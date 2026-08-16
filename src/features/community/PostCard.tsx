@@ -1,19 +1,14 @@
 import { useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { RichText } from "../../components/mentions/RichText";
+import { formatDateTime } from "../../lib/datetime";
 import { useHub } from "../../state/HubContext";
 import type { Post, PostComment } from "../../types/posts";
 import { describePost, isSaved } from "../../services/saved";
 import { postTypeConfig, questionStatus } from "./postTypes";
 import styles from "./PostCard.module.css";
 
-export function PostCard({
-  post,
-  compact = false,
-}: {
-  post: Post;
-  compact?: boolean;
-}) {
+export function PostCard({ post, compact = false }: { post: Post; compact?: boolean }) {
   const { mentionEntities, acceptAnswer, addComment, savedItems, toggleSavedTarget } = useHub();
   const status = questionStatus(post);
   const kind = postTypeConfig(post.type);
@@ -51,7 +46,7 @@ export function PostCard({
           </a>
         ))}
       <p className={styles.meta}>
-        {post.author.name} · {post.createdAt}
+        {post.author.name} · {formatDateTime(post.createdAt)}
       </p>
       {!compact
         ? post.comments.map((comment) => (
@@ -112,11 +107,8 @@ function CommentForm({ onSubmit }: { onSubmit: (text: string) => void }) {
         setText("");
       }}
     >
-      <input
-        value={text}
-        placeholder="Ответ"
-        onChange={(e) => setText(e.target.value)}
-      />
+      <input value={text} placeholder="Ответ" onChange={(e) => setText(e.target.value)} />
     </form>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { postTypeConfig } from "../../config/postTypes";
 import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
 import { IconButton } from "../../components/IconButton/IconButton";
@@ -30,7 +30,7 @@ export function ShareDialog() {
     }
   }, [addOpen]);
 
-  const closeNow = () => setAddOpen(false);
+  const closeNow = useCallback(() => setAddOpen(false), [setAddOpen]);
 
   const backNow = () => {
     setView({ step: "selecting-type" });
@@ -38,10 +38,10 @@ export function ShareDialog() {
     setBaseline(initialDraft("discussion"));
   };
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
     if (leave.intent) return;
     if (leave.request("close")) closeNow();
-  };
+  }, [leave, closeNow]);
 
   const requestBack = () => {
     if (leave.intent) return;
@@ -74,14 +74,11 @@ export function ShareDialog() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [addOpen, dirty, leave.intent]);
+  }, [addOpen, dirty, leave, requestClose]);
 
   if (!addOpen) return null;
 
-  const title =
-    view.step === "composing"
-      ? postTypeConfig(view.type).composeTitle
-      : "Поделиться";
+  const title = view.step === "composing" ? postTypeConfig(view.type).composeTitle : "Поделиться";
 
   return (
     <div className={styles.overlay} onClick={requestClose} role="presentation">
@@ -137,3 +134,4 @@ export function ShareDialog() {
     </div>
   );
 }
+

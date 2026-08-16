@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export type LeaveIntent = "close" | "back";
 
@@ -22,9 +22,13 @@ export function useUnsavedChanges(dirty: boolean) {
     return current;
   }, [intent]);
 
-  return { intent, request, dismiss, confirm };
+  return useMemo(
+    () => ({ intent, request, dismiss, confirm }),
+    [intent, request, dismiss, confirm],
+  );
 }
 
 export function isDraftDirty<T>(current: T, initial: T) {
   return JSON.stringify(current) !== JSON.stringify(initial);
 }
+

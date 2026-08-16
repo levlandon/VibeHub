@@ -28,15 +28,38 @@ VibeHub развивается самим vibe coding комьюнити.
 
 Не обязательно брать огромную задачу — небольшие улучшения интерфейса, новые функции и исправления тоже приветствуются.
 
+## Как запустить
+
+```bash
+npm install
+npm run dev       # разработка
+npm run build     # typecheck + сборка
+npm run lint      # eslint
+npm run test      # vitest
+```
+
+## Архитектура
+
+- **Стек:** Vite 7 + React 19 + TypeScript, CSS-модули. Роутер — TanStack Router.
+- **Маршруты** (`src/router.tsx`): `/models`, `/models/:id`, `/tools`, `/tools/:id`, `/benchmarks`, `/bookmarks`, `/collections`. Карточки моделей и инструментов имеют публичные URL — их можно шарить.
+- **Состояние** (`src/state/HubContext.tsx`): единый контекст. Навигация (`route`, `entityView`) выведена из URL через хелперы в `src/state/routing.ts`, переключение — через роутер.
+- **Данные моделей** (`src/services/models/`): живьё из OpenRouter API с кэшем (10 минут, sessionStorage). Абстракция `ModelProvider` позволяет добавить другие источники.
+- **Персистентность** (`src/services/collections/`, `src/services/saved.ts`): закладки, коллекции и Quick Access хранятся в localStorage через repository-интерфейсы.
+- **Сообщества** (`src/services/posts.ts`, `src/features/share/`): посты, комментарии, принятие ответа. Пока в памяти браузера — после подключения бэкенда переедет на сервер.
+
+### Важно про окружение
+
+Переменные с префиксом `VITE_` попадают в клиентский бандл. **Никогда** не указывайте API-ключи и другие секреты в `.env` или `.env.example` для `VITE_*`. См. `.env.example`.
+
 ## Как внести вклад
 
 1. Сделай Fork репозитория.
 2. Создай отдельную ветку под изменение.
 3. Внеси изменения.
-4. Проверь, что проект запускается и ничего очевидно не сломано.
+4. Проверь, что проект запускается и ничего очевидно не сломано: `npm run lint`, `npm run build`, `npm run test`.
 5. Отправь Pull Request с коротким описанием того, что изменил и зачем.
 
-Изменения в `main` принимаются через Pull Request.
+Изменения в `main` принимаются через Pull Request. Публикации (`vite preview`) проверяются в CI.
 
 ## Статус
 

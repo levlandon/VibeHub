@@ -3,10 +3,7 @@ import { parseSpans, relatedFromSpans } from "./content";
 import type { EntityRef } from "../types/entities";
 import type { CreatePostInput, Post, PostComment } from "../types/posts";
 
-export function createPost(
-  input: CreatePostInput,
-  entities: EntityRef[],
-): Post {
+export function createPost(input: CreatePostInput, entities: EntityRef[]): Post {
   const spans = parseSpans(input.content, entities);
   return {
     id: `post-${Date.now()}`,
@@ -14,7 +11,7 @@ export function createPost(
     author: CURRENT_USER,
     title: input.title.trim(),
     content: input.content.trim(),
-    createdAt: "сейчас",
+    createdAt: new Date().toISOString(),
     tags: input.tags,
     relatedEntities: relatedFromSpans(spans),
     reactions: [],
@@ -24,27 +21,19 @@ export function createPost(
   };
 }
 
-export function addComment(
-  posts: Post[],
-  postId: string,
-  content: string,
-): Post[] {
+export function addComment(posts: Post[], postId: string, content: string): Post[] {
   const comment: PostComment = {
     id: `c-${Date.now()}`,
     author: CURRENT_USER,
     content: content.trim(),
-    createdAt: "сейчас",
+    createdAt: new Date().toISOString(),
   };
   return posts.map((post) =>
     post.id === postId ? { ...post, comments: [...post.comments, comment] } : post,
   );
 }
 
-export function acceptAnswer(
-  posts: Post[],
-  postId: string,
-  commentId: string,
-): Post[] {
+export function acceptAnswer(posts: Post[], postId: string, commentId: string): Post[] {
   return posts.map((post) =>
     post.id === postId && post.type === "question"
       ? { ...post, solved: true, acceptedAnswerId: commentId }
@@ -62,3 +51,4 @@ export function filterPosts(posts: Post[], type: string) {
   if (type === "all") return posts;
   return posts.filter((post) => post.type === type);
 }
+

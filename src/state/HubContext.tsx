@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { INITIAL_MESSAGES } from "../data/chat";
 import { INITIAL_POSTS } from "../data/posts";
 import { CURRENT_USER } from "../data/site";
@@ -23,15 +24,10 @@ import {
 import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
 import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
 import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
-import type {
-  ChatChannelId,
-  ChatMessage,
-  Model,
-  Route,
-  Tool,
-} from "../types/hub";
+import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
 import type { CreatePostInput, Post } from "../types/posts";
 import type { SavedItem } from "../types/saved";
+import { entityFromPath, entityPath, routeFromPath, type EntityView } from "./routing";
 
 const COLLAPSE_KEY = "vibehub-sidebar-collapsed";
 const CHAT_KEY = "vibehub-chat-open";
@@ -51,14 +47,14 @@ interface HubState {
   chatOpen: boolean;
   chatChannel: ChatChannelId;
   messages: ChatMessage[];
-  entityView: { kind: CatalogKind; id: string } | null;
+  entityView: EntityView | null;
   setRoute: (route: Route) => void;
   setAddOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setChatOpen: (open: boolean) => void;
   setChatChannel: (id: ChatChannelId) => void;
-  setEntityView: (view: { kind: CatalogKind; id: string } | null) => void;
+  setEntityView: (view: EntityView | null) => void;
   sendMessage: (text: string) => void;
   openEntity: (kind: EntityKind, id: string) => void;
   toggleModelBookmark: (id: string) => void;
@@ -73,7 +69,10 @@ interface HubState {
 const HubContext = createContext<HubState | null>(null);
 
 export function HubProvider({ children }: { children: ReactNode }) {
-  const [route, setRouteState] = useState<Route>("models");
+  const navigate = useNavigate();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const route = routeFromPath(pathname);
+  const entityView = entityFromPath(pathname);
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setCollapsedState] = useState(() => {
@@ -95,10 +94,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
   });
   const [chatChannel, setChatChannel] = useState<ChatChannelId>("tools");
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
-  const [entityView, setEntityView] = useState<{
-    kind: CatalogKind;
-    id: string;
-  } | null>(null);
   const [models, setModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError, setModelsError] = useState<string | null>(null);
@@ -121,9 +116,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       const data = await modelsService.getModels({ forceRefresh });
       setModels(data);
     } catch (err) {
-      setModelsError(
-        err instanceof Error ? err.message : "Не удалось загрузить каталог моделей",
-      );
+      setModelsError(err instanceof Error ? err.message : "Не удалось загрузить каталог моделей");
     } finally {
       setModelsLoading(false);
     }
@@ -133,15 +126,25 @@ export function HubProvider({ children }: { children: ReactNode }) {
     fetchModels();
   }, [fetchModels]);
 
-  const mentionEntities = useMemo(
-    () => mentionIndex(models, tools),
-    [models, tools],
+  const mentionEntities = useMemo(() => mentionIndex(models, tools), [models, tools]);
+
+  const setRoute = useCallback(
+    (next: Route) => {
+      navigate({ to: `/${next}` });
+    },
+    [navigate],
   );
 
-  const setRoute = useCallback((next: Route) => {
-    setRouteState(next);
-    setEntityView(null);
-  }, []);
+  const setEntityView = useCallback(
+    (view: EntityView | null) => {
+      if (view) {
+        navigate({ to: entityPath(view) });
+      } else {
+        navigate({ to: `/${routeFromPath(pathname)}` });
+      }
+    },
+    [navigate, pathname],
+  );
 
   const setSidebarCollapsed = useCallback((collapsed: boolean) => {
     setCollapsedState(collapsed);
@@ -165,27 +168,24 @@ export function HubProvider({ children }: { children: ReactNode }) {
           author: CURRENT_USER,
           text: trimmed,
           spans: parseSpans(trimmed, mentionEntities),
-          createdAt: new Date().toLocaleTimeString("ru-RU", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          createdAt: new Date().toISOString(),
         },
       ]);
     },
     [chatChannel, mentionEntities],
   );
 
-  const openEntity = useCallback((kind: EntityKind, id: string) => {
-    if (kind !== "model" && kind !== "tool") return;
-    setRouteState(kind === "model" ? "models" : "tools");
-    setEntityView({ kind, id });
-  }, []);
+  const openEntity = useCallback(
+    (kind: EntityKind, id: string) => {
+      if (kind !== "model" && kind !== "tool") return;
+      navigate({ to: entityPath({ kind, id }) });
+    },
+    [navigate],
+  );
 
   const syncBookmark = useCallback((kind: CatalogKind, id: string, on: boolean) => {
     if (kind === "tool") {
-      setTools((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, bookmarked: on } : item)),
-      );
+      setTools((prev) => prev.map((item) => (item.id === id ? { ...item, bookmarked: on } : item)));
     }
   }, []);
 
@@ -298,6 +298,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       messages,
       entityView,
       setRoute,
+      setEntityView,
       setSidebarCollapsed,
       setChatOpen,
       sendMessage,
@@ -320,3 +321,4 @@ export function useHub() {
   if (!ctx) throw new Error("useHub must be used within HubProvider");
   return ctx;
 }
+

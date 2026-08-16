@@ -146,7 +146,10 @@ export function parseModelPricing(pricing?: OpenRouterRawModel["pricing"]): Mode
   };
 }
 
-export function extractProviderInfo(rawId: string, rawName: string): { providerId: string; provider: string } {
+export function extractProviderInfo(
+  rawId: string,
+  rawName: string,
+): { providerId: string; provider: string } {
   const rawPrefix = rawId.split("/")[0] ?? "";
   const cleanId = rawPrefix.replace(/^~/, "").toLowerCase();
 
@@ -198,10 +201,7 @@ export function extractCapabilities(raw: OpenRouterRawModel, pricing: ModelPrici
     capabilities.push("Audio");
   }
 
-  if (
-    supportedParams.includes("tools") ||
-    supportedParams.includes("tool_choice")
-  ) {
+  if (supportedParams.includes("tools") || supportedParams.includes("tool_choice")) {
     capabilities.push("Tools");
   }
 
@@ -225,9 +225,7 @@ export function mapOpenRouterModel(raw: OpenRouterRawModel): Model {
   const pricing = parseModelPricing(raw.pricing);
   const capabilities = extractCapabilities(raw, pricing);
   const createdAt = raw.created ? raw.created * 1000 : undefined;
-  const releaseDate = createdAt
-    ? new Date(createdAt).toISOString().slice(0, 10)
-    : undefined;
+  const releaseDate = createdAt ? new Date(createdAt).toISOString().slice(0, 10) : undefined;
 
   return {
     id: raw.id,
@@ -264,13 +262,11 @@ export class OpenRouterProvider implements ModelProvider {
   readonly name = "OpenRouter";
 
   private apiUrl: string;
-  private apiKey?: string;
 
   constructor() {
     this.apiUrl =
       import.meta.env.VITE_OPENROUTER_API_URL?.replace(/\/+$/, "") ||
       "https://openrouter.ai/api/v1";
-    this.apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
   }
 
   async getModels(options?: ModelProviderOptions): Promise<Model[]> {
@@ -278,10 +274,6 @@ export class OpenRouterProvider implements ModelProvider {
     const headers: Record<string, string> = {
       Accept: "application/json",
     };
-
-    if (this.apiKey) {
-      headers.Authorization = `Bearer ${this.apiKey}`;
-    }
 
     const res = await fetch(url, {
       method: "GET",
@@ -303,3 +295,4 @@ export class OpenRouterProvider implements ModelProvider {
     return data.data.map(mapOpenRouterModel);
   }
 }
+
