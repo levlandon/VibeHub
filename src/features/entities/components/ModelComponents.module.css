@@ -1,0 +1,533 @@
+/* ModelHeader and layout container */
+.modelHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mainInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.providerLogo {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modelTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.subRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.providerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+  transition: color var(--ease);
+}
+
+.providerLink:hover {
+  color: var(--accent);
+}
+
+.providerArrow {
+  opacity: 0.7;
+  transition: transform var(--ease), opacity var(--ease);
+}
+
+.providerLink:hover .providerArrow {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+.idRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.idText {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  user-select: all;
+  letter-spacing: -0.01em;
+  background: var(--bg-elevated);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--ease), background var(--ease), border-color var(--ease);
+}
+
+.copyBtn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.copyBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.copiedIcon {
+  color: var(--success);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Metadata Bar */
+.metaBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.metaIcon {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.metaChipText {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.pricingFreeChip {
+  background: rgba(46, 189, 133, 0.08);
+  border-color: rgba(46, 189, 133, 0.25);
+}
+
+.freeText {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--success);
+}
+
+.priceRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.priceItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.priceArrowDown {
+  color: var(--accent);
+}
+
+.priceArrowUp {
+  color: var(--text-dim);
+}
+
+.priceUnit {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* Capabilities */
+.capabilities {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.capBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  transition: color var(--ease), background var(--ease);
+}
+
+.capBadge:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+/* Modalities */
+.modalities {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.modalityGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modalityIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  transition: color var(--ease);
+}
+
+.modalityIcon:hover {
+  color: var(--text);
+}
+
+.modalityArrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.modalityFallback {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 1px 4px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xs);
+}
+
+/* Expandable Description */
+.descriptionWrap {
+  margin-top: 4px;
+  max-width: 800px;
+}
+
+.descriptionText {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.expanded {
+  display: block;
+}
+
+.expandBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 2px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--ease);
+}
+
+.expandBtn:hover {
+  color: var(--accent-hover);
+}
+
+.expandChevron {
+  transition: transform var(--ease);
+}
+
+.rotateChevron {
+  transform: rotate(180deg);
+}
+
+.descriptionEmpty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Popover */
+.popoverContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--ease), background var(--ease), border-color var(--ease);
+}
+
+.infoTriggerBtn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.infoTriggerActive {
+  color: var(--accent);
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.popoverMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: popoverFadeIn 120ms ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popoverHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.popoverTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.popoverCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition: color var(--ease);
+}
+
+.popoverCloseBtn:hover {
+  color: var(--text);
+}
+
+.popoverBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popoverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+}
+
+.popoverLabel {
+  color: var(--text-dim);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.popoverValue {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: right;
+}
+
+.popoverValueRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.popoverMono {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popoverCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition: color var(--ease);
+}
+
+.popoverCopyBtn:hover {
+  color: var(--text);
+}
+
+.popoverLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--ease);
+}
+
+.popoverLink:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .popoverMenu {
+    width: 280px;
+    left: -20px;
+  }
+}

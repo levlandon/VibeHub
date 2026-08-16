@@ -45,6 +45,50 @@
   color: var(--text-dim);
 }
 
+.idRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.idText {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  user-select: all;
+  letter-spacing: -0.01em;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--ease), background var(--ease);
+}
+
+.copyBtn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.copyBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.copiedIcon {
+  color: var(--success);
+}
+
 .headActions {
   display: flex;
   align-items: center;
@@ -85,95 +129,111 @@
 }
 
 .block {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
-.description {
-  font-size: 15px;
-  line-height: 1.6;
+.overviewSection {
+  margin-top: 24px;
+}
+
+.overviewSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+}
+
+.overviewBenchmarks {
+  margin-top: 20px;
+}
+
+.benchmarkList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.benchmarkRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.benchmarkRow:last-child {
+  border-bottom: none;
+}
+
+.benchmarkName {
+  font-weight: 500;
   color: var(--text);
-  margin-bottom: 24px;
+}
+
+.benchmarkScore {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.emptyNotice {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  padding: 16px 0;
+  margin: 0;
+}
+
+/* Tool Header & Tool specs */
+.toolHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolHeadMain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.toolDescription {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
   max-width: 800px;
 }
 
-.descriptionEmpty {
-  color: var(--text-dim);
-  font-style: italic;
-}
-
-.specsGrid {
+.toolSpecsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
-.specCard {
-  padding: 14px 16px;
-  border-radius: 12px;
+.toolSpecCard {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
 }
 
-.specTitle {
+.toolSpecTitle {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-dim);
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
-.specValue {
-  font-size: 14px;
+.toolSpecValue {
+  font-size: 13.5px;
   color: var(--text);
   margin: 0;
-  line-height: 1.4;
-}
-
-.specValueMono {
-  font-family: var(--mono);
-  font-size: 13px;
-}
-
-.specSub {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-top: 4px;
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.link {
-  color: var(--primary, #3b82f6);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-
-.row {
-  font-size: 13px;
-  color: var(--text-dim);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
 }

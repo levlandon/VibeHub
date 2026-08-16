@@ -1,23 +1,44 @@
 :root {
+  /* Surfaces */
   --bg: #0b0b0c;
-  --bg-elevated: #121213;
-  --surface: #161617;
-  --surface-hover: #1c1c1e;
-  --border: #2a2a2c;
-  --text: #f5f5f5;
-  --text-muted: #9c9c9f;
-  --text-dim: #6e6e72;
+  --bg-elevated: #131315;
+  --surface: #171719;
+  --surface-hover: #1f1f22;
+
+  /* Borders */
+  --border: #28282b;
+  --border-hover: #3e3e44;
+  --border-focus: var(--accent);
+
+  /* Typography Colors */
+  --text: #f0f0f2;
+  --text-secondary: #c4c4c8;
+  --text-muted: #9e9ea4;
+  --text-dim: #76767c;
+
+  /* Accents */
   --accent: #5b9e94;
   --accent-hover: #6eb0a6;
   --accent-soft: rgba(91, 158, 148, 0.14);
-  --radius-sm: 8px;
-  --radius: 12px;
+  --success: #2ebd85;
+  --danger: #e05252;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  /* Layout */
   --sidebar-w: 256px;
   --sidebar-collapsed: 72px;
   --content-max: 840px;
   --chat-w: 384px;
-  --font: "IBM Plex Sans", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Fonts */
+  --font: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --ease: 140ms ease;
 }
 

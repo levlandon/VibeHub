@@ -7,7 +7,7 @@
   user-select: none;
   overflow: hidden;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color var(--ease), background-color var(--ease);
 }
 
 .mark {

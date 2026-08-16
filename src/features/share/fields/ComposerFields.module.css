@@ -3,10 +3,18 @@
 .extra input {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   font: inherit;
+  outline: none;
+  transition: border-color var(--ease);
+}
+
+.title:focus,
+.body:focus,
+.extra input:focus {
+  border-color: var(--accent);
 }
 
 .title {

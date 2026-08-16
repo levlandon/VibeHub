@@ -13,9 +13,9 @@
 .dialog {
   width: 100%;
   max-width: 400px;
-  background: var(--bg-elevated, #18181b);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
@@ -41,11 +41,16 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
   outline: none;
+  transition: border-color var(--ease);
+}
+
+.field select:focus {
+  border-color: var(--accent);
 }
 
 .actions {

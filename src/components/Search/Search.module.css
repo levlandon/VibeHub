@@ -4,11 +4,11 @@
   height: 36px;
   width: 36px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-dim);
   overflow: hidden;
-  transition: width 160ms ease;
+  transition: width var(--ease), border-color var(--ease);
 }
 
 .open {

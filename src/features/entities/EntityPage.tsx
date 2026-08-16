@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { IconBookmark } from "../../components/icons";
-import { ProviderMark } from "../../components/ProviderMark/ProviderMark";
 import { BENCHMARKS } from "../../data/benchmarks";
 import { postsForEntity } from "../../services/posts";
 import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
 import type { CatalogKind } from "../../types/entities";
 import type { Model, Tool } from "../../types/hub";
-import styles from "./EntityPage.module.css";
 import { ENTITY_TABS } from "./entityTabs";
+import { ModelHeader } from "./components/ModelHeader";
 import { RelatedPosts } from "./RelatedPosts";
+import styles from "./EntityPage.module.css";
 
 export function EntityPage() {
   const {
@@ -109,24 +109,27 @@ function EntityPageView({
         ← К списку
       </button>
 
-      <header className={styles.head}>
-        <div className={styles.headMain}>
-          {model ? <ProviderMark model={model} size={48} /> : null}
-          <div>
-            <h1 className={styles.headTitle}>{title}</h1>
-            <p className={styles.headSubtitle}>{model?.provider ?? tool?.typeLabel}</p>
+      {model ? (
+        <ModelHeader model={model} saved={saved} onSave={onSave} />
+      ) : (
+        <header className={styles.toolHead}>
+          <div className={styles.toolHeadMain}>
+            <div>
+              <h1 className={styles.headTitle}>{title}</h1>
+              <p className={styles.headSubtitle}>{tool?.typeLabel}</p>
+            </div>
           </div>
-        </div>
-        <div className={styles.headActions}>
-          <IconButton
-            label={saved ? "Убрать из закладок" : "Сохранить"}
-            active={saved}
-            onClick={onSave}
-          >
-            <IconBookmark width={18} height={18} />
-          </IconButton>
-        </div>
-      </header>
+          <div className={styles.headActions}>
+            <IconButton
+              label={saved ? "Убрать из закладок" : "Сохранить"}
+              active={saved}
+              onClick={onSave}
+            >
+              <IconBookmark width={18} height={18} />
+            </IconButton>
+          </div>
+        </header>
+      )}
 
       <div className={styles.tabs}>
         {tabs.map((item) => (
@@ -143,134 +146,77 @@ function EntityPageView({
 
       {tab === "overview" ? (
         <section className={styles.block}>
-          {model ? (
+          {!model && tool ? (
             <>
-              <div className={styles.description}>
-                {model.description ? (
-                  <p>{model.description}</p>
-                ) : (
-                  <p className={styles.descriptionEmpty}>
-                    Описание модели отсутствует в спецификации провайдера.
-                  </p>
-                )}
+              <div className={styles.toolDescription}>
+                <p>{tool.summary ?? "Карточка инструмента в каталоге VibeHub."}</p>
               </div>
-
-              <div className={styles.specsGrid}>
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Контекстное окно</h3>
-                  <p className={`${styles.specValue} ${styles.specValueMono}`}>
-                    {model.contextWindow}
-                  </p>
-                  <p className={styles.specSub}>{model.contextLength.toLocaleString()} токенов</p>
+              <div className={styles.toolSpecsGrid}>
+                <div className={styles.toolSpecCard}>
+                  <h3 className={styles.toolSpecTitle}>Тип</h3>
+                  <p className={styles.toolSpecValue}>{tool.typeLabel}</p>
                 </div>
-
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Ценообразование</h3>
-                  <p className={`${styles.specValue} ${styles.specValueMono}`}>
-                    {model.pricing.formattedSummary}
-                  </p>
-                  <p className={styles.specSub}>
-                    {model.pricing.isFree
-                      ? "Бесплатный уровень (Free)"
-                      : `Prompt: $${model.pricing.promptPerMillion.toFixed(2)}/1M · Completion: $${model.pricing.completionPerMillion.toFixed(2)}/1M`}
-                  </p>
-                </div>
-
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Возможности</h3>
-                  <div className={styles.badges}>
-                    {model.capabilities.length > 0 ? (
-                      model.capabilities.map((cap) => (
-                        <span key={cap} className={styles.badge}>
-                          {cap}
-                        </span>
-                      ))
-                    ) : (
-                      <span className={styles.specSub}>Стандартные (текст)</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Модальность</h3>
-                  <p className={styles.specValue}>{model.architecture?.modality || "text->text"}</p>
-                  {model.architecture?.tokenizer ? (
-                    <p className={styles.specSub}>Токенизатор: {model.architecture.tokenizer}</p>
-                  ) : null}
-                </div>
-
-                {model.huggingFaceId ? (
-                  <div className={styles.specCard}>
-                    <h3 className={styles.specTitle}>Hugging Face</h3>
-                    <p className={styles.specValue}>
-                      <a
-                        href={`https://huggingface.co/${model.huggingFaceId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.link}
-                      >
-                        {model.huggingFaceId} ↗
-                      </a>
-                    </p>
-                  </div>
-                ) : null}
-
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Первоисточник</h3>
-                  <p className={styles.specValue}>
-                    <a
-                      href={model.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.link}
-                    >
-                      OpenRouter API ↗
-                    </a>
-                  </p>
-                  {model.releaseDate ? (
-                    <p className={styles.specSub}>Добавлено: {model.releaseDate}</p>
-                  ) : null}
+                <div className={styles.toolSpecCard}>
+                  <h3 className={styles.toolSpecTitle}>Совместимость</h3>
+                  <p className={styles.toolSpecValue}>{tool.compatibility.join(" · ")}</p>
                 </div>
               </div>
             </>
-          ) : (
-            <>
-              <div className={styles.description}>
-                <p>{tool?.summary ?? "Карточка инструмента в каталоге VibeHub."}</p>
-              </div>
-              <div className={styles.specsGrid}>
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Тип</h3>
-                  <p className={styles.specValue}>{tool?.typeLabel}</p>
-                </div>
-                <div className={styles.specCard}>
-                  <h3 className={styles.specTitle}>Совместимость</h3>
-                  <p className={styles.specValue}>{tool?.compatibility.join(" · ")}</p>
-                </div>
-              </div>
-            </>
-          )}
+          ) : null}
 
-          <RelatedPosts posts={related} />
+          {/* Benchmarks summary in Overview if present for this model */}
+          {model && rows.length > 0 ? (
+            <div className={styles.overviewBenchmarks}>
+              <h3 className={styles.overviewSectionTitle}>Проверенные бенчмарки</h3>
+              <div className={styles.benchmarkList}>
+                {rows.map((row) => (
+                  <div key={row.id} className={styles.benchmarkRow}>
+                    <span className={styles.benchmarkName}>{row.benchmark}</span>
+                    <span className={styles.benchmarkScore}>
+                      {row.score}
+                      {row.scoreMax ? ` / ${row.scoreMax}` : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Related posts in Overview only if they actually exist (no empty state) */}
+          {related.length > 0 ? (
+            <div className={styles.overviewSection}>
+              <h3 className={styles.overviewSectionTitle}>Связанные материалы</h3>
+              <RelatedPosts posts={related} />
+            </div>
+          ) : null}
         </section>
       ) : null}
 
       {tab === "benchmarks" ? (
         <section className={styles.block}>
           {rows.length === 0 ? (
-            <p className={styles.row}>Нет проверенных бенчмарков для этой сущности.</p>
+            <p className={styles.emptyNotice}>Нет проверенных бенчмарков для этой модели.</p>
           ) : (
-            rows.map((row) => (
-              <p key={row.id} className={styles.row}>
-                {row.benchmark} · {row.score}
-                {row.scoreMax ? `/${row.scoreMax}` : ""}
-              </p>
-            ))
+            <div className={styles.benchmarkList}>
+              {rows.map((row) => (
+                <div key={row.id} className={styles.benchmarkRow}>
+                  <span className={styles.benchmarkName}>{row.benchmark}</span>
+                  <span className={styles.benchmarkScore}>
+                    {row.score}
+                    {row.scoreMax ? ` / ${row.scoreMax}` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       ) : null}
 
-      {tab === "discussions" || tab === "guides" ? <RelatedPosts posts={tabPosts} /> : null}
+      {tab === "discussions" || tab === "guides" ? (
+        <section className={styles.block}>
+          <RelatedPosts posts={tabPosts} />
+        </section>
+      ) : null}
     </div>
   );
 }

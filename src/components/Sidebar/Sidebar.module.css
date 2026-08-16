@@ -9,8 +9,8 @@
   padding: 12px 10px 14px;
   border-right: 1px solid var(--border);
   background: var(--bg);
-  --nav-accent: #62b4e4;
-  transition: width 160ms ease;
+  --nav-accent: var(--accent);
+  transition: width var(--ease);
 }
 
 .collapsed:not(.mobileOpen) {

@@ -37,17 +37,17 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 18px 20px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
   min-height: 140px;
 }
 
 .collectionCard:hover {
   transform: translateY(-2px);
-  border-color: var(--border-hover, #3f3f46);
+  border-color: var(--border-hover);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -242,7 +242,7 @@
 }
 
 .siteTitleLink:hover {
-  color: var(--primary, #3b82f6);
+  color: var(--accent);
 }
 
 .siteDomain {
@@ -268,12 +268,12 @@
 .actionBtn {
   background: none;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 12px;
   color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--ease);
 }
 
 .actionBtn:hover {
@@ -283,8 +283,8 @@
 }
 
 .actionBtnDanger:hover {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--danger);
+  border-color: rgba(224, 82, 82, 0.3);
 }
 
 .emptyBlock {

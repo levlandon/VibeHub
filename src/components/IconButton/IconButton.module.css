@@ -4,13 +4,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--text-dim);
+  transition: background var(--ease), color var(--ease);
 }
 
 .btn:hover {
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface-hover);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .active {

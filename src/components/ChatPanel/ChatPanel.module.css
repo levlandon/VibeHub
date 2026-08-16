@@ -333,7 +333,7 @@
 
 .send {
   background: var(--accent);
-  color: #0b0b0c;
+  color: var(--bg);
 }
 
 .send:hover {

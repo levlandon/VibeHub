@@ -25,9 +25,18 @@ const indexRoute = createRoute({
   },
 });
 
+interface ModelsSearch {
+  provider?: string;
+}
+
 const modelsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/models",
+  validateSearch: (search: Record<string, unknown>): ModelsSearch => {
+    return {
+      provider: typeof search.provider === "string" ? search.provider : undefined,
+    };
+  },
   component: ModelsPage,
 });
 

@@ -1,14 +1,22 @@
 .chip {
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
 }
 
 .chip:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
   color: var(--text);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .on {

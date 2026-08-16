@@ -105,11 +105,12 @@ export function formatContextWindow(tokens: number): string {
   if (!tokens || tokens <= 0) return "—";
   if (tokens >= 1_000_000) {
     const m = tokens / 1_000_000;
-    return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
+    const rounded = Math.round(m * 10) / 10;
+    return `${rounded}M`;
   }
   if (tokens >= 1_000) {
-    const k = tokens / 1_000;
-    return `${k % 1 === 0 ? k : k.toFixed(0)}K`;
+    const k = Math.round(tokens / 1_000);
+    return `${k}K`;
   }
   return `${tokens}`;
 }
