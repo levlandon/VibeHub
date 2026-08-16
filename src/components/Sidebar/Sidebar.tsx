@@ -128,7 +128,7 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
           className={styles.link}
           href={GITHUB_URL}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           title={tip("GitHub")}
         >
           <IconGithub width={22} height={22} />

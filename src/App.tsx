@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AddModal } from "./components/AddModal/AddModal";
+import { ShareDialog } from "./features/share/ShareDialog";
+import { EntityPage } from "./features/entities/EntityPage";
 import { ChatPanel } from "./components/ChatPanel/ChatPanel";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { IconChat } from "./components/icons";
@@ -19,7 +20,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { route, sidebarCollapsed, searchOpen, setSearchOpen, chatOpen, setChatOpen } =
+  const { route, sidebarCollapsed, searchOpen, setSearchOpen, chatOpen, setChatOpen, entityView } =
     useHub();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -66,11 +67,17 @@ function Shell() {
               ☰
             </button>
             <main className="main">
-              {route === "models" ? <ModelsPage /> : null}
-              {route === "tools" ? <ToolsPage /> : null}
-              {route === "benchmarks" ? <BenchmarksPage /> : null}
-              {route === "bookmarks" ? <BookmarksPage /> : null}
-              {route === "collections" ? <CollectionsPage /> : null}
+              {entityView ? (
+                <EntityPage />
+              ) : (
+                <>
+                  {route === "models" ? <ModelsPage /> : null}
+                  {route === "tools" ? <ToolsPage /> : null}
+                  {route === "benchmarks" ? <BenchmarksPage /> : null}
+                  {route === "bookmarks" ? <BookmarksPage /> : null}
+                  {route === "collections" ? <CollectionsPage /> : null}
+                </>
+              )}
             </main>
             {chatOpen ? null : (
               <button
@@ -87,7 +94,7 @@ function Shell() {
         </div>
         {chatOpen ? <ChatPanel /> : null}
       </div>
-      <AddModal />
+      <ShareDialog />
       <CommandPalette />
     </div>
   );

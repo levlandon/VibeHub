@@ -1,7 +1,7 @@
 export const CURRENT_USER = {
-  name: "Lev Lon",
-  handle: "levlon",
-  initials: "LL",
+  name: "User",
+  handle: "user",
+  initials: "U",
 };
 
-export const GITHUB_URL = "https://github.com";
+export const GITHUB_URL = "https://github.com/levlandon/VibeHub";

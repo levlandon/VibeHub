@@ -1,0 +1,48 @@
+.lead {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.row:hover {
+  background: var(--surface-hover);
+}
+
+.mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.row em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-dim);
+}

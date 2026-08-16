@@ -1,86 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState, type KeyboardEvent } from "react";
 import { CategoryStrip } from "../../components/CategoryStrip/CategoryStrip";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { IconButton } from "../../components/IconButton/IconButton";
-import { IconBookmark, IconCompare, IconOpen } from "../../components/icons";
+import { IconBookmark } from "../../components/icons";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { ProviderMark } from "../../components/ProviderMark/ProviderMark";
+import { Select } from "../../components/ui/Select";
+import { filterAndSortModels } from "../../services/models";
+import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
-import type { BenchmarkScores, Model, ModelFilter, ModelSort } from "../../types/hub";
+import type { Model, ModelFilter, ModelSort } from "../../types/models";
+import { ModelSkeletonList } from "./ModelSkeleton";
 import styles from "./Models.module.css";
 
 const FILTERS: { id: ModelFilter; label: string }[] = [
   { id: "all", label: "Все" },
-  { id: "coding", label: "Coding" },
-  { id: "reasoning", label: "Reasoning" },
   { id: "vision", label: "Vision" },
-  { id: "agents", label: "Agents" },
-  { id: "local", label: "Local" },
+  { id: "reasoning", label: "Reasoning" },
+  { id: "tools", label: "Tools" },
+  { id: "free", label: "Free" },
 ];
 
-const SCORE_META: { key: keyof BenchmarkScores; glyph: string; label: string }[] = [
-  { key: "coding", glyph: "</>", label: "Coding" },
-  { key: "reasoning", glyph: "◈", label: "Reasoning" },
-  { key: "research", glyph: "◉", label: "Research" },
-  { key: "vision", glyph: "▣", label: "Vision" },
-  { key: "speed", glyph: "▷", label: "Speed" },
+const SORT_OPTIONS: { value: ModelSort; label: string }[] = [
+  { value: "catalog", label: "Каталог" },
+  { value: "new", label: "Новые" },
+  { value: "context-desc", label: "Контекст: больше" },
+  { value: "context-asc", label: "Контекст: меньше" },
+  { value: "price-asc", label: "Цена: дешевле" },
+  { value: "name", label: "Название (A–Z)" },
 ];
-
-function matchesFilter(model: Model, filter: ModelFilter) {
-  if (filter === "all") return true;
-  if (filter === "agents") return model.capabilities.some((c) => /agent/i.test(c));
-  if (filter === "local") return model.capabilities.some((c) => /local|gguf/i.test(c));
-  return model.benchmarkScores[filter] != null;
-}
-
-function sortModels(models: Model[], sort: ModelSort) {
-  const copy = [...models];
-  if (sort === "popular") copy.sort((a, b) => b.voteCount - a.voteCount);
-  if (sort === "rating") copy.sort((a, b) => b.communityRating - a.communityRating);
-  if (sort === "new") copy.sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
-  if (sort === "context") copy.sort((a, b) => b.contextTokens - a.contextTokens);
-  return copy;
-}
 
 export function ModelsPage() {
-  const { models, toggleModelBookmark, focusedEntity } = useHub();
+  const {
+    models,
+    modelsLoading,
+    modelsError,
+    refreshModels,
+    savedItems,
+    toggleModelBookmark,
+    openEntity,
+  } = useHub();
+
   const [filter, setFilter] = useState<ModelFilter>("all");
   const [provider, setProvider] = useState("all");
-  const [sort, setSort] = useState<ModelSort>("popular");
-  const [compare, setCompare] = useState<string[]>([]);
+  const [sort, setSort] = useState<ModelSort>("catalog");
 
   const providers = useMemo(
-    () => [...new Set(models.map((m) => m.provider))].sort(),
+    () => [...new Set(models.map((m) => m.provider))].sort((a, b) => a.localeCompare(b)),
     [models],
   );
 
-  const visible = sortModels(
-    models.filter((model) => {
-      if (focusedEntity?.kind === "model" && focusedEntity.id === model.id) return true;
-      const byFilter = matchesFilter(model, filter);
-      const byProvider = provider === "all" || model.provider === provider;
-      return byFilter && byProvider;
-    }),
-    sort,
+  const providerOptions = useMemo(() => {
+    const allOpt = { value: "all", label: `Все (${providers.length})` };
+    return [allOpt, ...providers.map((p) => ({ value: p, label: p }))];
+  }, [providers]);
+
+  const visible = useMemo(
+    () =>
+      filterAndSortModels(models, {
+        filter,
+        provider,
+        sort,
+      }),
+    [models, filter, provider, sort],
   );
-
-  useEffect(() => {
-    if (focusedEntity?.kind !== "model") return;
-    document.getElementById(`model-${focusedEntity.id}`)?.scrollIntoView({
-      block: "center",
-      behavior: "smooth",
-    });
-  }, [focusedEntity]);
-
-  const toggleCompare = (id: string) => {
-    setCompare((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 2) return [prev[1] ?? prev[0], id];
-      return [...prev, id];
-    });
-  };
-
-  const selected = models.filter((m) => compare.includes(m.id));
 
   return (
     <div className={styles.page}>
@@ -91,115 +74,147 @@ export function ModelsPage() {
           onChange={(id) => setFilter(id as ModelFilter)}
         />
         <div className={styles.secondary}>
-          <div className={styles.selects}>
-            <label>
-              Provider
-              <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-                <option value="all">Все</option>
-                {providers.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Сортировка
-              <select value={sort} onChange={(e) => setSort(e.target.value as ModelSort)}>
-                <option value="popular">Популярные</option>
-                <option value="rating">Рейтинг</option>
-                <option value="new">Новые</option>
-                <option value="context">Context</option>
-              </select>
-            </label>
+          <div className={styles.toolbar}>
+            <Select
+              label="Provider"
+              value={provider}
+              options={providerOptions}
+              onChange={setProvider}
+              searchable
+              searchPlaceholder="Поиск провайдера..."
+            />
+            <Select
+              label="Сортировка"
+              value={sort}
+              options={SORT_OPTIONS}
+              onChange={(val) => setSort(val as ModelSort)}
+            />
           </div>
         </div>
       </PageHeader>
 
-      {selected.length > 0 ? (
-        <p className={styles.compare}>К сравнению: {selected.map((m) => m.name).join(" · ")}</p>
-      ) : null}
-
-      {visible.length === 0 ? (
-        <EmptyState>Модели не найдены.</EmptyState>
+      {modelsLoading && models.length === 0 ? (
+        <ModelSkeletonList count={8} />
+      ) : modelsError && models.length === 0 ? (
+        <div className={styles.errorBox}>
+          <p>{modelsError}</p>
+          <button type="button" className={styles.retryBtn} onClick={() => refreshModels()}>
+            Повторить попытку
+          </button>
+        </div>
+      ) : visible.length === 0 ? (
+        <EmptyState>
+          <p>Модели не найдены по выбранным фильтрам.</p>
+          {filter !== "all" || provider !== "all" ? (
+            <button
+              type="button"
+              className={styles.resetBtn}
+              onClick={() => {
+                setFilter("all");
+                setProvider("all");
+              }}
+            >
+              Сбросить фильтры
+            </button>
+          ) : null}
+        </EmptyState>
       ) : (
-        <ul className={styles.list}>
-          {visible.map((model) => (
-            <li key={model.id} id={`model-${model.id}`}>
-              <ModelRow
-                model={model}
-                compared={compare.includes(model.id)}
-                focused={focusedEntity?.kind === "model" && focusedEntity.id === model.id}
-                onCompare={() => toggleCompare(model.id)}
-                onBookmark={() => toggleModelBookmark(model.id)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className={styles.countInfo}>
+            Показано моделей: {visible.length}
+            {visible.length !== models.length ? ` из ${models.length}` : ""}
+          </div>
+          <ul className={styles.list}>
+            {visible.map((model) => (
+              <li key={model.id} id={`model-${model.id.replace(/\//g, "-")}`}>
+                <ModelRow
+                  model={model}
+                  bookmarked={isSaved(savedItems, "model", model.id)}
+                  onBookmark={() => toggleModelBookmark(model.id)}
+                  onOpen={() => openEntity("model", model.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
 }
 
-function ModelRow({
+const ModelRow = memo(function ModelRow({
   model,
-  compared,
-  focused,
-  onCompare,
+  bookmarked,
   onBookmark,
+  onOpen,
 }: {
   model: Model;
-  compared: boolean;
-  focused: boolean;
-  onCompare: () => void;
+  bookmarked: boolean;
   onBookmark: () => void;
+  onOpen: () => void;
 }) {
-  const scores = SCORE_META.filter((item) => model.benchmarkScores[item.key] != null);
+  const hasReasoning = model.capabilities.includes("Reasoning");
+  const hasVision = model.capabilities.includes("Vision");
+  const hasTools = model.capabilities.includes("Tools");
+  const hasAudio = model.capabilities.includes("Audio");
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen();
+    }
+  };
 
   return (
-    <article className={`${styles.row}${focused ? ` ${styles.focused}` : ""}`}>
+    <article
+      className={styles.row}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={`Открыть модель ${model.name} (${model.provider})`}
+    >
       <ProviderMark model={model} />
       <div className={styles.body}>
         <h2>{model.name}</h2>
         <p className={styles.provider}>{model.provider}</p>
-        <p className={styles.scores} aria-label="Benchmark scores">
-          {scores.map((item) => {
-            const value = model.benchmarkScores[item.key] ?? 0;
-            return (
-              <span
-                key={item.key}
-                className={styles.score}
-                title={`${item.label} ${value.toFixed(1)} · внешний бенчмарк`}
-              >
-                <em>{item.glyph}</em> {value.toFixed(1)}
-              </span>
-            );
-          })}
-          <span className={styles.ctx}>{model.contextWindow}</span>
-          <span className={styles.rating} title="Оценка сообщества">
-            ★ {model.communityRating.toFixed(1)} · {model.voteCount}
+        <div className={styles.metaRow}>
+          <span className={styles.ctx} title={`Контекст: ${model.contextLength.toLocaleString()} токенов`}>
+            {model.contextWindow} ctx
           </span>
-        </p>
+          <span
+            className={`${styles.pricing} ${model.pricing.isFree ? styles.pricingFree : ""}`}
+            title={`Цена: Prompt $${model.pricing.promptPerMillion.toFixed(2)} / Completion $${model.pricing.completionPerMillion.toFixed(2)} за 1M токенов`}
+          >
+            {model.pricing.formattedSummary}
+          </span>
+          {hasReasoning ? <span className={`${styles.tag} ${styles.tagReasoning}`}>Reasoning</span> : null}
+          {hasVision ? <span className={`${styles.tag} ${styles.tagVision}`}>Vision</span> : null}
+          {hasTools ? <span className={`${styles.tag} ${styles.tagTools}`}>Tools</span> : null}
+          {hasAudio ? <span className={`${styles.tag} ${styles.tagAudio}`}>Audio</span> : null}
+          {model.releaseDate ? (
+            <span className={styles.tagDate} title="Дата добавления в каталог">
+              {model.releaseDate}
+            </span>
+          ) : null}
+        </div>
       </div>
-      <div className={styles.actions}>
+      <div
+        className={styles.actions}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <IconButton
-          label={model.bookmarked ? "Убрать из закладок" : "Сохранить"}
-          active={model.bookmarked}
-          onClick={onBookmark}
+          label={bookmarked ? "Убрать из закладок" : "Сохранить"}
+          active={bookmarked}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBookmark();
+          }}
         >
           <IconBookmark width={18} height={18} />
-        </IconButton>
-        <IconButton
-          label={compared ? "Убрать из сравнения" : "Добавить к сравнению"}
-          active={compared}
-          onClick={onCompare}
-        >
-          <IconCompare width={18} height={18} />
-        </IconButton>
-        <IconButton label="Открыть">
-          <IconOpen width={18} height={18} />
         </IconButton>
       </div>
     </article>
   );
-}
+});

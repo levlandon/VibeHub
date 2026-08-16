@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { matchesQuery } from "../../lib/search";
+import { groupHits, searchHub } from "../../services/search";
 import { useHub } from "../../state/HubContext";
-import type { Route } from "../../types/hub";
 import { IconSearch } from "../icons";
 import styles from "./CommandPalette.module.css";
 
@@ -22,7 +21,8 @@ function writeRecent(term: string) {
 }
 
 export function CommandPalette() {
-  const { searchOpen, setSearchOpen, models, tools, setRoute } = useHub();
+  const { searchOpen, setSearchOpen, models, tools, posts, openEntity, setAddOpen } =
+    useHub();
   const [q, setQ] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,36 +45,30 @@ export function CommandPalette() {
     };
   }, [searchOpen, setSearchOpen]);
 
-  const results = useMemo(() => {
-    if (!q.trim()) return [];
-    const modelHits = models
-      .filter((m) => matchesQuery(`${m.name} ${m.provider} ${m.searchText}`, q))
-      .slice(0, 5)
-      .map((m) => ({
-        id: m.id,
-        title: m.name,
-        meta: m.provider,
-        kind: "Модель" as const,
-        route: "models" as Route,
-      }));
-    const toolHits = tools
-      .filter((t) => matchesQuery(`${t.name} ${t.typeLabel} ${t.searchText}`, q))
-      .slice(0, 5)
-      .map((t) => ({
-        id: t.id,
-        title: t.name,
-        meta: `${t.typeLabel} · ${t.category}`,
-        kind: "Инструмент" as const,
-        route: "tools" as Route,
-      }));
-    return [...modelHits, ...toolHits];
-  }, [q, models, tools]);
+  const grouped = useMemo(
+    () => groupHits(searchHub(q, models, tools, posts)),
+    [q, models, tools, posts],
+  );
 
   if (!searchOpen) return null;
 
-  const go = (route: Route, term?: string) => {
+  const goFirst = () => {
+    const first = grouped[0]?.items[0];
+    if (first) openHit(first.id, first.kind, q);
+  };
+
+  const openHit = (id: string, kind: string, term?: string) => {
     if (term?.trim()) writeRecent(term.trim());
-    setRoute(route);
+    if (kind === "model" || kind === "tool") openEntity(kind, id);
+    else {
+      const post = posts.find((p) => p.id === id);
+      const rel = post?.relatedEntities[0];
+      if (rel && (rel.kind === "model" || rel.kind === "tool")) {
+        openEntity(rel.kind, rel.id);
+      } else {
+        setAddOpen(true);
+      }
+    }
     setSearchOpen(false);
   };
 
@@ -91,10 +85,10 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             value={q}
-            placeholder="Поиск моделей и инструментов..."
+            placeholder="Модели, инструменты, публикации..."
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && results[0]) go(results[0].route, q);
+              if (e.key === "Enter") goFirst();
             }}
           />
           <kbd>Esc</kbd>
@@ -110,25 +104,27 @@ export function CommandPalette() {
           </div>
         ) : null}
         {q.trim() ? (
-          <div className={styles.block}>
-            <p>Результаты</p>
-            {results.length === 0 ? (
+          grouped.length === 0 ? (
+            <div className={styles.block}>
               <span className={styles.empty}>Ничего не найдено</span>
-            ) : (
-              results.map((item) => (
-                <button
-                  key={`${item.kind}-${item.id}`}
-                  type="button"
-                  onClick={() => go(item.route, q)}
-                >
-                  <strong>{item.title}</strong>
-                  <em>
-                    {item.kind} · {item.meta}
-                  </em>
-                </button>
-              ))
-            )}
-          </div>
+            </div>
+          ) : (
+            grouped.map((group) => (
+              <div key={group.group} className={styles.block}>
+                <p>{group.group}</p>
+                {group.items.map((item) => (
+                  <button
+                    key={`${item.kind}-${item.id}`}
+                    type="button"
+                    onClick={() => openHit(item.id, item.kind, q)}
+                  >
+                    <strong>{item.title}</strong>
+                    <em>{item.meta}</em>
+                  </button>
+                ))}
+              </div>
+            ))
+          )
         ) : null}
       </div>
     </div>

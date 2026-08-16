@@ -1,32 +1,38 @@
-import { useEffect, useRef, useState } from "react";
-import { DEFAULT_QUICK_ACCESS } from "../../data/quickAccess";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSiteUrl } from "../../lib/siteUrl";
+import { quickAccessRepository, MAX_QUICK_ACCESS_ITEMS } from "../../services/collections";
 import type { QuickAccessSite } from "../../types/hub";
 import { Button } from "../Button/Button";
 import { IconMore, IconPlus } from "../icons";
+import { SiteIcon } from "../SiteIcon/SiteIcon";
 import styles from "./QuickAccess.module.css";
 
-const STORAGE_KEY = "vibehub-quick-access";
-
-function loadSites(): QuickAccessSite[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_QUICK_ACCESS;
-    const parsed = JSON.parse(raw) as QuickAccessSite[];
-    if (!Array.isArray(parsed)) return DEFAULT_QUICK_ACCESS;
-    return parsed;
-  } catch {
-    return DEFAULT_QUICK_ACCESS;
-  }
-}
-
 export function QuickAccess() {
-  const [sites, setSites] = useState<QuickAccessSite[]>(loadSites);
+  const [sites, setSites] = useState<QuickAccessSite[]>([]);
   const [modal, setModal] = useState<"add" | QuickAccessSite | null>(null);
 
-  const persist = (next: QuickAccessSite[]) => {
-    setSites(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  const load = useCallback(async () => {
+    const data = await quickAccessRepository.getSites();
+    setSites(data);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSave = async (draft: QuickAccessSite) => {
+    if (modal === "add") {
+      await quickAccessRepository.addSite(draft);
+    } else {
+      await quickAccessRepository.updateSite(draft.id, draft);
+    }
+    await load();
+    setModal(null);
+  };
+
+  const handleRemove = async (id: string) => {
+    await quickAccessRepository.removeSite(id);
+    await load();
   };
 
   return (
@@ -38,30 +44,28 @@ export function QuickAccess() {
             <SiteTile
               site={site}
               onEdit={() => setModal(site)}
-              onRemove={() => persist(sites.filter((item) => item.id !== site.id))}
+              onRemove={() => handleRemove(site.id)}
             />
           </li>
         ))}
-        <li>
-          <button type="button" className={styles.add} onClick={() => setModal("add")}>
-            <span className={styles.addMark} aria-hidden>
-              <IconPlus width={16} height={16} />
-            </span>
-            <span className={styles.meta}>
-              <strong>Добавить</strong>
-            </span>
-          </button>
-        </li>
+        {sites.length < MAX_QUICK_ACCESS_ITEMS ? (
+          <li>
+            <button type="button" className={styles.add} onClick={() => setModal("add")}>
+              <span className={styles.addMark} aria-hidden>
+                <IconPlus width={16} height={16} />
+              </span>
+              <span className={styles.meta}>
+                <strong>Добавить</strong>
+              </span>
+            </button>
+          </li>
+        ) : null}
       </ul>
       {modal ? (
         <SiteModal
           site={modal === "add" ? null : modal}
           onClose={() => setModal(null)}
-          onSave={(draft) => {
-            if (modal === "add") persist([...sites, draft]);
-            else persist(sites.map((item) => (item.id === draft.id ? draft : item)));
-            setModal(null);
-          }}
+          onSave={handleSave}
         />
       ) : null}
     </section>
@@ -78,7 +82,6 @@ function SiteTile({
   onRemove: () => void;
 }) {
   const [menu, setMenu] = useState(false);
-  const [broken, setBroken] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,22 +99,16 @@ function SiteTile({
         className={styles.tile}
         href={site.url}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
       >
-        {broken ? (
-          <span className={styles.fallback} aria-hidden>
-            {site.title.slice(0, 1)}
-          </span>
-        ) : (
-          <img
-            className={styles.icon}
-            src={site.favicon}
-            alt=""
-            width={20}
-            height={20}
-            onError={() => setBroken(true)}
-          />
-        )}
+        <SiteIcon
+          src={site.favicon}
+          domain={site.domain}
+          fallbackText={site.title.slice(0, 1)}
+          size={20}
+          iconSize={20}
+          radius={4}
+        />
         <span className={styles.meta}>
           <strong>{site.title}</strong>
           <em>{site.domain}</em>

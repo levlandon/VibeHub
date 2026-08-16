@@ -1,3 +1,7 @@
+import type { ContentSpan } from "./entities";
+
+export type { CatalogKind, ContentSpan, EntityKind, EntityRef } from "./entities";
+
 export type Route =
   | "models"
   | "tools"
@@ -21,44 +25,8 @@ export type BenchmarkCategory =
   | "vision"
   | "speed";
 
-export type ModelFilter =
-  | "all"
-  | "coding"
-  | "reasoning"
-  | "vision"
-  | "agents"
-  | "local";
-
-export type ModelSort = "popular" | "rating" | "new" | "context";
-
-export interface BenchmarkScores {
-  coding?: number;
-  reasoning?: number;
-  research?: number;
-  vision?: number;
-  speed?: number;
-}
-
-export interface Model {
-  id: string;
-  name: string;
-  provider: string;
-  providerId: string;
-  providerLogo: string;
-  releaseDate: string;
-  contextWindow: string;
-  contextTokens: number;
-  capabilities: string[];
-  pricing?: string;
-  benchmarkScores: BenchmarkScores;
-  communityRating: number;
-  voteCount: number;
-  userRating?: number;
-  source: string;
-  lastUpdated: string;
-  bookmarked?: boolean;
-  searchText: string;
-}
+export * from "./models";
+export * from "./collections";
 
 export interface Tool {
   id: string;
@@ -69,10 +37,9 @@ export interface Tool {
   tags: string[];
   summary: string;
   compatibility: string[];
-  rating: number;
-  ratingsCount: number;
+  rating?: number;
+  ratingsCount?: number;
   bookmarked?: boolean;
-  searchText: string;
 }
 
 export interface BenchmarkRow {
@@ -96,14 +63,6 @@ export interface CurrentUser {
 
 export type ChatChannelId = "general" | "coding" | "models" | "tools";
 
-export type EntityKind = "model" | "tool";
-
-export interface EntityRef {
-  kind: EntityKind;
-  id: string;
-  name: string;
-}
-
 export interface ChatAuthor {
   name: string;
   handle: string;
@@ -115,6 +74,7 @@ export interface ChatMessage {
   channelId: ChatChannelId;
   author: ChatAuthor;
   text: string;
+  spans?: ContentSpan[];
   createdAt: string;
 }
 

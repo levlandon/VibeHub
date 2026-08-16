@@ -92,6 +92,27 @@
   padding: 12px 10px 8px;
 }
 
+.emptyThread {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-dim);
+}
+
+.emptyThread p {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.emptyHint {
+  font-size: 12px !important;
+  color: var(--text-dim) !important;
+}
+
 .msg {
   position: relative;
   display: grid;

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CHAT_CHANNELS } from "../../data/chat";
-import { atQuery, entityIndex, filterEntities, parseMessage } from "../../lib/mentions";
+import { RichText } from "../mentions/RichText";
+import { MentionField } from "../mentions/MentionField";
 import { useHub } from "../../state/HubContext";
 import type { ChatMessage, EntityRef } from "../../types/hub";
 import {
@@ -11,21 +12,17 @@ import {
   IconReply,
   IconSend,
 } from "../icons";
-import { ProviderMark } from "../ProviderMark/ProviderMark";
 import styles from "./ChatPanel.module.css";
 
 export function ChatPanel() {
   const {
-    models,
-    tools,
+    mentionEntities,
     chatChannel,
     setChatChannel,
     messages,
     sendMessage,
     setChatOpen,
-    openEntity,
   } = useHub();
-  const entities = useMemo(() => entityIndex(models, tools), [models, tools]);
   const channel = CHAT_CHANNELS.find((c) => c.id === chatChannel)!;
   const list = messages.filter((m) => m.channelId === chatChannel);
   const scroller = useRef<HTMLDivElement>(null);
@@ -54,17 +51,25 @@ export function ChatPanel() {
       </header>
 
       <div className={styles.thread} ref={scroller}>
-        {list.map((message) => (
-          <ChatRow
-            key={message.id}
-            message={message}
-            entities={entities}
-            onMention={openEntity}
-          />
-        ))}
+        {list.length === 0 ? (
+          <div className={styles.emptyThread}>
+            <p>Сообщений в #{channel.label} пока нет.</p>
+            <p className={styles.emptyHint}>
+              Напишите первое сообщение или упомяните модель через @.
+            </p>
+          </div>
+        ) : (
+          list.map((message) => (
+            <ChatRow
+              key={message.id}
+              message={message}
+              entities={mentionEntities}
+            />
+          ))
+        )}
       </div>
 
-      <Composer entities={entities} onSend={sendMessage} />
+      <Composer onSend={sendMessage} />
     </aside>
   );
 }
@@ -115,14 +120,10 @@ function ChannelMenu({
 function ChatRow({
   message,
   entities,
-  onMention,
 }: {
   message: ChatMessage;
   entities: EntityRef[];
-  onMention: (kind: EntityRef["kind"], id: string) => void;
 }) {
-  const parts = parseMessage(message.text, entities);
-
   return (
     <article className={styles.msg}>
       <span className={styles.avatar} aria-hidden>
@@ -134,20 +135,7 @@ function ChatRow({
           <time>{message.createdAt}</time>
         </p>
         <p className={styles.bubble}>
-          {parts.map((part, i) =>
-            part.type === "mention" ? (
-              <button
-                key={i}
-                type="button"
-                className={styles.mention}
-                onClick={() => onMention(part.entity.kind, part.entity.id)}
-              >
-                @{part.value}
-              </button>
-            ) : (
-              <span key={i}>{part.value}</span>
-            ),
-          )}
+          <RichText text={message.text} spans={message.spans} entities={entities} />
         </p>
       </div>
       <div className={styles.hover}>
@@ -162,138 +150,22 @@ function ChatRow({
   );
 }
 
-function Composer({
-  entities,
-  onSend,
-}: {
-  entities: EntityRef[];
-  onSend: (text: string) => void;
-}) {
-  const { models, tools } = useHub();
+function Composer({ onSend }: { onSend: (text: string) => void }) {
   const [value, setValue] = useState("");
-  const [caret, setCaret] = useState(0);
-  const [active, setActive] = useState(0);
-  const area = useRef<HTMLTextAreaElement>(null);
-
-  const query = atQuery(value, caret);
-  const suggestions = query
-    ? filterEntities(query.query, entities).slice(0, 8)
-    : [];
-
-  const modelsHits = suggestions.filter((s) => s.kind === "model");
-  const toolsHits = suggestions.filter((s) => s.kind === "tool");
-  const flat = [...modelsHits, ...toolsHits];
-
-  useEffect(() => {
-    setActive(0);
-  }, [query?.query]);
-
-  const insert = (entity: EntityRef) => {
-    if (!query) return;
-    const next = `${value.slice(0, query.start)}@${entity.name} ${value.slice(caret)}`;
-    setValue(next);
-    requestAnimationFrame(() => {
-      const pos = query.start + entity.name.length + 2;
-      area.current?.focus();
-      area.current?.setSelectionRange(pos, pos);
-      setCaret(pos);
-    });
-  };
-
   const send = () => {
     onSend(value);
     setValue("");
-    setCaret(0);
   };
 
   return (
     <div className={styles.composerWrap}>
-      {query && flat.length > 0 ? (
-        <div className={styles.ac} role="listbox">
-          {modelsHits.length > 0 ? <p className={styles.acLabel}>Модели</p> : null}
-          {modelsHits.map((item) => {
-            const model = models.find((m) => m.id === item.id);
-            const idx = flat.indexOf(item);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`${styles.acItem} ${idx === active ? styles.acOn : ""}`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  insert(item);
-                }}
-              >
-                {model ? (
-                  <ProviderMark model={model} size={28} />
-                ) : (
-                  <span className={styles.acMark} />
-                )}
-                <span>
-                  <strong>{item.name}</strong>
-                  <em>{model?.provider}</em>
-                </span>
-              </button>
-            );
-          })}
-          {toolsHits.length > 0 ? <p className={styles.acLabel}>Инструменты</p> : null}
-          {toolsHits.map((item) => {
-            const tool = tools.find((t) => t.id === item.id);
-            const idx = flat.indexOf(item);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`${styles.acItem} ${idx === active ? styles.acOn : ""}`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  insert(item);
-                }}
-              >
-                <span className={styles.acMark}>{item.name.slice(0, 1)}</span>
-                <span>
-                  <strong>{item.name}</strong>
-                  <em>{tool?.typeLabel}</em>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
       <div className={styles.composer}>
-        <textarea
-          ref={area}
+        <MentionField
           rows={2}
           value={value}
+          onChange={setValue}
           placeholder="Написать сообщение..."
-          onChange={(e) => {
-            setValue(e.target.value);
-            setCaret(e.target.selectionStart);
-          }}
-          onClick={(e) => setCaret(e.currentTarget.selectionStart)}
-          onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)}
-          onKeyDown={(e) => {
-            if (flat.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
-              e.preventDefault();
-              setActive((i) =>
-                e.key === "ArrowDown"
-                  ? (i + 1) % flat.length
-                  : (i - 1 + flat.length) % flat.length,
-              );
-              return;
-            }
-            if (flat.length && e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              const pick = flat[active];
-              if (pick) insert(pick);
-              return;
-            }
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
+          onSubmit={send}
         />
         <div className={styles.composerBar}>
           <button type="button" className={styles.plus} title="Вложение (скоро)">

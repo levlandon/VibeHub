@@ -1,8 +1,0 @@
-.mark {
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  flex: 0 0 auto;
-}

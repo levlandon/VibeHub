@@ -1,0 +1,67 @@
+.ac {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 3;
+  max-height: 280px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.acLabel {
+  margin: 8px 8px 4px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.acLabel:first-child {
+  margin-top: 0;
+}
+
+.acItem {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.acItem:hover,
+.acOn {
+  background: var(--surface-hover);
+}
+
+.acItem strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.acItem em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.acMark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}

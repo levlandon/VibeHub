@@ -32,12 +32,22 @@ export function BenchmarksPage() {
         />
         <div className={styles.secondary}>
           <p className={styles.legend}>
-            Score — внешний тест · Community — оценка VibeHub
+            Score — проверенный результат внешнего теста
           </p>
         </div>
       </PageHeader>
-      {rows.length === 0 ? (
-        <EmptyState>Нет строк по фильтру.</EmptyState>
+
+      {BENCHMARKS.length === 0 ? (
+        <EmptyState>
+          <div className={styles.emptyContent}>
+            <h3>Бенчмарки пока не подключены</h3>
+            <p>
+              Позже здесь появятся независимые данные из внешних бенчмарков (SWE-bench, LiveCodeBench, SimpleQA).
+            </p>
+          </div>
+        </EmptyState>
+      ) : rows.length === 0 ? (
+        <EmptyState>Нет строк по выбранному фильтру.</EmptyState>
       ) : (
         <div className={styles.scroll}>
           <table className={styles.table}>
@@ -46,7 +56,6 @@ export function BenchmarksPage() {
                 <th>Модель</th>
                 <th>Benchmark</th>
                 <th>Score</th>
-                <th>Community</th>
                 <th>Источник</th>
                 <th>Обновлено</th>
               </tr>
@@ -57,7 +66,6 @@ export function BenchmarksPage() {
                   <td>{row.modelName}</td>
                   <td>{row.benchmark}</td>
                   <td className={styles.score}>{formatScore(row.score)}</td>
-                  <td className={styles.community}>★ {row.communityScore.toFixed(1)}</td>
                   <td>{row.source}</td>
                   <td>{row.updatedAt}</td>
                 </tr>
