@@ -17,10 +17,11 @@ export interface SelectOption {
   description?: string;
 }
 
-export interface SelectProps {
-  options: (SelectOption | string)[];
+export interface SingleSelectProps {
+  multiple?: false;
   value: string;
   onChange: (value: string) => void;
+  options: (SelectOption | string)[];
   label?: string;
   placeholder?: string;
   searchable?: boolean;
@@ -32,20 +33,41 @@ export interface SelectProps {
   renderOption?: (option: SelectOption, isSelected: boolean) => ReactNode;
 }
 
-export function Select({
-  options: rawOptions,
-  value,
-  onChange,
-  label,
-  placeholder = "Выберите...",
-  searchable = false,
-  searchPlaceholder = "Поиск...",
-  disabled = false,
-  className,
-  id,
-  "aria-label": ariaLabel,
-  renderOption,
-}: SelectProps) {
+export interface MultiSelectProps {
+  multiple: true;
+  value: string[];
+  onChange: (value: string[]) => void;
+  options: (SelectOption | string)[];
+  label?: string;
+  placeholder?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+  "aria-label"?: string;
+  renderOption?: (option: SelectOption, isSelected: boolean) => ReactNode;
+}
+
+export type SelectProps = SingleSelectProps | MultiSelectProps;
+
+export function Select(props: SelectProps) {
+  const {
+    options: rawOptions,
+    value,
+    onChange,
+    label,
+    placeholder = "Выберите...",
+    searchable = false,
+    searchPlaceholder = "Поиск...",
+    disabled = false,
+    className,
+    id,
+    "aria-label": ariaLabel,
+    renderOption,
+    multiple = false,
+  } = props;
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -62,10 +84,30 @@ export function Select({
     );
   }, [rawOptions]);
 
-  // Selected option
-  const selectedOption = useMemo(() => {
-    return options.find((opt) => opt.value === value);
-  }, [options, value]);
+  // Selected values (multi vs single)
+  const selectedValues = useMemo<string[]>(() => {
+    if (multiple) {
+      return Array.isArray(value) ? value : [];
+    }
+    return typeof value === "string" && value ? [value] : [];
+  }, [multiple, value]);
+
+  // Display text in trigger button
+  const triggerDisplayValue = useMemo(() => {
+    if (multiple) {
+      if (selectedValues.length === 0) {
+        return placeholder || "Все";
+      }
+      if (selectedValues.length === 1) {
+        const found = options.find((opt) => opt.value === selectedValues[0]);
+        return found ? found.label : selectedValues[0];
+      }
+      return `${selectedValues.length}`;
+    }
+
+    const found = options.find((opt) => opt.value === value);
+    return found ? found.label : placeholder;
+  }, [multiple, selectedValues, options, value, placeholder]);
 
   // Filtered options based on search query
   const filteredOptions = useMemo(() => {
@@ -79,9 +121,10 @@ export function Select({
     if (disabled) return;
     setIsOpen(true);
     setSearchQuery("");
-    const selectedIdx = options.findIndex((opt) => opt.value === value);
+    const firstSelectedVal = selectedValues[0];
+    const selectedIdx = options.findIndex((opt) => opt.value === firstSelectedVal);
     setFocusedIndex(selectedIdx >= 0 ? selectedIdx : 0);
-  }, [disabled, options, value]);
+  }, [disabled, options, selectedValues]);
 
   const closeDropdown = useCallback(() => {
     setIsOpen(false);
@@ -101,7 +144,6 @@ export function Select({
   // Auto-focus search input when opened
   useEffect(() => {
     if (isOpen && searchable) {
-      // Small timeout ensures element is mounted and rendered
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
       }, 30);
@@ -137,10 +179,17 @@ export function Select({
 
   const handleSelectOption = useCallback(
     (optValue: string) => {
-      onChange(optValue);
-      closeDropdown();
+      if (multiple) {
+        const next = selectedValues.includes(optValue)
+          ? selectedValues.filter((v) => v !== optValue)
+          : [...selectedValues, optValue];
+        (onChange as (val: string[]) => void)(next);
+      } else {
+        (onChange as (val: string) => void)(optValue);
+        closeDropdown();
+      }
     },
-    [onChange, closeDropdown],
+    [multiple, selectedValues, onChange, closeDropdown],
   );
 
   // Keyboard navigation on Trigger button
@@ -171,7 +220,7 @@ export function Select({
       setFocusedIndex((prev) =>
         prev > 0 ? prev - 1 : filteredOptions.length - 1,
       );
-    } else if (e.key === "Enter") {
+    } else if (e.key === "Enter" || (multiple && e.key === " ")) {
       e.preventDefault();
       if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
         handleSelectOption(filteredOptions[focusedIndex].value);
@@ -206,9 +255,7 @@ export function Select({
         onKeyDown={handleTriggerKeyDown}
       >
         {label ? <span className={styles.triggerLabel}>{label}:</span> : null}
-        <span className={styles.triggerValue}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <span className={styles.triggerValue}>{triggerDisplayValue}</span>
         <span
           className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ""}`}
           aria-hidden
@@ -252,7 +299,9 @@ export function Select({
               <li className={styles.emptyState}>Ничего не найдено</li>
             ) : (
               filteredOptions.map((opt, idx) => {
-                const isSelected = opt.value === value;
+                const isSelected = multiple
+                  ? selectedValues.includes(opt.value)
+                  : opt.value === value;
                 const isFocused = idx === focusedIndex;
 
                 return (
@@ -267,12 +316,24 @@ export function Select({
                     onClick={() => handleSelectOption(opt.value)}
                     onMouseEnter={() => setFocusedIndex(idx)}
                   >
+                    {multiple ? (
+                      <span
+                        className={`${styles.checkbox} ${
+                          isSelected ? styles.checkboxChecked : ""
+                        }`}
+                        aria-hidden
+                      >
+                        {isSelected ? <IconCheck width={11} height={11} /> : null}
+                      </span>
+                    ) : null}
+
                     <span className={styles.optionText}>
                       {renderOption
                         ? renderOption(opt, isSelected)
                         : opt.label}
                     </span>
-                    {isSelected ? (
+
+                    {!multiple && isSelected ? (
                       <span className={styles.optionCheck} aria-hidden>
                         <IconCheck width={14} height={14} />
                       </span>
@@ -287,3 +348,4 @@ export function Select({
     </div>
   );
 }
+

@@ -125,6 +125,16 @@ export function matchesModelFilter(model: Model, filter: ModelFilter): boolean {
   return true;
 }
 
+export function matchesCapability(model: Model, capability: string): boolean {
+  const norm = capability.trim().toLowerCase();
+  if (norm === "vision") return model.capabilities.includes("Vision");
+  if (norm === "reasoning") return model.capabilities.includes("Reasoning");
+  if (norm === "tools") return model.capabilities.includes("Tools");
+  if (norm === "audio") return model.capabilities.includes("Audio");
+  if (norm === "free" || norm === "бесплатные") return model.pricing.isFree;
+  return true;
+}
+
 export function getModelSearchableText(model: Model): string {
   const parts = [
     model.name,
@@ -141,11 +151,18 @@ export function filterAndSortModels(
   options: {
     query?: string;
     filter?: ModelFilter;
+    capabilities?: string[];
     provider?: string;
     sort?: ModelSort;
   },
 ): Model[] {
-  const { query = "", filter = "all", provider = "all", sort = "catalog" } = options;
+  const {
+    query = "",
+    filter = "all",
+    capabilities = [],
+    provider = "all",
+    sort = "catalog",
+  } = options;
   const q = query.trim().toLowerCase();
 
   const filtered = models.filter((model) => {
@@ -153,9 +170,17 @@ export function filterAndSortModels(
       return false;
     }
 
+    if (capabilities.length > 0) {
+      const matchesAll = capabilities.every((cap) => matchesCapability(model, cap));
+      if (!matchesAll) {
+        return false;
+      }
+    }
+
     if (provider !== "all" && model.provider !== provider) {
       return false;
     }
+
 
     if (q) {
       const searchable = getModelSearchableText(model);

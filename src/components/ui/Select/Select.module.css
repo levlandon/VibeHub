@@ -190,6 +190,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .optionCheck {
@@ -200,9 +201,35 @@
   flex-shrink: 0;
 }
 
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: transparent;
+  flex-shrink: 0;
+  margin-right: 6px;
+  transition: all 0.15s ease;
+}
+
+.checkboxChecked {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.option:hover .checkbox:not(.checkboxChecked) {
+  border-color: var(--border-hover, #71717a);
+}
+
 .emptyState {
   padding: 16px 12px;
   font-size: 12px;
   color: var(--text-dim);
   text-align: center;
 }
+

@@ -60,4 +60,27 @@ describe("filterAndSortModels", () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("openai/gpt-4o");
   });
-});
+
+  it("фильтрует по нескольким возможностям (multi-capabilities)", () => {
+    const m1 = model({ id: "m1", capabilities: ["Vision", "Tools"] });
+    const m2 = model({ id: "m2", capabilities: ["Vision", "Reasoning"] });
+    const m3 = model({ id: "m3", capabilities: ["Tools"] });
+
+    const filtered = filterAndSortModels([m1, m2, m3], {
+      capabilities: ["vision", "tools"],
+    });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe("m1");
+  });
+
+  it("фильтрует по бесплатным моделям через capabilities", () => {
+    const paid = model({ id: "paid", capabilities: ["Vision"], pricing: { ...model({}).pricing, isFree: false } });
+    const free = model({ id: "free", capabilities: ["Vision"], pricing: { ...model({}).pricing, isFree: true } });
+
+    const filtered = filterAndSortModels([paid, free], {
+      capabilities: ["vision", "free"],
+    });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe("free");
+  });
+});

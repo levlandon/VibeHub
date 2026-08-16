@@ -1,24 +1,31 @@
 import { memo, useMemo, useState, type KeyboardEvent } from "react";
-import { CategoryStrip } from "../../components/CategoryStrip/CategoryStrip";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { IconButton } from "../../components/IconButton/IconButton";
-import { IconBookmark } from "../../components/icons";
+import {
+  IconAudio,
+  IconBookmark,
+  IconBrain,
+  IconLayers,
+  IconTools,
+  IconVision,
+} from "../../components/icons";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { ProviderMark } from "../../components/ProviderMark/ProviderMark";
 import { Select } from "../../components/ui/Select";
 import { filterAndSortModels } from "../../services/models";
 import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
-import type { Model, ModelFilter, ModelSort } from "../../types/models";
+import type { Model, ModelSort } from "../../types/models";
+import { formatFullDate, formatModelDate } from "../../utils/dateFormat";
 import { ModelSkeletonList } from "./ModelSkeleton";
 import styles from "./Models.module.css";
 
-const FILTERS: { id: ModelFilter; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "vision", label: "Vision" },
-  { id: "reasoning", label: "Reasoning" },
-  { id: "tools", label: "Tools" },
-  { id: "free", label: "Free" },
+const CAPABILITY_OPTIONS = [
+  { value: "vision", label: "Vision" },
+  { value: "reasoning", label: "Reasoning" },
+  { value: "tools", label: "Tools" },
+  { value: "audio", label: "Audio" },
+  { value: "free", label: "Бесплатные" },
 ];
 
 const SORT_OPTIONS: { value: ModelSort; label: string }[] = [
@@ -41,7 +48,7 @@ export function ModelsPage() {
     openEntity,
   } = useHub();
 
-  const [filter, setFilter] = useState<ModelFilter>("all");
+  const [capabilities, setCapabilities] = useState<string[]>([]);
   const [provider, setProvider] = useState("all");
   const [sort, setSort] = useState<ModelSort>("catalog");
 
@@ -58,38 +65,41 @@ export function ModelsPage() {
   const visible = useMemo(
     () =>
       filterAndSortModels(models, {
-        filter,
+        capabilities,
         provider,
         sort,
       }),
-    [models, filter, provider, sort],
+    [models, capabilities, provider, sort],
   );
+
+  const hasActiveFilters = capabilities.length > 0 || provider !== "all";
 
   return (
     <div className={styles.page}>
       <PageHeader title="Модели">
-        <CategoryStrip
-          items={FILTERS}
-          value={filter}
-          onChange={(id) => setFilter(id as ModelFilter)}
-        />
-        <div className={styles.secondary}>
-          <div className={styles.toolbar}>
-            <Select
-              label="Provider"
-              value={provider}
-              options={providerOptions}
-              onChange={setProvider}
-              searchable
-              searchPlaceholder="Поиск провайдера..."
-            />
-            <Select
-              label="Сортировка"
-              value={sort}
-              options={SORT_OPTIONS}
-              onChange={(val) => setSort(val as ModelSort)}
-            />
-          </div>
+        <div className={styles.toolbar}>
+          <Select
+            label="Provider"
+            value={provider}
+            options={providerOptions}
+            onChange={setProvider}
+            searchable
+            searchPlaceholder="Поиск провайдера..."
+          />
+          <Select
+            label="Возможности"
+            multiple
+            value={capabilities}
+            options={CAPABILITY_OPTIONS}
+            onChange={setCapabilities}
+            placeholder="Все"
+          />
+          <Select
+            label="Сортировка"
+            value={sort}
+            options={SORT_OPTIONS}
+            onChange={(val) => setSort(val as ModelSort)}
+          />
         </div>
       </PageHeader>
 
@@ -105,12 +115,12 @@ export function ModelsPage() {
       ) : visible.length === 0 ? (
         <EmptyState>
           <p>Модели не найдены по выбранным фильтрам.</p>
-          {filter !== "all" || provider !== "all" ? (
+          {hasActiveFilters ? (
             <button
               type="button"
               className={styles.resetBtn}
               onClick={() => {
-                setFilter("all");
+                setCapabilities([]);
                 setProvider("all");
               }}
             >
@@ -176,11 +186,15 @@ const ModelRow = memo(function ModelRow({
     >
       <ProviderMark model={model} />
       <div className={styles.body}>
-        <h2>{model.name}</h2>
+        <h2 className={styles.name}>{model.name}</h2>
         <p className={styles.provider}>{model.provider}</p>
         <div className={styles.metaRow}>
-          <span className={styles.ctx} title={`Контекст: ${model.contextLength.toLocaleString()} токенов`}>
-            {model.contextWindow} ctx
+          <span
+            className={styles.contextWindow}
+            title={`Контекстное окно: ${model.contextLength.toLocaleString("ru-RU")} токенов`}
+          >
+            <IconLayers width={14} height={14} className={styles.metaIcon} aria-hidden />
+            <span>{model.contextWindow}</span>
           </span>
           <span
             className={`${styles.pricing} ${model.pricing.isFree ? styles.pricingFree : ""}`}
@@ -188,13 +202,36 @@ const ModelRow = memo(function ModelRow({
           >
             {model.pricing.formattedSummary}
           </span>
-          {hasReasoning ? <span className={`${styles.tag} ${styles.tagReasoning}`}>Reasoning</span> : null}
-          {hasVision ? <span className={`${styles.tag} ${styles.tagVision}`}>Vision</span> : null}
-          {hasTools ? <span className={`${styles.tag} ${styles.tagTools}`}>Tools</span> : null}
-          {hasAudio ? <span className={`${styles.tag} ${styles.tagAudio}`}>Audio</span> : null}
+          {hasReasoning || hasVision || hasTools || hasAudio ? (
+            <div className={styles.capabilities} aria-label="Возможности">
+              {hasReasoning ? (
+                <span className={styles.capIcon} title="Reasoning" aria-label="Reasoning">
+                  <IconBrain width={16} height={16} />
+                </span>
+              ) : null}
+              {hasVision ? (
+                <span className={styles.capIcon} title="Vision" aria-label="Vision">
+                  <IconVision width={16} height={16} />
+                </span>
+              ) : null}
+              {hasTools ? (
+                <span className={styles.capIcon} title="Tool use" aria-label="Tool use">
+                  <IconTools width={16} height={16} />
+                </span>
+              ) : null}
+              {hasAudio ? (
+                <span className={styles.capIcon} title="Audio" aria-label="Audio">
+                  <IconAudio width={16} height={16} />
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {model.releaseDate ? (
-            <span className={styles.tagDate} title="Дата добавления в каталог">
-              {model.releaseDate}
+            <span
+              className={styles.date}
+              title={formatFullDate(model.releaseDate)}
+            >
+              {formatModelDate(model.releaseDate)}
             </span>
           ) : null}
         </div>
@@ -218,3 +255,4 @@ const ModelRow = memo(function ModelRow({
     </article>
   );
 });
+
