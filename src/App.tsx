@@ -3,12 +3,26 @@ import { Outlet } from "@tanstack/react-router";
 import { ShareDialog } from "./features/share/ShareDialog";
 import { ChatPanel } from "./components/ChatPanel/ChatPanel";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
+import { SettingsModal } from "./components/SettingsModal/SettingsModal";
 import { IconChat } from "./components/icons";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { useHub } from "./state/HubContext";
 
 export function Shell() {
-  const { sidebarCollapsed, searchOpen, setSearchOpen, chatOpen, setChatOpen } = useHub();
+  const {
+    sidebarCollapsed,
+    searchOpen,
+    setSearchOpen,
+    chatOpen,
+    setChatOpen,
+    userProfile,
+    updateUserProfile,
+    settingsOpen,
+    setSettingsOpen,
+    settingsTab,
+    models,
+    tools,
+  } = useHub();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -67,6 +81,15 @@ export function Shell() {
       </div>
       <ShareDialog />
       <CommandPalette />
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        profile={userProfile}
+        onSaveProfile={updateUserProfile}
+        initialTab={settingsTab}
+        availableModels={models}
+        availableTools={tools}
+      />
     </div>
   );
 }

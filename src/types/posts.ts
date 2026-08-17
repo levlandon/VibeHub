@@ -8,6 +8,9 @@ export type PostType =
   | "guide"
   | "resource";
 
+export type PostTopicCategory = "models" | "tools" | "agents" | "mcp";
+export type PostCategory = "all" | PostTopicCategory;
+
 export interface PostComment {
   id: string;
   author: ChatAuthor;
@@ -18,6 +21,7 @@ export interface PostComment {
 export interface PostBase {
   id: string;
   type: PostType;
+  category?: PostTopicCategory;
   author: ChatAuthor;
   title: string;
   content: string;
@@ -38,6 +42,7 @@ export type Post = PostBase & Partial<QuestionFields>;
 
 export interface CreatePostInput {
   type: PostType;
+  category?: PostTopicCategory;
   title: string;
   content: string;
   tags: string[];

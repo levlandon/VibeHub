@@ -10,7 +10,6 @@ import {
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { INITIAL_MESSAGES } from "../data/chat";
 import { INITIAL_POSTS } from "../data/posts";
-import { CURRENT_USER } from "../data/site";
 import { TOOLS } from "../data/tools";
 import { parseSpans } from "../services/content";
 import { mentionIndex } from "../services/entities";
@@ -20,6 +19,8 @@ import {
   acceptAnswer as acceptAnswerOn,
   addComment as addCommentOn,
   createPost,
+  deletePost as deletePostOn,
+  updatePost as updatePostOn,
 } from "../services/posts";
 import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
 import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
@@ -27,6 +28,9 @@ import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
 import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
 import type { CreatePostInput, Post } from "../types/posts";
 import type { SavedItem } from "../types/saved";
+import type { UserProfile } from "../types/profile";
+import { profileRepository, profileService } from "../services/profile";
+import type { SettingsTab } from "../components/SettingsModal/SettingsModal";
 import { entityFromPath, entityPath, routeFromPath, type EntityView } from "./routing";
 
 const COLLAPSE_KEY = "vibehub-sidebar-collapsed";
@@ -48,6 +52,9 @@ interface HubState {
   chatChannel: ChatChannelId;
   messages: ChatMessage[];
   entityView: EntityView | null;
+  userProfile: UserProfile;
+  settingsOpen: boolean;
+  settingsTab: SettingsTab;
   setRoute: (route: Route) => void;
   setAddOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
@@ -55,12 +62,17 @@ interface HubState {
   setChatOpen: (open: boolean) => void;
   setChatChannel: (id: ChatChannelId) => void;
   setEntityView: (view: EntityView | null) => void;
+  setSettingsOpen: (open: boolean) => void;
+  setSettingsTab: (tab: SettingsTab) => void;
+  updateUserProfile: (profile: UserProfile) => boolean;
   sendMessage: (text: string) => void;
   openEntity: (kind: EntityKind, id: string) => void;
   toggleModelBookmark: (id: string) => void;
   toggleToolBookmark: (id: string) => void;
   toggleSavedTarget: (item: Omit<SavedItem, "id" | "savedAt">) => void;
   publishPost: (input: CreatePostInput) => void;
+  updatePost: (postId: string, input: Partial<CreatePostInput>) => void;
+  deletePost: (postId: string) => void;
   addComment: (postId: string, content: string) => void;
   acceptAnswer: (postId: string, commentId: string) => void;
   refreshModels: () => Promise<void>;
@@ -156,6 +168,19 @@ export function HubProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CHAT_KEY, open ? "1" : "0");
   }, []);
 
+  const [userProfile, setUserProfileState] = useState<UserProfile>(() => profileRepository.getProfile());
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
+
+  const updateUserProfile = useCallback((newProfile: UserProfile): boolean => {
+    const res = profileService.saveProfile(newProfile);
+    if (res.success) {
+      setUserProfileState(newProfile);
+      return true;
+    }
+    return false;
+  }, []);
+
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -165,14 +190,18 @@ export function HubProvider({ children }: { children: ReactNode }) {
         {
           id: `local-${Date.now()}`,
           channelId: chatChannel,
-          author: CURRENT_USER,
+          author: {
+            name: userProfile.displayName,
+            handle: userProfile.username,
+            initials: profileService.getInitials(userProfile.displayName, userProfile.username),
+          },
           text: trimmed,
           spans: parseSpans(trimmed, mentionEntities),
           createdAt: new Date().toISOString(),
         },
       ]);
     },
-    [chatChannel, mentionEntities],
+    [chatChannel, mentionEntities, userProfile],
   );
 
   const openEntity = useCallback(
@@ -235,6 +264,17 @@ export function HubProvider({ children }: { children: ReactNode }) {
     [mentionEntities],
   );
 
+  const updatePost = useCallback(
+    (postId: string, input: Partial<CreatePostInput>) => {
+      setPosts((prev) => updatePostOn(prev, postId, input, mentionEntities));
+    },
+    [mentionEntities],
+  );
+
+  const deletePost = useCallback((postId: string) => {
+    setPosts((prev) => deletePostOn(prev, postId));
+  }, []);
+
   const addComment = useCallback((postId: string, content: string) => {
     setPosts((prev) => addCommentOn(prev, postId, content));
   }, []);
@@ -264,6 +304,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
       chatChannel,
       messages,
       entityView,
+      userProfile,
+      settingsOpen,
+      settingsTab,
       setRoute,
       setAddOpen,
       setSearchOpen,
@@ -271,12 +314,17 @@ export function HubProvider({ children }: { children: ReactNode }) {
       setChatOpen,
       setChatChannel,
       setEntityView,
+      setSettingsOpen,
+      setSettingsTab,
+      updateUserProfile,
       sendMessage,
       openEntity,
       toggleModelBookmark,
       toggleToolBookmark,
       toggleSavedTarget,
       publishPost,
+      updatePost,
+      deletePost,
       addComment,
       acceptAnswer,
       refreshModels,
@@ -297,16 +345,22 @@ export function HubProvider({ children }: { children: ReactNode }) {
       chatChannel,
       messages,
       entityView,
+      userProfile,
+      settingsOpen,
+      settingsTab,
       setRoute,
       setEntityView,
       setSidebarCollapsed,
       setChatOpen,
+      updateUserProfile,
       sendMessage,
       openEntity,
       toggleModelBookmark,
       toggleToolBookmark,
       toggleSavedTarget,
       publishPost,
+      updatePost,
+      deletePost,
       addComment,
       acceptAnswer,
       refreshModels,

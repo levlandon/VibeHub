@@ -1,0 +1,124 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 140ms ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: min(90vh, 740px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+  animation: scaleIn 140ms ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--ease);
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+  transition: border-color var(--ease);
+}
+
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}

@@ -6,6 +6,8 @@ import { BookmarksPage, CollectionsPage } from "./pages/Library/Library";
 import { ModelsPage } from "./pages/Models/Models";
 import { NotFound } from "./pages/NotFound/NotFound";
 import { ToolsPage } from "./pages/Tools/Tools";
+import { ProfilePage } from "./pages/Profile/ProfilePage";
+import { FeedPage } from "./pages/Feed/FeedPage";
 import { HubProvider } from "./state/HubContext";
 
 const rootRoute = createRootRoute({
@@ -82,6 +84,26 @@ const collectionsRoute = createRoute({
   component: CollectionsPage,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: ProfilePage,
+});
+
+const feedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/feed",
+  component: FeedPage,
+});
+
+const peopleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/people",
+  beforeLoad: () => {
+    throw redirect({ to: "/feed" });
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   modelsRoute,
@@ -91,6 +113,9 @@ const routeTree = rootRoute.addChildren([
   benchmarksRoute,
   bookmarksRoute,
   collectionsRoute,
+  profileRoute,
+  feedRoute,
+  peopleRoute,
 ]);
 
 export const router = createRouter({ routeTree });

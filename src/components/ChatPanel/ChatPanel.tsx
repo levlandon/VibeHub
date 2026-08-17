@@ -98,6 +98,7 @@ function ChannelMenu({
 }
 
 function ChatRow({ message, entities }: { message: ChatMessage; entities: EntityRef[] }) {
+  const { setRoute } = useHub();
   return (
     <article className={styles.msg}>
       <span className={styles.avatar} aria-hidden>
@@ -105,7 +106,14 @@ function ChatRow({ message, entities }: { message: ChatMessage; entities: Entity
       </span>
       <div className={styles.msgBody}>
         <p className={styles.meta}>
-          <strong>{message.author.name}</strong>
+          <button
+            type="button"
+            className={styles.authorBtn}
+            onClick={() => setRoute("profile")}
+            title="Открыть профиль автора"
+          >
+            {message.author.name}
+          </button>
           <time>{formatDateTime(message.createdAt)}</time>
         </p>
         <p className={styles.bubble}>

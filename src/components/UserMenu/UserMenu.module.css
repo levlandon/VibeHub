@@ -1,0 +1,129 @@
+.menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 8px;
+  right: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: slideUp 120ms ease-out;
+  min-width: 220px;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.displayName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.username {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: all var(--ease);
+}
+
+.item:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.item svg {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: color var(--ease);
+}
+
+.item:hover svg {
+  color: var(--accent);
+}
+
+.danger {
+  color: var(--text-muted);
+}
+
+.danger:hover {
+  background: rgba(224, 82, 82, 0.12);
+  color: var(--danger);
+}
+
+.danger:hover svg {
+  color: var(--danger);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}

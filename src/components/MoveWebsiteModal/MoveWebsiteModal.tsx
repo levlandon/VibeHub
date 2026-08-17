@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "../Button/Button";
+import { Select } from "../ui/Select";
 import styles from "./MoveWebsiteModal.module.css";
 
 interface MoveWebsiteModalProps {
@@ -30,6 +31,11 @@ export function MoveWebsiteModal({
     onMove(selectedId);
   };
 
+  const selectOptions = targetOptions.map((col) => ({
+    value: col.id,
+    label: col.name,
+  }));
+
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
@@ -52,20 +58,15 @@ export function MoveWebsiteModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <label className={styles.field}>
-              Выберите новую коллекцию
-              <select
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Выберите новую коллекцию</span>
+              <Select
                 value={selectedId}
-                onChange={(e) => setSelectedId(e.target.value)}
-                required
-              >
-                {targetOptions.map((col) => (
-                  <option key={col.id} value={col.id}>
-                    {col.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                options={selectOptions}
+                onChange={setSelectedId}
+                placeholder="Выберите коллекцию..."
+              />
+            </div>
             <div className={styles.actions}>
               <Button variant="text" onClick={onClose} type="button">
                 Отмена

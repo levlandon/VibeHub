@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addComment, createPost } from "./posts";
+import { addComment, createPost, deletePost, updatePost } from "./posts";
 import type { EntityRef } from "../types/entities";
 import type { CreatePostInput } from "../types/posts";
 
@@ -37,3 +37,24 @@ describe("addComment", () => {
     expect(comment.createdAt).toMatch(ISO_DATE);
   });
 });
+
+describe("updatePost and deletePost", () => {
+  it("обновляет заголовок и контент поста", () => {
+    const post = createPost(INPUT, ENTITIES);
+    const updated = updatePost([post], post.id, {
+      title: "Новый заголовок",
+      content: "Новый контент",
+      category: "models",
+    });
+    expect(updated[0].title).toBe("Новый заголовок");
+    expect(updated[0].content).toBe("Новый контент");
+    expect(updated[0].category).toBe("models");
+  });
+
+  it("удаляет пост по id", () => {
+    const post = createPost(INPUT, ENTITIES);
+    const remaining = deletePost([post], post.id);
+    expect(remaining).toHaveLength(0);
+  });
+});
+

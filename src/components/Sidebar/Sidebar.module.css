@@ -81,28 +81,30 @@
   color: var(--text);
 }
 
-.nav {
+.navWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding-right: 2px;
+}
+
+.group {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.library {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.bottom {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+.groupTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 12px 2px;
+  user-select: none;
 }
 
 .link {
@@ -110,18 +112,20 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
+  min-height: 40px;
+  padding: 8px 12px;
   border-radius: 12px;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   text-align: left;
+  transition: all var(--ease);
 }
 
 .link svg {
   color: var(--text-dim);
   flex: 0 0 auto;
+  transition: color var(--ease);
 }
 
 .link:hover {
@@ -142,28 +146,32 @@
   color: var(--nav-accent);
 }
 
-.share {
-  margin-top: 8px;
+.bottom {
+  margin-top: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
-.share svg {
-  color: var(--text-dim);
-}
-
-.share:hover svg {
-  color: var(--nav-accent);
-}
-
-.user {
+.userBtn {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   min-height: 48px;
   padding: 8px 10px;
   border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  transition: background var(--ease);
 }
 
-.user:hover {
+.userBtn:hover,
+.userBtn.menuOpen {
   background: var(--surface);
 }
 
@@ -171,12 +179,28 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border: 1px solid var(--border);
   font-size: 11px;
   font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 
 .userMeta strong,
@@ -188,7 +212,9 @@
 }
 
 .userMeta strong {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .userMeta span {
@@ -196,9 +222,17 @@
   color: var(--text-dim);
 }
 
+.userChevron {
+  color: var(--text-dim);
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+/* Collapsed styles */
 .collapsed:not(.mobileOpen) .brand,
 .collapsed:not(.mobileOpen) .link,
-.collapsed:not(.mobileOpen) .user {
+.collapsed:not(.mobileOpen) .userBtn {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
@@ -207,7 +241,9 @@
 
 .collapsed:not(.mobileOpen) .vibe,
 .collapsed:not(.mobileOpen) .link span,
-.collapsed:not(.mobileOpen) .userMeta {
+.collapsed:not(.mobileOpen) .userMeta,
+.collapsed:not(.mobileOpen) .userChevron,
+.collapsed:not(.mobileOpen) .groupTitle {
   display: none;
 }
 

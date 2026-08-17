@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AddWebsiteModal } from "../../components/AddWebsiteModal/AddWebsiteModal";
 import { Button } from "../../components/Button/Button";
+import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
 import { CreateCollectionModal } from "../../components/CreateCollectionModal/CreateCollectionModal";
+import { IconButton } from "../../components/IconButton/IconButton";
+import {
+  IconEdit,
+  IconMore,
+  IconMove,
+  IconTrash,
+} from "../../components/icons";
 import { MoveWebsiteModal } from "../../components/MoveWebsiteModal/MoveWebsiteModal";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { QuickAccess } from "../../components/QuickAccess/QuickAccess";
 import { SiteIcon } from "../../components/SiteIcon/SiteIcon";
 import { useCollections } from "../../hooks/useCollections";
-import type { CollectionItem, CreateCollectionItemInput } from "../../types/collections";
+import type {
+  Collection,
+  CollectionItem,
+  CreateCollectionItemInput,
+} from "../../types/collections";
 import styles from "./Collections.module.css";
 
 function formatItemsCount(count: number): string {
@@ -28,7 +40,6 @@ export function CollectionsPage() {
   const {
     collections,
     activeCollection,
-    activeCollectionId,
     setActiveCollectionId,
     createCollection,
     updateCollection,
@@ -39,19 +50,38 @@ export function CollectionsPage() {
   } = useCollections();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editColModalOpen, setEditColModalOpen] = useState(false);
-  const [addSiteModalOpen, setAddSiteModalOpen] = useState(false);
+  const [editCollectionTarget, setEditCollectionTarget] = useState<Collection | null>(null);
+  const [addSiteModalCollectionId, setAddSiteModalCollectionId] = useState<string | null>(null);
+  const [deleteConfirmCollection, setDeleteConfirmCollection] = useState<Collection | null>(null);
+  const [deleteConfirmActive, setDeleteConfirmActive] = useState(false);
+  const [openMenuCollectionId, setOpenMenuCollectionId] = useState<string | null>(null);
+
   const [moveModalItem, setMoveModalItem] = useState<{
     item: CollectionItem;
     fromCollectionId: string;
   } | null>(null);
+
+  // Close context menu on outside click or escape
+  useEffect(() => {
+    if (!openMenuCollectionId) return;
+    const handleDocClick = () => setOpenMenuCollectionId(null);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenuCollectionId(null);
+    };
+    document.addEventListener("click", handleDocClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("click", handleDocClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [openMenuCollectionId]);
 
   const handleAddSite = async (
     collectionId: string,
     input: CreateCollectionItemInput,
   ) => {
     await addItem(collectionId, input);
-    setAddSiteModalOpen(false);
+    setAddSiteModalCollectionId(null);
   };
 
   const handleCreateCollection = async (input: {
@@ -67,19 +97,9 @@ export function CollectionsPage() {
     name: string;
     description?: string;
   }) => {
-    if (!activeCollectionId) return;
-    await updateCollection(activeCollectionId, input);
-    setEditColModalOpen(false);
-  };
-
-  const handleDeleteActiveCollection = async () => {
-    if (!activeCollection) return;
-    const confirmDelete = window.confirm(
-      `Вы уверены, что хотите удалить коллекцию «${activeCollection.name}» и все сохраненные в ней сайты (${activeCollection.items.length})?`,
-    );
-    if (confirmDelete) {
-      await deleteCollection(activeCollection.id);
-    }
+    if (!editCollectionTarget) return;
+    await updateCollection(editCollectionTarget.id, input);
+    setEditCollectionTarget(null);
   };
 
   const handleMoveSite = async (toCollectionId: string) => {
@@ -115,22 +135,22 @@ export function CollectionsPage() {
             <div className={styles.detailActions}>
               <Button
                 variant="primary"
-                onClick={() => setAddSiteModalOpen(true)}
+                onClick={() => setAddSiteModalCollectionId(activeCollection.id)}
               >
                 + Добавить сайт
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setEditColModalOpen(true)}
+              <IconButton
+                label="Редактировать коллекцию"
+                onClick={() => setEditCollectionTarget(activeCollection)}
               >
-                Редактировать
-              </Button>
-              <Button
-                variant="text"
-                onClick={handleDeleteActiveCollection}
+                <IconEdit width={16} height={16} />
+              </IconButton>
+              <IconButton
+                label="Удалить коллекцию"
+                onClick={() => setDeleteConfirmActive(true)}
               >
-                Удалить
-              </Button>
+                <IconTrash width={16} height={16} />
+              </IconButton>
             </div>
           </div>
         </div>
@@ -140,7 +160,7 @@ export function CollectionsPage() {
             <p>В этой коллекции пока нет сохраненных сайтов.</p>
             <Button
               variant="ghost"
-              onClick={() => setAddSiteModalOpen(true)}
+              onClick={() => setAddSiteModalCollectionId(activeCollection.id)}
             >
               + Добавить первый сайт
             </Button>
@@ -165,23 +185,39 @@ export function CollectionsPage() {
         )}
 
         <AddWebsiteModal
-          isOpen={addSiteModalOpen}
-          onClose={() => setAddSiteModalOpen(false)}
+          isOpen={Boolean(addSiteModalCollectionId)}
+          onClose={() => setAddSiteModalCollectionId(null)}
           onSave={handleAddSite}
           collections={collections}
-          defaultCollectionId={activeCollection.id}
+          defaultCollectionId={addSiteModalCollectionId || activeCollection.id}
         />
 
-        <CreateCollectionModal
-          isOpen={editColModalOpen}
-          onClose={() => setEditColModalOpen(false)}
-          onSave={handleEditCollection}
-          initialValues={{
-            name: activeCollection.name,
-            description: activeCollection.description,
-          }}
-          modalTitle="Редактировать коллекцию"
-        />
+        {editCollectionTarget ? (
+          <CreateCollectionModal
+            isOpen={Boolean(editCollectionTarget)}
+            onClose={() => setEditCollectionTarget(null)}
+            onSave={handleEditCollection}
+            initialValues={{
+              name: editCollectionTarget.name,
+              description: editCollectionTarget.description,
+            }}
+            modalTitle="Редактировать коллекцию"
+          />
+        ) : null}
+
+        {deleteConfirmActive ? (
+          <ConfirmDialog
+            title={`Удалить коллекцию «${activeCollection.name}»?`}
+            body={`Все сохраненные сайты (${activeCollection.items.length}) в этой коллекции будут удалены.`}
+            cancelLabel="Отмена"
+            confirmLabel="Удалить"
+            onCancel={() => setDeleteConfirmActive(false)}
+            onConfirm={async () => {
+              await deleteCollection(activeCollection.id);
+              setDeleteConfirmActive(false);
+            }}
+          />
+        ) : null}
 
         {moveModalItem ? (
           <MoveWebsiteModal
@@ -202,7 +238,7 @@ export function CollectionsPage() {
     <div className={styles.page}>
       <PageHeader title="Коллекции">
         <div className={styles.headerActions}>
-          <Button variant="ghost" onClick={() => setAddSiteModalOpen(true)}>
+          <Button variant="ghost" onClick={() => setAddSiteModalCollectionId(collections[0]?.id || "")}>
             + Добавить сайт
           </Button>
           <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
@@ -238,6 +274,65 @@ export function CollectionsPage() {
                 <div>
                   <div className={styles.cardHead}>
                     <h3 className={styles.cardTitle}>{col.name}</h3>
+                    <div
+                      className={styles.menuWrap}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconButton
+                        label="Опции коллекции"
+                        className={styles.menuTrigger}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuCollectionId((prev) =>
+                            prev === col.id ? null : col.id,
+                          );
+                        }}
+                      >
+                        <IconMore width={16} height={16} />
+                      </IconButton>
+
+                      {openMenuCollectionId === col.id ? (
+                        <div
+                          className={styles.menuDropdown}
+                          role="menu"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className={styles.menuItem}
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuCollectionId(null);
+                              setAddSiteModalCollectionId(col.id);
+                            }}
+                          >
+                            + Добавить сайт
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.menuItem}
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuCollectionId(null);
+                              setEditCollectionTarget(col);
+                            }}
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuCollectionId(null);
+                              setDeleteConfirmCollection(col);
+                            }}
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   {col.description ? (
                     <p className={styles.cardDesc}>{col.description}</p>
@@ -261,10 +356,11 @@ export function CollectionsPage() {
       </section>
 
       <AddWebsiteModal
-        isOpen={addSiteModalOpen}
-        onClose={() => setAddSiteModalOpen(false)}
+        isOpen={Boolean(addSiteModalCollectionId)}
+        onClose={() => setAddSiteModalCollectionId(null)}
         onSave={handleAddSite}
         collections={collections}
+        defaultCollectionId={addSiteModalCollectionId || undefined}
       />
 
       <CreateCollectionModal
@@ -272,6 +368,33 @@ export function CollectionsPage() {
         onClose={() => setCreateModalOpen(false)}
         onSave={handleCreateCollection}
       />
+
+      {editCollectionTarget ? (
+        <CreateCollectionModal
+          isOpen={Boolean(editCollectionTarget)}
+          onClose={() => setEditCollectionTarget(null)}
+          onSave={handleEditCollection}
+          initialValues={{
+            name: editCollectionTarget.name,
+            description: editCollectionTarget.description,
+          }}
+          modalTitle="Редактировать коллекцию"
+        />
+      ) : null}
+
+      {deleteConfirmCollection ? (
+        <ConfirmDialog
+          title={`Удалить коллекцию «${deleteConfirmCollection.name}»?`}
+          body={`Все сохраненные сайты (${deleteConfirmCollection.items.length}) в этой коллекции будут удалены.`}
+          cancelLabel="Отмена"
+          confirmLabel="Удалить"
+          onCancel={() => setDeleteConfirmCollection(null)}
+          onConfirm={async () => {
+            await deleteCollection(deleteConfirmCollection.id);
+            setDeleteConfirmCollection(null);
+          }}
+        />
+      ) : null}
 
       {moveModalItem ? (
         <MoveWebsiteModal
@@ -336,22 +459,18 @@ function SiteRow({
       </div>
 
       <div className={styles.siteActions}>
-        <button
-          type="button"
-          className={styles.actionBtn}
-          title="Переместить в другую коллекцию"
+        <IconButton
+          label="Переместить в другую коллекцию"
           onClick={onMove}
         >
-          ⇄ Переместить
-        </button>
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-          title="Удалить из коллекции"
+          <IconMove width={16} height={16} />
+        </IconButton>
+        <IconButton
+          label="Удалить из коллекции"
           onClick={onDelete}
         >
-          ✕
-        </button>
+          <IconTrash width={16} height={16} />
+        </IconButton>
       </div>
     </article>
   );

@@ -17,8 +17,6 @@ export function ModelSkeletonList({ count = 8 }: { count?: number }) {
           </div>
           <div className={styles.actions}>
             <div className={styles.skeletonAction} />
-            <div className={styles.skeletonAction} />
-            <div className={styles.skeletonAction} />
           </div>
         </li>
       ))}

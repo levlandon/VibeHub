@@ -31,26 +31,14 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.fieldLabel {
   font-size: 13px;
-  color: var(--text-dim);
-  margin-bottom: 14px;
-}
-
-.field select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
-  outline: none;
-  transition: border-color var(--ease);
-}
-
-.field select:focus {
-  border-color: var(--accent);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .actions {

@@ -140,9 +140,11 @@ export function ModelsPage() {
         </EmptyState>
       ) : (
         <>
-          <div className={styles.countInfo}>
-            Показано моделей: {visible.length}
-            {visible.length !== models.length ? ` из ${models.length}` : ""}
+          <div className={styles.listHeader}>
+            <div className={styles.countInfo}>
+              Показано моделей: {visible.length}
+              {visible.length !== models.length ? ` из ${models.length}` : ""}
+            </div>
           </div>
           <ul className={styles.list}>
             {visible.map((model) => (

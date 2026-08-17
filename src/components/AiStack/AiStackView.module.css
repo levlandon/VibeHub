@@ -1,0 +1,81 @@
+.stackContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.categoryBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.categoryCount {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-dim);
+}
+
+.itemList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.itemBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--ease);
+}
+
+.itemBadge:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.iconWrap {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.badgeSub {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.emptyCategory {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 8px 0;
+}

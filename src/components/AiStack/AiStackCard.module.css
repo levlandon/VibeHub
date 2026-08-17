@@ -1,0 +1,115 @@
+.card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ease);
+  position: relative;
+  text-align: left;
+}
+
+.card:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.card.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.iconWrap {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.card.selected .iconWrap {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0b0c;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.card.selected .badge {
+  background: rgba(91, 158, 148, 0.25);
+  color: var(--accent-hover);
+}
+
+.checkMark {
+  margin-left: auto;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all var(--ease);
+}
+
+.card.selected .checkMark {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Compact chip variant */
+.chip {
+  padding: 5px 10px;
+  gap: 7px;
+  font-size: 12px;
+  border-radius: var(--radius-full);
+}
+
+.chip .iconWrap {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+  border-radius: 50%;
+}

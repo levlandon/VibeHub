@@ -1,0 +1,43 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.noticeCard {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-dim);
+  max-width: 480px;
+  margin: 0;
+  line-height: 1.5;
+}

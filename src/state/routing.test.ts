@@ -23,6 +23,9 @@ describe("routeFromPath", () => {
     expect(routeFromPath("/benchmarks")).toBe("benchmarks");
     expect(routeFromPath("/bookmarks")).toBe("bookmarks");
     expect(routeFromPath("/collections")).toBe("collections");
+    expect(routeFromPath("/profile")).toBe("profile");
+    expect(routeFromPath("/feed")).toBe("feed");
+    expect(routeFromPath("/people")).toBe("people");
   });
 
   it("неизвестный путь ведёт к models", () => {
