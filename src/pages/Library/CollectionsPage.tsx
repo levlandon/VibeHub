@@ -5,9 +5,13 @@ import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
 import { CreateCollectionModal } from "../../components/CreateCollectionModal/CreateCollectionModal";
 import { IconButton } from "../../components/IconButton/IconButton";
 import {
+  IconCollections,
   IconEdit,
   IconMore,
   IconMove,
+  IconOpen,
+  IconPlus,
+  IconSparkles,
   IconTrash,
 } from "../../components/icons";
 import { MoveWebsiteModal } from "../../components/MoveWebsiteModal/MoveWebsiteModal";
@@ -36,7 +40,11 @@ function formatItemsCount(count: number): string {
   return `${count} сайтов`;
 }
 
-export function CollectionsPage() {
+interface CollectionsPageProps {
+  showHeader?: boolean;
+}
+
+export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
   const {
     collections,
     activeCollection,
@@ -55,18 +63,26 @@ export function CollectionsPage() {
   const [deleteConfirmCollection, setDeleteConfirmCollection] = useState<Collection | null>(null);
   const [deleteConfirmActive, setDeleteConfirmActive] = useState(false);
   const [openMenuCollectionId, setOpenMenuCollectionId] = useState<string | null>(null);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [addQuickAccessOpen, setAddQuickAccessOpen] = useState(false);
 
   const [moveModalItem, setMoveModalItem] = useState<{
     item: CollectionItem;
     fromCollectionId: string;
   } | null>(null);
 
-  // Close context menu on outside click or escape
+  // Close context menu / plus menu on outside click or escape
   useEffect(() => {
-    if (!openMenuCollectionId) return;
-    const handleDocClick = () => setOpenMenuCollectionId(null);
+    if (!openMenuCollectionId && !plusMenuOpen) return;
+    const handleDocClick = () => {
+      setOpenMenuCollectionId(null);
+      setPlusMenuOpen(false);
+    };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenMenuCollectionId(null);
+      if (e.key === "Escape") {
+        setOpenMenuCollectionId(null);
+        setPlusMenuOpen(false);
+      }
     };
     document.addEventListener("click", handleDocClick);
     document.addEventListener("keydown", handleKey);
@@ -74,7 +90,7 @@ export function CollectionsPage() {
       document.removeEventListener("click", handleDocClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [openMenuCollectionId]);
+  }, [openMenuCollectionId, plusMenuOpen]);
 
   const handleAddSite = async (
     collectionId: string,
@@ -111,6 +127,66 @@ export function CollectionsPage() {
     );
     setMoveModalItem(null);
   };
+
+  const renderPlusButton = () => (
+    <div className={styles.plusWrap} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className={`${styles.plusBtn} ${plusMenuOpen ? styles.plusBtnActive : ""}`}
+        title="Добавить"
+        aria-label="Добавить"
+        aria-expanded={plusMenuOpen}
+        onClick={() => setPlusMenuOpen((prev) => !prev)}
+      >
+        <IconPlus width={18} height={18} />
+      </button>
+
+      {plusMenuOpen ? (
+        <div className={styles.headerDropdown} role="menu">
+          <button
+            type="button"
+            className={styles.menuItem}
+            role="menuitem"
+            onClick={() => {
+              setPlusMenuOpen(false);
+              setCreateModalOpen(true);
+            }}
+          >
+            <IconCollections width={16} height={16} />
+            <span>Создать коллекцию</span>
+          </button>
+          <button
+            type="button"
+            className={styles.menuItem}
+            role="menuitem"
+            onClick={() => {
+              setPlusMenuOpen(false);
+              if (collections.length === 0) {
+                setCreateModalOpen(true);
+              } else {
+                setAddSiteModalCollectionId(collections[0].id);
+              }
+            }}
+          >
+            <IconOpen width={16} height={16} />
+            <span>Добавить сайт</span>
+          </button>
+          <button
+            type="button"
+            className={styles.menuItem}
+            role="menuitem"
+            onClick={() => {
+              setPlusMenuOpen(false);
+              setAddQuickAccessOpen(true);
+            }}
+          >
+            <IconSparkles width={16} height={16} />
+            <span>Добавить в быстрый доступ</span>
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 
   // Detail View of a specific Collection
   if (activeCollection) {
@@ -236,24 +312,23 @@ export function CollectionsPage() {
   // Overview View: Quick Access + Collections Grid
   return (
     <div className={styles.page}>
-      <PageHeader title="Коллекции">
-        <div className={styles.headerActions}>
-          <Button variant="ghost" onClick={() => setAddSiteModalCollectionId(collections[0]?.id || "")}>
-            + Добавить сайт
-          </Button>
-          <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
-            + Создать коллекцию
-          </Button>
-        </div>
-      </PageHeader>
+      {showHeader ? (
+        <PageHeader title="Коллекции">
+          <div className={styles.headerActions}>{renderPlusButton()}</div>
+        </PageHeader>
+      ) : null}
 
-      <QuickAccess />
+      <QuickAccess
+        externalAddOpen={addQuickAccessOpen}
+        onCloseExternalAdd={() => setAddQuickAccessOpen(false)}
+      />
 
       <section aria-labelledby="collections-title">
         <div className={styles.sectionHeader}>
           <h2 id="collections-title" className={styles.sectionTitle}>
             Мои коллекции ({collections.length})
           </h2>
+          {!showHeader ? renderPlusButton() : null}
         </div>
 
         <ul className={styles.collectionsGrid}>

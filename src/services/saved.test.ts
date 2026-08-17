@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { fromBookmarks, isSaved, savedId, toggleSaved } from "./saved";
+import {
+  describeRepository,
+  fromBookmarks,
+  isSaved,
+  parseGithubUrl,
+  savedId,
+  toggleSaved,
+} from "./saved";
 import type { Tool } from "../types/hub";
 
 function tool(partial: Partial<Tool>): Tool {
@@ -45,3 +52,37 @@ describe("fromBookmarks", () => {
     expect(items[0].targetId).toBe("skill-a");
   });
 });
+
+describe("parseGithubUrl & describeRepository", () => {
+  it("парсит полный https URL репозитория", () => {
+    const parsed = parseGithubUrl("https://github.com/vllm-project/vllm");
+    expect(parsed).toEqual({
+      owner: "vllm-project",
+      name: "vllm",
+      url: "https://github.com/vllm-project/vllm",
+    });
+  });
+
+  it("парсит короткий owner/repo формат", () => {
+    const parsed = parseGithubUrl("facebookresearch/llama");
+    expect(parsed).toEqual({
+      owner: "facebookresearch",
+      name: "llama",
+      url: "https://github.com/facebookresearch/llama",
+    });
+  });
+
+  it("формирует закладку репозитория", () => {
+    const repo = describeRepository({
+      url: "https://github.com/huggingface/transformers",
+      description: "State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.",
+    });
+    expect(repo.kind).toBe("repository");
+    expect(repo.targetId).toBe("huggingface/transformers");
+    expect(repo.title).toBe("transformers");
+    expect(repo.subtitle).toBe("huggingface");
+    expect(repo.url).toBe("https://github.com/huggingface/transformers");
+    expect(repo.description).toBe("State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.");
+  });
+});
+

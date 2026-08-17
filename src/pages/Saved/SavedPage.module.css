@@ -1,0 +1,47 @@
+.page {
+  padding-bottom: 48px;
+}
+
+.primaryTabs {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+
+.primaryTab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 2px 12px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--ease);
+  user-select: none;
+}
+
+.primaryTab:hover {
+  color: var(--text);
+}
+
+.primaryTabActive {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.primaryTabActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}

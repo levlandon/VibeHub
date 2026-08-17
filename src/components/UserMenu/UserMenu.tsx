@@ -60,9 +60,9 @@ export function UserMenu({
     >
       <div className={styles.header}>
         <div className={styles.avatar}>
-          {profile.avatar ? (
+          {profile.avatarUrl || profile.avatar ? (
             <img
-              src={profile.avatar}
+              src={profile.avatarUrl || profile.avatar}
               alt={profile.displayName}
               className={styles.avatarImg}
               onError={(e) => {
@@ -89,7 +89,7 @@ export function UserMenu({
         }}
       >
         <IconUser width={18} height={18} />
-        <span>Мой профиль</span>
+        <span>Профиль</span>
       </button>
 
       <button

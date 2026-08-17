@@ -2,6 +2,11 @@
   padding-bottom: 48px;
 }
 
+.filterBar {
+  margin-top: 2px;
+  margin-bottom: 16px;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

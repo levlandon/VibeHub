@@ -3,6 +3,7 @@ import { Outlet } from "@tanstack/react-router";
 import { ShareDialog } from "./features/share/ShareDialog";
 import { ChatPanel } from "./components/ChatPanel/ChatPanel";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
+import { AuthModal } from "./components/AuthModal/AuthModal";
 import { SettingsModal } from "./components/SettingsModal/SettingsModal";
 import { IconChat } from "./components/icons";
 import { Sidebar } from "./components/Sidebar/Sidebar";
@@ -15,13 +16,11 @@ export function Shell() {
     setSearchOpen,
     chatOpen,
     setChatOpen,
-    userProfile,
-    updateUserProfile,
+    authModalOpen,
+    setAuthModalOpen,
     settingsOpen,
     setSettingsOpen,
-    settingsTab,
-    models,
-    tools,
+    loginDev,
   } = useHub();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -81,14 +80,14 @@ export function Shell() {
       </div>
       <ShareDialog />
       <CommandPalette />
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onDevLogin={loginDev}
+      />
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        profile={userProfile}
-        onSaveProfile={updateUserProfile}
-        initialTab={settingsTab}
-        availableModels={models}
-        availableTools={tools}
       />
     </div>
   );

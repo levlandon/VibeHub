@@ -21,8 +21,9 @@ describe("routeFromPath", () => {
 
   it("возвращает остальные разделы", () => {
     expect(routeFromPath("/benchmarks")).toBe("benchmarks");
-    expect(routeFromPath("/bookmarks")).toBe("bookmarks");
-    expect(routeFromPath("/collections")).toBe("collections");
+    expect(routeFromPath("/saved")).toBe("saved");
+    expect(routeFromPath("/bookmarks")).toBe("saved");
+    expect(routeFromPath("/collections")).toBe("saved");
     expect(routeFromPath("/profile")).toBe("profile");
     expect(routeFromPath("/feed")).toBe("feed");
     expect(routeFromPath("/people")).toBe("people");

@@ -3,6 +3,7 @@ import { CategoryStrip } from "../../components/CategoryStrip/CategoryStrip";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { ModelRow } from "../../components/ModelRow";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
+import { RepositoryRow } from "../../components/RepositoryRow";
 import { ToolRow } from "../../components/ToolRow";
 import { Select } from "../../components/ui/Select";
 import { filterAndSortModels } from "../../services/models";
@@ -12,7 +13,7 @@ import type { Model, Tool } from "../../types/hub";
 import type { ModelSort } from "../../types/models";
 import styles from "./Library.module.css";
 
-type TabId = "all" | "model" | "tool";
+type TabId = "all" | "model" | "tool" | "repository";
 
 const CAPABILITY_OPTIONS = [
   { value: "vision", label: "Vision" },
@@ -31,13 +32,18 @@ const SORT_OPTIONS: { value: ModelSort; label: string }[] = [
   { value: "name", label: "Название (A–Z)" },
 ];
 
-export function BookmarksPage() {
+interface BookmarksPageProps {
+  showHeader?: boolean;
+}
+
+export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
   const {
     savedItems,
     models,
     tools,
     toggleModelBookmark,
     toggleToolBookmark,
+    toggleSavedTarget,
     openEntity,
   } = useHub();
 
@@ -66,14 +72,20 @@ export function BookmarksPage() {
       .filter((t): t is Tool => Boolean(t));
   }, [savedItems, tools]);
 
-  // Categories with live counts
+  // Resolve saved repositories
+  const savedRepositories = useMemo(() => {
+    return savedItems.filter((item) => item.kind === "repository");
+  }, [savedItems]);
+
+  // Categories with live computed counts
   const categories = useMemo(
     () => [
-      { id: "all" as const, label: `Все (${savedItems.length})` },
-      { id: "model" as const, label: `Модели (${savedModels.length})` },
-      { id: "tool" as const, label: `Инструменты (${savedTools.length})` },
+      { id: "all" as const, label: "Все", count: savedItems.length },
+      { id: "model" as const, label: "Модели", count: savedModels.length },
+      { id: "tool" as const, label: "Инструменты", count: savedTools.length },
+      { id: "repository" as const, label: "Репозитории", count: savedRepositories.length },
     ],
-    [savedItems.length, savedModels.length, savedTools.length],
+    [savedItems.length, savedModels.length, savedTools.length, savedRepositories.length],
   );
 
   // Dynamic providers computed solely from saved models
@@ -100,51 +112,59 @@ export function BookmarksPage() {
 
   const hasActiveModelFilters = capabilities.length > 0 || provider !== "all";
 
+  const renderContentControls = () => (
+    <div className={styles.filterBar}>
+      <CategoryStrip
+        items={categories}
+        value={activeTab}
+        onChange={(id) => setActiveTab(id as TabId)}
+      />
+      {activeTab === "model" && savedModels.length > 0 ? (
+        <div className={styles.toolbar}>
+          <Select
+            label="Provider"
+            value={provider}
+            options={providerOptions}
+            onChange={setProvider}
+            searchable={savedProviders.length > 5}
+            searchPlaceholder="Поиск провайдера..."
+          />
+          <Select
+            label="Возможности"
+            multiple
+            value={capabilities}
+            options={CAPABILITY_OPTIONS}
+            onChange={setCapabilities}
+            placeholder="Все"
+          />
+          <Select
+            label="Сортировка"
+            value={sort}
+            options={SORT_OPTIONS}
+            onChange={(val) => setSort(val as ModelSort)}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className={styles.page}>
-      <PageHeader title="Закладки">
-        <CategoryStrip
-          items={categories}
-          value={activeTab}
-          onChange={(id) => setActiveTab(id as TabId)}
-        />
-        {activeTab === "model" && savedModels.length > 0 ? (
-          <div className={styles.toolbar}>
-            <Select
-              label="Provider"
-              value={provider}
-              options={providerOptions}
-              onChange={setProvider}
-              searchable={savedProviders.length > 5}
-              searchPlaceholder="Поиск провайдера..."
-            />
-            <Select
-              label="Возможности"
-              multiple
-              value={capabilities}
-              options={CAPABILITY_OPTIONS}
-              onChange={setCapabilities}
-              placeholder="Все"
-            />
-            <Select
-              label="Сортировка"
-              value={sort}
-              options={SORT_OPTIONS}
-              onChange={(val) => setSort(val as ModelSort)}
-            />
-          </div>
-        ) : null}
-      </PageHeader>
+      {showHeader ? (
+        <PageHeader title="Закладки">{renderContentControls()}</PageHeader>
+      ) : (
+        renderContentControls()
+      )}
 
       {savedItems.length === 0 ? (
         <EmptyState>
-          <p>Здесь появятся сохранённые модели и инструменты.</p>
+          <p>Здесь появятся сохранённые модели, инструменты и репозитории.</p>
         </EmptyState>
       ) : activeTab === "all" ? (
         <>
           {savedModels.length > 0 ? (
             <section aria-label="Сохранённые модели">
-              {savedTools.length > 0 ? (
+              {savedTools.length > 0 || savedRepositories.length > 0 ? (
                 <h3 className={styles.groupTitle}>Модели</h3>
               ) : null}
               <ul className={styles.list}>
@@ -164,7 +184,7 @@ export function BookmarksPage() {
 
           {savedTools.length > 0 ? (
             <section aria-label="Сохранённые инструменты">
-              {savedModels.length > 0 ? (
+              {savedModels.length > 0 || savedRepositories.length > 0 ? (
                 <h3 className={styles.groupTitle}>Инструменты</h3>
               ) : null}
               <ul className={styles.list}>
@@ -175,6 +195,25 @@ export function BookmarksPage() {
                       bookmarked={isSaved(savedItems, "tool", tool.id)}
                       onBookmark={() => toggleToolBookmark(tool.id)}
                       onOpen={() => openEntity("tool", tool.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {savedRepositories.length > 0 ? (
+            <section aria-label="Сохранённые репозитории">
+              {savedModels.length > 0 || savedTools.length > 0 ? (
+                <h3 className={styles.groupTitle}>Репозитории</h3>
+              ) : null}
+              <ul className={styles.list}>
+                {savedRepositories.map((repo) => (
+                  <li key={repo.id} id={`saved-repo-${repo.targetId.replace(/\//g, "-")}`}>
+                    <RepositoryRow
+                      item={repo}
+                      bookmarked={true}
+                      onBookmark={() => toggleSavedTarget(repo)}
                     />
                   </li>
                 ))}
@@ -242,9 +281,29 @@ export function BookmarksPage() {
             ))}
           </ul>
         )
+      ) : activeTab === "repository" ? (
+        savedRepositories.length === 0 ? (
+          <EmptyState>
+            <p>Сохранённых репозиториев пока нет.</p>
+          </EmptyState>
+        ) : (
+          <ul className={styles.list}>
+            {savedRepositories.map((repo) => (
+              <li key={repo.id} id={`saved-repo-${repo.targetId.replace(/\//g, "-")}`}>
+                <RepositoryRow
+                  item={repo}
+                  bookmarked={true}
+                  onBookmark={() => toggleSavedTarget(repo)}
+                />
+              </li>
+            ))}
+          </ul>
+        )
       ) : null}
     </div>
   );
 }
 
 export { CollectionsPage } from "./CollectionsPage";
+export { SavedPage } from "../Saved";
+

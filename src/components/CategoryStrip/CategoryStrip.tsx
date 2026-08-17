@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { IconChevron } from "../icons";
 import styles from "./CategoryStrip.module.css";
 
-interface Item {
+export interface CategoryStripItem {
   id: string;
   label: string;
+  count?: number;
 }
 
 interface CategoryStripProps {
-  items: Item[];
+  items: CategoryStripItem[];
   value: string;
   onChange: (id: string) => void;
 }
@@ -58,7 +59,10 @@ export function CategoryStrip({ items, value, onChange }: CategoryStripProps) {
             className={`${styles.tab} ${item.id === value ? styles.on : ""}`}
             onClick={() => onChange(item.id)}
           >
-            {item.label}
+            <span>{item.label}</span>
+            {typeof item.count === "number" && item.count > 0 ? (
+              <span className={styles.countBadge}>{item.count}</span>
+            ) : null}
           </button>
         ))}
       </div>

@@ -1,13 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSiteUrl } from "../../lib/siteUrl";
-import { quickAccessRepository, MAX_QUICK_ACCESS_ITEMS } from "../../services/collections";
+import { quickAccessRepository } from "../../services/collections";
 import type { QuickAccessSite } from "../../types/hub";
 import { Button } from "../Button/Button";
-import { IconMore, IconPlus } from "../icons";
+import { IconMore } from "../icons";
 import { SiteIcon } from "../SiteIcon/SiteIcon";
 import styles from "./QuickAccess.module.css";
 
-export function QuickAccess() {
+export interface QuickAccessProps {
+  externalAddOpen?: boolean;
+  onCloseExternalAdd?: () => void;
+  onSiteAdded?: () => void;
+}
+
+export function QuickAccess({
+  externalAddOpen = false,
+  onCloseExternalAdd,
+  onSiteAdded,
+}: QuickAccessProps) {
   const [sites, setSites] = useState<QuickAccessSite[]>([]);
   const [modal, setModal] = useState<"add" | QuickAccessSite | null>(null);
 
@@ -20,14 +30,26 @@ export function QuickAccess() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (externalAddOpen) {
+      setModal("add");
+    }
+  }, [externalAddOpen]);
+
+  const handleCloseModal = () => {
+    setModal(null);
+    onCloseExternalAdd?.();
+  };
+
   const handleSave = async (draft: QuickAccessSite) => {
     if (modal === "add") {
       await quickAccessRepository.addSite(draft);
+      onSiteAdded?.();
     } else {
       await quickAccessRepository.updateSite(draft.id, draft);
     }
     await load();
-    setModal(null);
+    handleCloseModal();
   };
 
   const handleRemove = async (id: string) => {
@@ -48,23 +70,11 @@ export function QuickAccess() {
             />
           </li>
         ))}
-        {sites.length < MAX_QUICK_ACCESS_ITEMS ? (
-          <li>
-            <button type="button" className={styles.add} onClick={() => setModal("add")}>
-              <span className={styles.addMark} aria-hidden>
-                <IconPlus width={16} height={16} />
-              </span>
-              <span className={styles.meta}>
-                <strong>Добавить</strong>
-              </span>
-            </button>
-          </li>
-        ) : null}
       </ul>
       {modal ? (
         <SiteModal
           site={modal === "add" ? null : modal}
-          onClose={() => setModal(null)}
+          onClose={handleCloseModal}
           onSave={handleSave}
         />
       ) : null}
@@ -152,7 +162,7 @@ function SiteTile({
   );
 }
 
-function SiteModal({
+export function SiteModal({
   site,
   onClose,
   onSave,
@@ -197,45 +207,45 @@ function SiteModal({
             submit();
           }}
         >
-        <label className={styles.field}>
-          Ссылка
-          <input
-            autoFocus
-            value={url}
-            placeholder="https://..."
-            onChange={(e) => {
-              setUrl(e.target.value);
-              if (!autoTitle) return;
-            }}
-          />
-        </label>
-        <label className={styles.field}>
-          Название
-          <input
-            value={title}
-            placeholder={parsed?.title ?? "Название"}
-            onChange={(e) => {
-              setAutoTitle(false);
-              setTitle(e.target.value);
-            }}
-          />
-        </label>
-        {parsed ? (
-          <p className={styles.hint}>
-            {parsed.domain}
-            {parsed.favicon ? " · favicon подставится автоматически" : ""}
-          </p>
-        ) : url.trim() ? (
-          <p className={styles.hint}>Проверьте ссылку</p>
-        ) : null}
-        <div className={styles.actions}>
-          <Button variant="text" onClick={onClose}>
-            Отмена
-          </Button>
-          <Button variant="primary" disabled={!parsed} type="submit">
-            {site ? "Сохранить" : "Добавить"}
-          </Button>
-        </div>
+          <label className={styles.field}>
+            Ссылка
+            <input
+              autoFocus
+              value={url}
+              placeholder="https://..."
+              onChange={(e) => {
+                setUrl(e.target.value);
+                if (!autoTitle) return;
+              }}
+            />
+          </label>
+          <label className={styles.field}>
+            Название
+            <input
+              value={title}
+              placeholder={parsed?.title ?? "Название"}
+              onChange={(e) => {
+                setAutoTitle(false);
+                setTitle(e.target.value);
+              }}
+            />
+          </label>
+          {parsed ? (
+            <p className={styles.hint}>
+              {parsed.domain}
+              {parsed.favicon ? " · favicon подставится автоматически" : ""}
+            </p>
+          ) : url.trim() ? (
+            <p className={styles.hint}>Проверьте ссылку</p>
+          ) : null}
+          <div className={styles.actions}>
+            <Button variant="text" onClick={onClose}>
+              Отмена
+            </Button>
+            <Button variant="primary" disabled={!parsed} type="submit">
+              {site ? "Сохранить" : "Добавить"}
+            </Button>
+          </div>
         </form>
       </div>
     </div>

@@ -5,32 +5,32 @@ import type { UserProfile } from "../../types/profile";
 
 class MockProfileRepository implements ProfileRepository {
   private current: UserProfile = {
-    avatar: "",
+    id: "user-1",
+    avatarUrl: "",
     displayName: "Test User",
     username: "testuser",
     bio: "Developer bio",
-    codingAgents: ["Claude Code", "Cursor"],
-    models: ["openai/gpt-4o"],
-    tools: ["v0"],
+    modelIds: ["openai/gpt-4o"],
     interests: ["Coding", "Research"],
   };
 
-  getProfile(): UserProfile {
+  async getProfile(): Promise<UserProfile> {
     return { ...this.current };
   }
 
-  saveProfile(profile: UserProfile): boolean {
+  async saveProfile(profile: UserProfile): Promise<boolean> {
     this.current = { ...profile };
     return true;
   }
 
-  resetProfile(): UserProfile {
+  async resetProfile(): Promise<UserProfile> {
     this.current = {
-      avatar: "",
+      id: "user-1",
+      avatarUrl: "",
       displayName: "User",
       username: "user",
       bio: "",
-      models: [],
+      modelIds: [],
       interests: [],
     };
     return this.getProfile();
@@ -46,12 +46,12 @@ describe("ProfileService", () => {
     service = new ProfileService(mockRepo);
   });
 
-  describe("getProfile", () => {
-    it("возвращает текущий профиль из репозитория", () => {
-      const profile = service.getProfile();
-      expect(profile.displayName).toBe("Test User");
-      expect(profile.username).toBe("testuser");
-      expect(profile.codingAgents).toEqual(["Claude Code", "Cursor"]);
+  describe("getCurrentProfile", () => {
+    it("возвращает текущий профиль из репозитория", async () => {
+      const profile = await service.getCurrentProfile();
+      expect(profile?.displayName).toBe("Test User");
+      expect(profile?.username).toBe("testuser");
+      expect(profile?.modelIds).toEqual(["openai/gpt-4o"]);
     });
   });
 
@@ -61,7 +61,7 @@ describe("ProfileService", () => {
         displayName: "Alex Rivers",
         username: "alex_rivers",
         bio: "Senior AI Engineer",
-        avatar: "https://example.com/avatar.png",
+        avatarUrl: "https://example.com/avatar.png",
       });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual({});
@@ -105,51 +105,51 @@ describe("ProfileService", () => {
       expect(result.errors.bio).toContain("160");
     });
 
-    it("невалидный URL аватара вызывает ошибку", () => {
+    it("превышение лимита моделей (>8) вызывает ошибку", () => {
       const result = service.validateProfile({
         displayName: "Alex",
         username: "alex",
-        avatar: "not-a-valid-url",
+        modelIds: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.avatar).toBeDefined();
+      expect(result.errors.models).toContain("8");
+    });
+
+    it("превышение лимита интересов (>6) вызывает ошибку", () => {
+      const result = service.validateProfile({
+        displayName: "Alex",
+        username: "alex",
+        interests: ["1", "2", "3", "4", "5", "6", "7"],
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.interests).toContain("6");
     });
   });
 
-  describe("saveProfile", () => {
-    it("успешно сохраняет валидный профиль", () => {
-      const update: UserProfile = {
-        avatar: "https://example.com/avatar.jpg",
+  describe("updateCurrentProfile", () => {
+    it("успешно обновляет валидный профиль", async () => {
+      const updated = await service.updateCurrentProfile({
         displayName: "Updated Name",
         username: "updated_user",
         bio: "New Bio",
-        models: ["anthropic/claude-3.5-sonnet"],
+        modelIds: ["anthropic/claude-3.5-sonnet"],
         interests: ["Coding", "Design"],
-        codingAgents: ["Codex", "Aider"],
-        tools: ["bolt-new"],
-      };
+      });
 
-      const result = service.saveProfile(update);
-      expect(result.success).toBe(true);
+      expect(updated.displayName).toBe("Updated Name");
+      expect(updated.username).toBe("updated_user");
+      expect(updated.interests).toEqual(["Coding", "Design"]);
 
-      const saved = service.getProfile();
-      expect(saved.displayName).toBe("Updated Name");
-      expect(saved.interests).toEqual(["Coding", "Design"]);
+      const current = await service.getCurrentProfile();
+      expect(current?.displayName).toBe("Updated Name");
     });
 
-    it("не сохраняет невалидный профиль", () => {
-      const invalid: UserProfile = {
-        avatar: "",
-        displayName: "",
-        username: "user",
-        bio: "",
-        models: [],
-        interests: [],
-      };
-
-      const result = service.saveProfile(invalid);
-      expect(result.success).toBe(false);
-      expect(result.errors?.displayName).toBeDefined();
+    it("выбрасывает ошибку при невалидном обновлении", async () => {
+      await expect(
+        service.updateCurrentProfile({
+          displayName: "",
+        }),
+      ).rejects.toThrow();
     });
   });
 
@@ -167,3 +167,4 @@ describe("ProfileService", () => {
     });
   });
 });
+

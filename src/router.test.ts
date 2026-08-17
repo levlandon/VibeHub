@@ -31,4 +31,16 @@ describe("router", () => {
     const ids = matchedIds("/tools/codex-cli");
     expect(ids).toContain("/tools/$");
   });
-});
+
+  it("маршрут /saved матчится на /saved", () => {
+    const ids = matchedIds("/saved");
+    expect(ids).toContain("/saved");
+  });
+
+  it("маршруты /bookmarks и /collections присутствуют в роутере", () => {
+    const bookmarkIds = matchedIds("/bookmarks");
+    expect(bookmarkIds).toContain("/bookmarks");
+    const collectionIds = matchedIds("/collections");
+    expect(collectionIds).toContain("/collections");
+  });
+});

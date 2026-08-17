@@ -2,7 +2,7 @@ import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/
 import { Shell } from "./App";
 import { EntityPage } from "./features/entities/EntityPage";
 import { BenchmarksPage } from "./pages/Benchmarks/Benchmarks";
-import { BookmarksPage, CollectionsPage } from "./pages/Library/Library";
+import { SavedPage } from "./pages/Saved";
 import { ModelsPage } from "./pages/Models/Models";
 import { NotFound } from "./pages/NotFound/NotFound";
 import { ToolsPage } from "./pages/Tools/Tools";
@@ -72,16 +72,40 @@ const benchmarksRoute = createRoute({
   component: BenchmarksPage,
 });
 
+interface SavedSearch {
+  tab?: "bookmarks" | "collections";
+}
+
+const savedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/saved",
+  validateSearch: (search: Record<string, unknown>): SavedSearch => {
+    return {
+      tab:
+        search.tab === "collections"
+          ? "collections"
+          : search.tab === "bookmarks"
+            ? "bookmarks"
+            : undefined,
+    };
+  },
+  component: SavedPage,
+});
+
 const bookmarksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bookmarks",
-  component: BookmarksPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/saved", search: { tab: "bookmarks" } });
+  },
 });
 
 const collectionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/collections",
-  component: CollectionsPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/saved", search: { tab: "collections" } });
+  },
 });
 
 const profileRoute = createRoute({
@@ -111,6 +135,7 @@ const routeTree = rootRoute.addChildren([
   toolsRoute,
   toolDetailRoute,
   benchmarksRoute,
+  savedRoute,
   bookmarksRoute,
   collectionsRoute,
   profileRoute,
@@ -119,3 +144,4 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 export const router = createRouter({ routeTree });
+

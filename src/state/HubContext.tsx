@@ -24,12 +24,14 @@ import {
 } from "../services/posts";
 import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
 import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
+import type { AuthStatus, CurrentUser } from "../types/auth";
 import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
 import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
 import type { CreatePostInput, Post } from "../types/posts";
 import type { SavedItem } from "../types/saved";
 import type { UserProfile } from "../types/profile";
-import { profileRepository, profileService } from "../services/profile";
+import { authService } from "../services/auth";
+import { DEFAULT_USER_PROFILE, profileService } from "../services/profile";
 import type { SettingsTab } from "../components/SettingsModal/SettingsModal";
 import { entityFromPath, entityPath, routeFromPath, type EntityView } from "./routing";
 
@@ -38,6 +40,12 @@ const CHAT_KEY = "vibehub-chat-open";
 
 interface HubState {
   route: Route;
+  authStatus: AuthStatus;
+  currentUser: CurrentUser | null;
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+  loginDev: () => void;
+  logout: () => void;
   models: Model[];
   modelsLoading: boolean;
   modelsError: string | null;
@@ -64,7 +72,7 @@ interface HubState {
   setEntityView: (view: EntityView | null) => void;
   setSettingsOpen: (open: boolean) => void;
   setSettingsTab: (tab: SettingsTab) => void;
-  updateUserProfile: (profile: UserProfile) => boolean;
+  updateUserProfile: (profile: UserProfile | Partial<UserProfile>) => Promise<boolean>;
   sendMessage: (text: string) => void;
   openEntity: (kind: EntityKind, id: string) => void;
   toggleModelBookmark: (id: string) => void;
@@ -168,18 +176,63 @@ export function HubProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CHAT_KEY, open ? "1" : "0");
   }, []);
 
-  const [userProfile, setUserProfileState] = useState<UserProfile>(() => profileRepository.getProfile());
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() => authService.getAuthState().status);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => authService.getAuthState().user);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = authService.onAuthChange((state) => {
+      setAuthStatus(state.status);
+      setCurrentUser(state.user);
+    });
+    return unsubscribe;
+  }, []);
+
+  const loginDev = useCallback(() => {
+    const user = authService.loginDev();
+    setCurrentUser(user);
+    setAuthStatus("authenticated");
+  }, []);
+
+  const logout = useCallback(() => {
+    authService.logout();
+    setCurrentUser(null);
+    setAuthStatus("anonymous");
+  }, []);
+
+  const [userProfile, setUserProfileState] = useState<UserProfile>(() => DEFAULT_USER_PROFILE);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
 
-  const updateUserProfile = useCallback((newProfile: UserProfile): boolean => {
-    const res = profileService.saveProfile(newProfile);
-    if (res.success) {
-      setUserProfileState(newProfile);
-      return true;
-    }
-    return false;
+  useEffect(() => {
+    profileService.getCurrentProfile().then((profile) => {
+      if (profile) {
+        setUserProfileState(profile);
+      }
+    });
   }, []);
+
+  const updateUserProfile = useCallback(
+    async (updates: UserProfile | Partial<UserProfile>): Promise<boolean> => {
+      try {
+        const updated = await profileService.updateCurrentProfile(updates, currentUser?.id);
+        setUserProfileState(updated);
+        if (currentUser) {
+          setCurrentUser({
+            ...currentUser,
+            displayName: updated.displayName,
+            username: updated.username,
+            avatarUrl: updated.avatarUrl,
+          });
+        }
+        return true;
+      } catch (err) {
+        console.error("Failed to update profile:", err);
+        return false;
+      }
+    },
+    [currentUser],
+  );
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -290,6 +343,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       route,
+      authStatus,
+      currentUser,
+      authModalOpen,
+      setAuthModalOpen,
+      loginDev,
+      logout,
       models,
       modelsLoading,
       modelsError,
@@ -331,6 +390,11 @@ export function HubProvider({ children }: { children: ReactNode }) {
     }),
     [
       route,
+      authStatus,
+      currentUser,
+      authModalOpen,
+      loginDev,
+      logout,
       models,
       modelsLoading,
       modelsError,

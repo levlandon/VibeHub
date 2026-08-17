@@ -1,19 +1,20 @@
 .menu {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 8px;
-  right: 8px;
+  left: 6px;
+  width: calc(100% - 12px);
+  min-width: 220px;
+  max-width: 260px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
   padding: 6px;
-  z-index: 50;
+  z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   animation: slideUp 120ms ease-out;
-  min-width: 220px;
 }
 
 @keyframes slideUp {
