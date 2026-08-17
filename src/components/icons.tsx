@@ -525,5 +525,42 @@ export function getInterestIcon(tag: string) {
   }
 }
 
+export function IconMath(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M18 7V4H6l6 8-6 8h12v-3" />
+    </svg>
+  );
+}
 
+export function IconGauge(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m12 14 4-4" />
+      <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+    </svg>
+  );
+}
+
+export function IconGlobe(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      <path d="M2 12h20" />
+    </svg>
+  );
+}
+
+export function IconListChecks(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m3 17 2 2 4-4" />
+      <path d="m3 7 2 2 4-4" />
+      <path d="M13 6h8" />
+      <path d="M13 12h8" />
+      <path d="M13 18h8" />
+    </svg>
+  );
+}
 

@@ -34,6 +34,7 @@
   --sidebar-w: 256px;
   --sidebar-collapsed: 72px;
   --content-max: 840px;
+  --content-max-wide: 1200px;
   --chat-w: 384px;
 
   /* Fonts */
@@ -114,8 +115,12 @@ a {
 }
 
 .main {
-  width: min(100%, var(--content-max));
+  width: min(100%, var(--page-max-w, var(--content-max)));
   padding: 8px 28px 64px;
+}
+
+.main:has([data-page="wide"]) {
+  --page-max-w: var(--content-max-wide);
 }
 
 .menu-btn {

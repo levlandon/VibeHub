@@ -34,7 +34,9 @@ export function Rating({
           ))}
         </div>
       ) : (
-        <span className={styles.value}>★ {value.toFixed(1)}</span>
+        <span className={styles.value}>
+          ★ {typeof value === "number" && !isNaN(value) ? value.toFixed(1) : "0.0"}
+        </span>
       )}
       {votes != null ? (
         <span className={styles.votes}>{votes} голосов</span>

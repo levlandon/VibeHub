@@ -72,6 +72,15 @@ const benchmarksRoute = createRoute({
   component: BenchmarksPage,
 });
 
+const benchmarkDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/benchmarks/$",
+  component: BenchmarksPage,
+  params: {
+    parse: (raw) => (raw._splat ? raw : false),
+  },
+});
+
 interface SavedSearch {
   tab?: "bookmarks" | "collections";
 }
@@ -135,6 +144,7 @@ const routeTree = rootRoute.addChildren([
   toolsRoute,
   toolDetailRoute,
   benchmarksRoute,
+  benchmarkDetailRoute,
   savedRoute,
   bookmarksRoute,
   collectionsRoute,

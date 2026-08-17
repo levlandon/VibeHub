@@ -4,6 +4,7 @@ import { profileService } from "../../services/profile";
 import type { Route } from "../../types/hub";
 import { UserMenu } from "../UserMenu/UserMenu";
 import {
+  IconBenchmarks,
   IconBookmarks,
   IconChat,
   IconFeed,
@@ -95,6 +96,12 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
             active={route === "models"}
             tooltip={tip("Модели")}
             onClick={() => navigateTo("models")}
+          />
+          <NavButton
+            item={{ id: "benchmarks", label: "Бенчмарки", icon: IconBenchmarks }}
+            active={route === "benchmarks"}
+            tooltip={tip("Бенчмарки")}
+            onClick={() => navigateTo("benchmarks")}
           />
         </div>
 

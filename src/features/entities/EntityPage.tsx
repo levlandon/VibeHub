@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { IconButton } from "../../components/IconButton/IconButton";
-import { IconBookmark } from "../../components/icons";
-import { BENCHMARKS } from "../../data/benchmarks";
+import { IconBookmark, IconChevron } from "../../components/icons";
+import {
+  benchmarkService,
+  type ModelBenchmarkScore,
+  type ModelSpeedMetric,
+} from "../../services/benchmarks";
 import { postsForEntity } from "../../services/posts";
 import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
@@ -92,9 +97,35 @@ function EntityPageView({
   onSave: () => void;
   saved: boolean;
 }) {
+  const navigate = useNavigate();
   const tabs = ENTITY_TABS[kind];
   const [tab, setTab] = useState(tabs[0].id);
-  const rows = model ? BENCHMARKS.filter((row) => row.modelId === model.id) : [];
+
+  const [benchmarkScores, setBenchmarkScores] = useState<ModelBenchmarkScore[]>([]);
+  const [speedMetric, setSpeedMetric] = useState<ModelSpeedMetric | null>(null);
+
+  useEffect(() => {
+    if (!model) return;
+    let isMounted = true;
+
+    Promise.all([
+      benchmarkService.getModelBenchmarkScores(model),
+      benchmarkService.getModelSpeed(model),
+    ])
+      .then(([scores, speed]) => {
+        if (isMounted) {
+          setBenchmarkScores(scores);
+          setSpeedMetric(speed);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load model benchmarks:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [model]);
 
   const tabPosts =
     tab === "guides"
@@ -102,6 +133,10 @@ function EntityPageView({
       : tab === "discussions"
         ? related.filter((p) => p.type === "discussion" || p.type === "question")
         : related;
+
+  const handleOpenBenchmark = (benchmarkId: string) => {
+    navigate({ to: `/benchmarks/${encodeURIComponent(benchmarkId)}` });
+  };
 
   return (
     <div className={styles.page}>
@@ -165,19 +200,49 @@ function EntityPageView({
           ) : null}
 
           {/* Benchmarks summary in Overview if present for this model */}
-          {model && rows.length > 0 ? (
+          {model && benchmarkScores.length > 0 ? (
             <div className={styles.overviewBenchmarks}>
-              <h3 className={styles.overviewSectionTitle}>Проверенные бенчмарки</h3>
+              <h3 className={styles.overviewSectionTitle}>Проверенные бенчмарки (BenchLM)</h3>
               <div className={styles.benchmarkList}>
-                {rows.map((row) => (
-                  <div key={row.id} className={styles.benchmarkRow}>
-                    <span className={styles.benchmarkName}>{row.benchmark}</span>
-                    <span className={styles.benchmarkScore}>
-                      {row.score}
-                      {row.scoreMax ? ` / ${row.scoreMax}` : ""}
-                    </span>
+                {benchmarkScores.slice(0, 6).map((score) => (
+                  <div
+                    key={score.benchmarkId}
+                    className={`${styles.benchmarkRow} ${styles.clickableRow}`}
+                    onClick={() => handleOpenBenchmark(score.benchmarkId)}
+                  >
+                    <div className={styles.benchmarkTitleGroup}>
+                      <span className={styles.benchmarkName}>{score.benchmarkName}</span>
+                      <span className={styles.benchmarkCategoryBadge}>{score.categoryLabel}</span>
+                    </div>
+                    <div className={styles.benchmarkScoreGroup}>
+                      <span className={styles.benchmarkScore}>{formatScore(score.score)}</span>
+                      <IconChevron width={14} height={14} className={styles.rowChevron} />
+                    </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Speed summary in Overview if present */}
+          {model && speedMetric ? (
+            <div className={styles.overviewBenchmarks}>
+              <h3 className={styles.overviewSectionTitle}>Скорость генерации (Inference Speed)</h3>
+              <div className={styles.speedGrid}>
+                <div className={styles.speedCard}>
+                  <span className={styles.speedCardLabel}>Пропускная способность</span>
+                  <span className={styles.speedCardValue}>
+                    {speedMetric.tokensPerSecond} <small>токенов/сек</small>
+                  </span>
+                </div>
+                {typeof speedMetric.ttft === "number" && !isNaN(speedMetric.ttft) ? (
+                  <div className={styles.speedCard}>
+                    <span className={styles.speedCardLabel}>Латентность (TTFT)</span>
+                    <span className={styles.speedCardValue}>
+                      {speedMetric.ttft.toFixed(2)}s
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -194,21 +259,57 @@ function EntityPageView({
 
       {tab === "benchmarks" ? (
         <section className={styles.block}>
-          {rows.length === 0 ? (
-            <p className={styles.emptyNotice}>Нет проверенных бенчмарков для этой модели.</p>
-          ) : (
-            <div className={styles.benchmarkList}>
-              {rows.map((row) => (
-                <div key={row.id} className={styles.benchmarkRow}>
-                  <span className={styles.benchmarkName}>{row.benchmark}</span>
-                  <span className={styles.benchmarkScore}>
-                    {row.score}
-                    {row.scoreMax ? ` / ${row.scoreMax}` : ""}
+          {speedMetric ? (
+            <div className={styles.speedSectionBox}>
+              <h3 className={styles.overviewSectionTitle}>Скорость работы модели</h3>
+              <div className={styles.speedGrid}>
+                <div className={styles.speedCard}>
+                  <span className={styles.speedCardLabel}>Пропускная способность</span>
+                  <span className={styles.speedCardValue}>
+                    {speedMetric.tokensPerSecond} <small>токенов/сек</small>
                   </span>
                 </div>
-              ))}
+                {typeof speedMetric.ttft === "number" && !isNaN(speedMetric.ttft) ? (
+                  <div className={styles.speedCard}>
+                    <span className={styles.speedCardLabel}>Время до первого токена (TTFT)</span>
+                    <span className={styles.speedCardValue}>
+                      {speedMetric.ttft.toFixed(2)}s
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          )}
+          ) : null}
+
+          {benchmarkScores.length === 0 && !speedMetric ? (
+            <p className={styles.emptyNotice}>
+              Для этой модели пока нет проверенных внешних бенчмарков в открытой базе.
+            </p>
+          ) : benchmarkScores.length > 0 ? (
+            <div>
+              <h3 className={styles.overviewSectionTitle}>
+                Результаты бенчмарков ({benchmarkScores.length})
+              </h3>
+              <div className={styles.benchmarkList}>
+                {benchmarkScores.map((score) => (
+                  <div
+                    key={score.benchmarkId}
+                    className={`${styles.benchmarkRow} ${styles.clickableRow}`}
+                    onClick={() => handleOpenBenchmark(score.benchmarkId)}
+                  >
+                    <div className={styles.benchmarkTitleGroup}>
+                      <span className={styles.benchmarkName}>{score.benchmarkName}</span>
+                      <span className={styles.benchmarkCategoryBadge}>{score.categoryLabel}</span>
+                    </div>
+                    <div className={styles.benchmarkScoreGroup}>
+                      <span className={styles.benchmarkScore}>{formatScore(score.score)}</span>
+                      <IconChevron width={14} height={14} className={styles.rowChevron} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -221,3 +322,10 @@ function EntityPageView({
   );
 }
 
+function formatScore(value: number | null | undefined): string {
+  if (value === null || value === undefined || typeof value !== "number" || isNaN(value)) {
+    return "—";
+  }
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(value < 2 ? 2 : 1);
+}

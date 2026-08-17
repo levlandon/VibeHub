@@ -64,7 +64,7 @@ export const ModelRow = memo(function ModelRow({
             title={
               model.pricing.isFree
                 ? "Бесплатная модель"
-                : `Цена: Prompt $${model.pricing.promptPerMillion.toFixed(2)} / Completion $${model.pricing.completionPerMillion.toFixed(2)} за 1M токенов`
+                : `Цена: Prompt $${(model.pricing.promptPerMillion ?? 0).toFixed(2)} / Completion $${(model.pricing.completionPerMillion ?? 0).toFixed(2)} за 1M токенов`
             }
           >
             {model.pricing.formattedSummary}

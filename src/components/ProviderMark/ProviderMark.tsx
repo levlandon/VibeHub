@@ -26,7 +26,7 @@ export function ProviderMark({
   const pName = propProvider || model?.provider || "";
   const mName = propModelName || model?.name || "";
 
-  const domain = getProviderDomain(pId);
+  const domain = getProviderDomain(pId || pName);
   const fallbackText = (pName || mName || pId || "?").slice(0, 2).toUpperCase();
 
   return (
