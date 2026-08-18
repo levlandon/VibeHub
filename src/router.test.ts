@@ -43,4 +43,4 @@ describe("router", () => {
     const collectionIds = matchedIds("/collections");
     expect(collectionIds).toContain("/collections");
   });
-});
+});

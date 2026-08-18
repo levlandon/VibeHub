@@ -57,4 +57,3 @@ describe("updatePost and deletePost", () => {
     expect(remaining).toHaveLength(0);
   });
 });
-

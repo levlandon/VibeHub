@@ -83,4 +83,4 @@ describe("filterAndSortModels", () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe("free");
   });
-});
+});

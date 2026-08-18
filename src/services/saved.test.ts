@@ -85,4 +85,3 @@ describe("parseGithubUrl & describeRepository", () => {
     expect(repo.description).toBe("State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.");
   });
 });
-

@@ -47,7 +47,6 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
       document.removeEventListener("keydown", handleKey);
     };
   }, [menuOpen]);
-
   const status = questionStatus(post);
   const kind = postTypeConfig(post.type);
   const saved = isSaved(savedItems, "post", post.id);
@@ -174,5 +173,4 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
     </article>
   );
 }
-
 

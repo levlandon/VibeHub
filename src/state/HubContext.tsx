@@ -22,6 +22,8 @@ import {
   deletePost as deletePostOn,
   updatePost as updatePostOn,
 } from "../services/posts";
+import { SupabasePostsRepository } from "../services/posts/supabasePostsRepository";
+import { getSupabaseClient } from "../services/supabase/client";
 import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
 import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
 import type { AuthStatus, CurrentUser } from "../types/auth";
@@ -51,6 +53,8 @@ interface HubState {
   modelsError: string | null;
   tools: Tool[];
   posts: Post[];
+  postsLoading: boolean;
+  postsError: string | null;
   savedItems: SavedItem[];
   mentionEntities: EntityRef[];
   addOpen: boolean;
@@ -119,6 +123,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [tools, setTools] = useState<Tool[]>(TOOLS);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
   const [savedItems, setSavedItems] = useState<SavedItem[]>(() => {
     const stored = localStorageDriver.getItem<SavedItem[]>(STORAGE_KEYS.BOOKMARKS);
     if (stored && Array.isArray(stored)) return stored;
@@ -146,6 +152,35 @@ export function HubProvider({ children }: { children: ReactNode }) {
     fetchModels();
   }, [fetchModels]);
 
+  const postsRepository = useMemo(
+    () => new SupabasePostsRepository(getSupabaseClient()),
+    []
+  );
+
+  const fetchPosts = useCallback(async () => {
+    setPostsLoading(true);
+    setPostsError(null);
+    try {
+      if (!getSupabaseClient()) {
+        setPosts(INITIAL_POSTS);
+        return;
+      }
+      const data = await postsRepository.getPosts();
+      setPosts(data);
+    } catch (err) {
+      setPosts(INITIAL_POSTS);
+      setPostsError(
+        err instanceof Error ? err.message : "Не удалось загрузить посты"
+      );
+    } finally {
+      setPostsLoading(false);
+    }
+  }, [postsRepository]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
   const mentionEntities = useMemo(() => mentionIndex(models, tools), [models, tools]);
 
   const setRoute = useCallback(
@@ -154,7 +189,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
     },
     [navigate],
   );
-
   const setEntityView = useCallback(
     (view: EntityView | null) => {
       if (view) {
@@ -354,6 +388,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
       modelsError,
       tools,
       posts,
+      postsLoading,
+      postsError,
       savedItems,
       mentionEntities,
       addOpen,
@@ -400,6 +436,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
       modelsError,
       tools,
       posts,
+      postsLoading,
+      postsError,
       savedItems,
       mentionEntities,
       addOpen,
