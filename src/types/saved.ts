@@ -1,6 +1,6 @@
 import type { EntityKind } from "./entities";
 
-export type BookmarkType = "model" | "tool" | "repository";
+export type BookmarkType = "model" | "tool" | "repository" | "post";
 
 export interface RepositoryBookmark {
   id: string;

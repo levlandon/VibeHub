@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Button } from "../../components/Button/Button";
 import { IconButton } from "../../components/IconButton/IconButton";
 import {
@@ -14,10 +15,13 @@ import {
   getInterestIcon,
 } from "../../components/icons";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
+import { ProfileSkeleton } from "../../components/Skeleton";
 import { ProviderMark } from "../../components/ProviderMark/ProviderMark";
 import { DEFAULT_INTEREST_TAGS, profileService } from "../../services/profile";
 import { useHub } from "../../state/HubContext";
+import { profileIdentifierFromPath, profilePath } from "../../state/routing";
 import type { Model } from "../../types/models";
+import type { UserProfile } from "../../types/profile";
 import styles from "./ProfilePage.module.css";
 
 interface ProfileDraft {
@@ -68,9 +72,16 @@ function getModelDisplay(id: string, availableModels: Model[]) {
   };
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function ProfilePage() {
+  const navigate = useNavigate();
   const {
     userProfile,
+    profileLoading,
+    profileError,
+    retryLoadProfile,
     updateUserProfile,
     authStatus,
     currentUser,
@@ -78,6 +89,64 @@ export function ProfilePage() {
     openEntity,
     models,
   } = useHub();
+
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const targetIdentifier = profileIdentifierFromPath(pathname);
+
+  const isSelf = useMemo(() => {
+    if (!targetIdentifier) return true;
+    if (currentUser?.id && targetIdentifier === currentUser.id) return true;
+    if (currentUser?.handle && targetIdentifier.toLowerCase() === currentUser.handle.toLowerCase()) return true;
+    if (userProfile?.id && targetIdentifier === userProfile.id) return true;
+    if (userProfile?.username && targetIdentifier.toLowerCase() === userProfile.username.toLowerCase()) return true;
+    return false;
+  }, [targetIdentifier, currentUser, userProfile]);
+
+  const [publicProfile, setPublicProfile] = useState<UserProfile | null>(null);
+  const [loadingPublic, setLoadingPublic] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [publicError, setPublicError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSelf && targetIdentifier) {
+      let active = true;
+      setLoadingPublic(true);
+      setNotFound(false);
+      setPublicError(null);
+      profileService
+        .getCurrentProfile(targetIdentifier)
+        .then((res) => {
+          if (!active) return;
+          if (res && res.id) {
+            setPublicProfile(res);
+            // Canonical replacement: If accessed via UUID, replace URL with /profile/<handle>
+            if (UUID_REGEX.test(targetIdentifier) && res.username) {
+              navigate({ to: profilePath(res.username), replace: true });
+            }
+          } else {
+            setNotFound(true);
+          }
+        })
+        .catch((err) => {
+          if (!active) return;
+          console.error("Failed to fetch public profile:", err);
+          setPublicError(
+            err instanceof Error ? err.message : "Не удалось загрузить профиль пользователя",
+          );
+        })
+        .finally(() => {
+          if (active) setLoadingPublic(false);
+        });
+      return () => {
+        active = false;
+      };
+    } else {
+      setPublicProfile(null);
+      setNotFound(false);
+      setPublicError(null);
+      setLoadingPublic(false);
+    }
+  }, [isSelf, targetIdentifier, navigate]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -152,25 +221,32 @@ export function ProfilePage() {
     };
   }, [showModelPicker, showAvatarMenu]);
 
+  const profileToDisplay = isSelf ? userProfile : publicProfile;
+
   const activeModelIds = isEditing
     ? draft.modelIds
-    : userProfile.modelIds || userProfile.models || [];
+    : profileToDisplay?.modelIds || profileToDisplay?.models || [];
 
   const activeInterests = isEditing
     ? draft.interests
-    : userProfile.interests || [];
+    : profileToDisplay?.interests || [];
 
   const activeAvatar = isEditing
     ? draft.avatarUrl
-    : userProfile.avatarUrl || userProfile.avatar || "";
+    : profileToDisplay?.avatarUrl || profileToDisplay?.avatar || "";
 
-  const activeDisplayName = isEditing ? draft.displayName : userProfile.displayName;
-  const activeUsername = isEditing ? draft.username : userProfile.username;
-  const activeBio = isEditing ? draft.bio : userProfile.bio;
+  const activeDisplayName = isEditing
+    ? draft.displayName
+    : profileToDisplay?.displayName || "Пользователь";
+  const activeUsername = isEditing
+    ? draft.username
+    : profileToDisplay?.username || "user";
+  const activeBio = isEditing ? draft.bio : profileToDisplay?.bio || "";
 
   const initials = profileService.getInitials(activeDisplayName, activeUsername);
 
   const handleStartEdit = () => {
+    if (!isSelf || !userProfile) return;
     setDraft({
       displayName: userProfile.displayName,
       username: userProfile.username,
@@ -289,21 +365,76 @@ export function ProfilePage() {
       .slice(0, 40);
   }, [models, modelSearch]);
 
-  if (authStatus === "anonymous") {
-    return (
-      <div className={styles.page}>
-        <PageHeader title="Профиль" />
-        <div className={styles.anonymousCard}>
-          <h2 className={styles.anonymousTitle}>Вы не авторизованы</h2>
-          <p className={styles.anonymousDesc}>
-            Войдите в аккаунт, чтобы просматривать и настраивать свой профиль, модели и направления деятельности.
-          </p>
-          <Button variant="primary" onClick={() => setAuthModalOpen(true)}>
-            Войти в VibeHub
-          </Button>
+  if (isSelf) {
+    if (authStatus === "loading" || profileLoading) {
+      return <ProfileSkeleton />;
+    }
+
+    if (profileError) {
+      return (
+        <div className={styles.page}>
+          <PageHeader title="Профиль" />
+          <div className={styles.anonymousCard}>
+            <h2 className={styles.anonymousTitle}>Ошибка загрузки профиля</h2>
+            <p className={styles.anonymousDesc}>{profileError}</p>
+            <Button variant="primary" onClick={retryLoadProfile}>
+              Повторить попытку
+            </Button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    if (authStatus === "anonymous") {
+      return (
+        <div className={styles.page}>
+          <PageHeader title="Профиль" />
+          <div className={styles.anonymousCard}>
+            <h2 className={styles.anonymousTitle}>Вы не авторизованы</h2>
+            <p className={styles.anonymousDesc}>
+              Войдите в аккаунт, чтобы просматривать и настраивать свой профиль, модели и направления деятельности.
+            </p>
+            <Button variant="primary" onClick={() => setAuthModalOpen(true)}>
+              Войти в VibeHub
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!userProfile) {
+      return <ProfileSkeleton />;
+    }
+  } else {
+    if (loadingPublic) {
+      return <ProfileSkeleton />;
+    }
+
+    if (publicError) {
+      return (
+        <div className={styles.page}>
+          <PageHeader title="Профиль" />
+          <div className={styles.anonymousCard}>
+            <h2 className={styles.anonymousTitle}>Ошибка загрузки профиля</h2>
+            <p className={styles.anonymousDesc}>{publicError}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (notFound || !publicProfile) {
+      return (
+        <div className={styles.page}>
+          <PageHeader title="Профиль" />
+          <div className={styles.anonymousCard}>
+            <h2 className={styles.anonymousTitle}>Пользователь не найден</h2>
+            <p className={styles.anonymousDesc}>
+              Профиль с указанным идентификатором не существует или был удалён.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   return (
@@ -664,22 +795,24 @@ export function ProfilePage() {
       </div>
 
       {/* Bottom Actions Zone */}
-      <div className={styles.bottomActions}>
-        {!isEditing ? (
-          <IconButton label="Редактировать профиль" onClick={handleStartEdit}>
-            <IconEdit width={18} height={18} />
-          </IconButton>
-        ) : (
-          <div className={styles.editActions}>
-            <Button variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
-              Отмена
-            </Button>
-            <Button variant="primary" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </div>
-        )}
-      </div>
+      {isSelf && authStatus === "authenticated" ? (
+        <div className={styles.bottomActions}>
+          {!isEditing ? (
+            <IconButton label="Редактировать профиль" onClick={handleStartEdit}>
+              <IconEdit width={18} height={18} />
+            </IconButton>
+          ) : (
+            <div className={styles.editActions}>
+              <Button variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
+                Отмена
+              </Button>
+              <Button variant="primary" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Сохранение..." : "Сохранить"}
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

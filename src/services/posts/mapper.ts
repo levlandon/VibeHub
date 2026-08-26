@@ -91,9 +91,11 @@ function resolveJoinedRow(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-export function mapAuthor(profile: unknown): ChatAuthor {
+export function mapAuthor(profile: unknown, fallbackId?: string): ChatAuthor {
   const p = resolveJoinedRow(profile);
+  const id = isString(p?.id) ? p.id : fallbackId;
   return {
+    ...(id ? { id } : {}),
     name: asString(p?.name, "Unknown"),
     handle: asString(p?.handle, "unknown"),
     initials: asString(p?.initials, "?"),
@@ -114,7 +116,7 @@ export function mapComment(row: unknown): PostComment | null {
 
   return {
     id: r.id,
-    author: mapAuthor(r.author),
+    author: mapAuthor(r.author, isString(r.author_id) ? r.author_id : undefined),
     content: r.content,
     createdAt: r.created_at,
   };
@@ -142,7 +144,7 @@ export function mapPost(row: unknown): Post | null {
   const base: Post = {
     id: r.id,
     type: r.type,
-    author: mapAuthor(r.author),
+    author: mapAuthor(r.author, isString(r.author_id) ? r.author_id : undefined),
     title: r.title,
     content: r.content,
     createdAt: r.created_at,

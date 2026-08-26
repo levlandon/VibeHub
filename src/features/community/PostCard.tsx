@@ -28,7 +28,7 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
     mentionEntities,
     savedItems,
     toggleSavedTarget,
-    setRoute,
+    openProfile,
     userProfile,
   } = useHub();
 
@@ -55,9 +55,8 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
   const badgeText = categoryLabel ? `${categoryLabel} · ${kind.label}` : kind.label;
 
   const isOwnPost =
-    post.author.handle === userProfile.username ||
-    post.author.name === userProfile.displayName ||
-    post.author.handle === "user";
+    Boolean(userProfile?.username && post.author.handle === userProfile.username) ||
+    Boolean(userProfile?.id && post.author.id === userProfile.id);
 
   return (
     <article
@@ -148,7 +147,7 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
             className={styles.authorBtn}
             onClick={(e) => {
               e.stopPropagation();
-              setRoute("profile");
+              openProfile(post.author.handle || post.author.id);
             }}
             title="Открыть профиль автора"
           >

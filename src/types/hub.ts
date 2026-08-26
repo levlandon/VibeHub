@@ -63,14 +63,19 @@ export interface BenchmarkRow {
 }
 
 export interface CurrentUser {
+  id?: string;
   name: string;
   handle: string;
   initials: string;
+  username?: string;
+  displayName?: string;
+  avatarUrl?: string;
 }
 
 export type ChatChannelId = "general" | "coding" | "models" | "tools";
 
 export interface ChatAuthor {
+  id?: string;
   name: string;
   handle: string;
   initials: string;

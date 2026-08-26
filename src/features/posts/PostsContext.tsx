@@ -10,11 +10,7 @@ import {
 } from "react";
 import {
   acceptAnswer as acceptAnswerOn,
-  addComment as addCommentOn,
-  createPost,
-  deletePost as deletePostOn,
   mergePostsDeduplicated,
-  updatePost as updatePostOn,
 } from "./postsOperations";
 import {
   postsRepository as defaultPostsRepository,
@@ -28,16 +24,28 @@ export interface PostsState {
   posts: Post[];
   loading: boolean;
   loadingMore: boolean;
+  isMutating: boolean;
   error: string | null;
+  mutationError: string | null;
   nextCursor: PostsCursor | null;
   hasMore: boolean;
   fetchPosts: () => Promise<void>;
   fetchMorePosts: () => Promise<void>;
   refreshPosts: () => Promise<void>;
-  publishPost: (input: CreatePostInput, entities?: EntityRef[]) => void;
-  updatePost: (postId: string, input: Partial<CreatePostInput>, entities?: EntityRef[]) => void;
-  deletePost: (postId: string) => void;
-  addComment: (postId: string, content: string) => void;
+  publishPost: (input: CreatePostInput, entities?: EntityRef[]) => Promise<Post>;
+  updatePost: (
+    postId: string,
+    input: Partial<CreatePostInput>,
+    entities?: EntityRef[],
+  ) => Promise<Post>;
+  deletePost: (postId: string) => Promise<void>;
+  addComment: (postId: string, content: string) => Promise<PostComment>;
+  updateComment: (
+    commentId: string,
+    content: string,
+    postId?: string,
+  ) => Promise<PostComment>;
+  deleteComment: (commentId: string, postId?: string) => Promise<void>;
   acceptAnswer: (postId: string, commentId: string) => void;
   getPost: (id: string) => Promise<Post | null>;
   getComments: (postId: string) => Promise<PostComment[]>;
@@ -63,7 +71,9 @@ export function PostsProvider({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(autoFetch);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<PostsCursor | null>(null);
 
   const isFetchingRef = useRef(false);
@@ -124,26 +134,162 @@ export function PostsProvider({
   }, [autoFetch, fetchPosts]);
 
   const publishPost = useCallback(
-    (input: CreatePostInput, entities = mentionEntities) => {
-      setPosts((prev) => [createPost(input, entities), ...prev]);
+    async (input: CreatePostInput, entities = mentionEntities): Promise<Post> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        const created = await repository.createPost(input, entities);
+        setPosts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+        return created;
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось опубликовать запись";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [mentionEntities],
+    [repository, mentionEntities],
   );
 
   const updatePost = useCallback(
-    (postId: string, input: Partial<CreatePostInput>, entities = mentionEntities) => {
-      setPosts((prev) => updatePostOn(prev, postId, input, entities));
+    async (
+      postId: string,
+      input: Partial<CreatePostInput>,
+      entities = mentionEntities,
+    ): Promise<Post> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        const updated = await repository.updatePost(postId, input, entities);
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, ...updated } : p)),
+        );
+        return updated;
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось обновить запись";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [mentionEntities],
+    [repository, mentionEntities],
   );
 
-  const deletePost = useCallback((postId: string) => {
-    setPosts((prev) => deletePostOn(prev, postId));
-  }, []);
+  const deletePost = useCallback(
+    async (postId: string): Promise<void> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        await repository.deletePost(postId);
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось удалить запись";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [repository],
+  );
 
-  const addComment = useCallback((postId: string, content: string) => {
-    setPosts((prev) => addCommentOn(prev, postId, content));
-  }, []);
+  const addComment = useCallback(
+    async (postId: string, content: string): Promise<PostComment> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        const comment = await repository.createComment(postId, content);
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== postId) return p;
+            const existingComments = p.comments ?? [];
+            return {
+              ...p,
+              comments: [
+                ...existingComments.filter((c) => c.id !== comment.id),
+                comment,
+              ],
+            };
+          }),
+        );
+        return comment;
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось добавить комментарий";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [repository],
+  );
+
+  const updateComment = useCallback(
+    async (
+      commentId: string,
+      content: string,
+      postId?: string,
+    ): Promise<PostComment> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        const updated = await repository.updateComment(commentId, content);
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (postId && p.id !== postId) return p;
+            if (!p.comments?.some((c) => c.id === commentId)) return p;
+            return {
+              ...p,
+              comments: p.comments.map((c) => (c.id === commentId ? updated : c)),
+            };
+          }),
+        );
+        return updated;
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось обновить комментарий";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [repository],
+  );
+
+  const deleteComment = useCallback(
+    async (commentId: string, postId?: string): Promise<void> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        await repository.deleteComment(commentId);
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (postId && p.id !== postId) return p;
+            if (!p.comments?.some((c) => c.id === commentId)) return p;
+            return {
+              ...p,
+              comments: p.comments.filter((c) => c.id !== commentId),
+            };
+          }),
+        );
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Не удалось удалить комментарий";
+        setMutationError(msg);
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [repository],
+  );
 
   const acceptAnswer = useCallback((postId: string, commentId: string) => {
     setPosts((prev) => acceptAnswerOn(prev, postId, commentId));
@@ -193,7 +339,9 @@ export function PostsProvider({
       posts,
       loading,
       loadingMore,
+      isMutating,
       error,
+      mutationError,
       nextCursor,
       hasMore,
       fetchPosts,
@@ -203,6 +351,8 @@ export function PostsProvider({
       updatePost,
       deletePost,
       addComment,
+      updateComment,
+      deleteComment,
       acceptAnswer,
       getPost,
       getComments,
@@ -211,7 +361,9 @@ export function PostsProvider({
       posts,
       loading,
       loadingMore,
+      isMutating,
       error,
+      mutationError,
       nextCursor,
       hasMore,
       fetchPosts,
@@ -221,6 +373,8 @@ export function PostsProvider({
       updatePost,
       deletePost,
       addComment,
+      updateComment,
+      deleteComment,
       acceptAnswer,
       getPost,
       getComments,

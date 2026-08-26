@@ -29,3 +29,14 @@ export function entityFromPath(pathname: string): EntityView | null {
 export function entityPath(view: EntityView): string {
   return view.kind === "model" ? `/models/${view.id}` : `/tools/${view.id}`;
 }
+
+export function profileIdentifierFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/profile\/(.+)$/);
+  if (!match) return null;
+  const decoded = decodeURIComponent(match[1].trim());
+  return decoded || null;
+}
+
+export function profilePath(identifier?: string): string {
+  return identifier ? `/profile/${encodeURIComponent(identifier)}` : "/profile";
+}

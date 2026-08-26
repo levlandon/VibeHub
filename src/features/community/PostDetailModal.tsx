@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { IconButton } from "../../components/IconButton/IconButton";
-import { IconBookmark, IconClose } from "../../components/icons";
+import { IconBookmark, IconClose, IconTrash } from "../../components/icons";
 import { RichText } from "../../components/mentions/RichText";
 import { formatDateTime } from "../../lib/datetime";
 import { describePost, isSaved } from "../../services/saved";
@@ -28,10 +28,13 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
     mentionEntities,
     savedItems,
     toggleSavedTarget,
-    setRoute,
+    openProfile,
+    authStatus,
+    setAuthModalOpen,
   } = useHub();
 
-  const { acceptAnswer, addComment, getComments } = usePosts();
+  const { acceptAnswer, addComment, deleteComment, getComments, isMutating } = usePosts();
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (post?.id && (!post.comments || post.comments.length === 0)) {
@@ -55,6 +58,29 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
   const kind = postTypeConfig(post.type);
   const categoryLabel = post.category ? CATEGORY_LABELS[post.category] || post.category : null;
   const badgeText = categoryLabel ? `${categoryLabel} · ${kind.label}` : kind.label;
+
+  const handleAddComment = async (text: string) => {
+    if (authStatus !== "authenticated") {
+      setAuthModalOpen(true);
+      return;
+    }
+    setCommentError(null);
+    try {
+      await addComment(post.id, text);
+    } catch (err) {
+      setCommentError(
+        err instanceof Error ? err.message : "Не удалось отправить комментарий",
+      );
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await deleteComment(commentId, post.id);
+    } catch (err) {
+      console.warn("Failed to delete comment:", err);
+    }
+  };
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -97,7 +123,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
               className={styles.authorBtn}
               onClick={() => {
                 onClose();
-                setRoute("profile");
+                openProfile(post.author.handle || post.author.id);
               }}
             >
               {post.author.name}
@@ -132,6 +158,22 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
               Ответы и обсуждение ({post.comments.length})
             </h3>
 
+            {commentError ? (
+              <div
+                style={{
+                  padding: "8px 12px",
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "#f87171",
+                  fontSize: "12px",
+                  marginBottom: "8px",
+                }}
+              >
+                {commentError}
+              </div>
+            ) : null}
+
             {post.comments.length === 0 ? (
               <p className={styles.noComments}>Пока нет ответов. Будьте первым!</p>
             ) : (
@@ -143,12 +185,16 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
                     comment={comment}
                     onClose={onClose}
                     onAccept={() => acceptAnswer(post.id, comment.id)}
+                    onDelete={() => handleDeleteComment(comment.id)}
                   />
                 ))}
               </div>
             )}
 
-            <CommentForm onSubmit={(text) => addComment(post.id, text)} />
+            <CommentForm
+              onSubmit={handleAddComment}
+              disabled={isMutating}
+            />
           </section>
         </div>
       </div>
@@ -161,31 +207,45 @@ function CommentRow({
   comment,
   onClose,
   onAccept,
+  onDelete,
 }: {
   post: Post;
   comment: PostComment;
   onClose: () => void;
   onAccept: () => void;
+  onDelete: () => void;
 }) {
-  const { mentionEntities, setRoute } = useHub();
+  const { mentionEntities, openProfile, userProfile } = useHub();
   const accepted = post.acceptedAnswerId === comment.id;
+
+  const isOwnComment =
+    Boolean(userProfile?.username && comment.author.handle === userProfile.username) ||
+    Boolean(userProfile?.id && comment.author.id === userProfile.id);
 
   return (
     <div className={`${styles.comment} ${accepted ? styles.accepted : ""}`}>
       <div className={styles.commentHead}>
-        <button
-          type="button"
-          className={styles.authorBtn}
-          onClick={() => {
-            onClose();
-            setRoute("profile");
-          }}
-        >
-          {comment.author.name}
-        </button>
-        <span className={styles.dot}>·</span>
-        <span className={styles.date}>{formatDateTime(comment.createdAt)}</span>
-        {accepted ? <span className={styles.solvedBadge}>✓ Решение</span> : null}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <button
+            type="button"
+            className={styles.authorBtn}
+            onClick={() => {
+              onClose();
+              openProfile(comment.author.handle || comment.author.id);
+            }}
+          >
+            {comment.author.name}
+          </button>
+          <span className={styles.dot}>·</span>
+          <span className={styles.date}>{formatDateTime(comment.createdAt)}</span>
+          {accepted ? <span className={styles.solvedBadge}>✓ Решение</span> : null}
+        </div>
+
+        {isOwnComment ? (
+          <IconButton label="Удалить комментарий" onClick={onDelete}>
+            <IconTrash width={13} height={13} />
+          </IconButton>
+        ) : null}
       </div>
 
       <div className={styles.commentBody}>
@@ -203,7 +263,13 @@ function CommentRow({
   );
 }
 
-function CommentForm({ onSubmit }: { onSubmit: (text: string) => void }) {
+function CommentForm({
+  onSubmit,
+  disabled = false,
+}: {
+  onSubmit: (text: string) => void;
+  disabled?: boolean;
+}) {
   const [text, setText] = useState("");
 
   return (
@@ -211,7 +277,7 @@ function CommentForm({ onSubmit }: { onSubmit: (text: string) => void }) {
       className={styles.replyForm}
       onSubmit={(e) => {
         e.preventDefault();
-        if (!text.trim()) return;
+        if (!text.trim() || disabled) return;
         onSubmit(text);
         setText("");
       }}
@@ -220,10 +286,15 @@ function CommentForm({ onSubmit }: { onSubmit: (text: string) => void }) {
         className={styles.replyInput}
         value={text}
         placeholder="Написать ответ..."
+        disabled={disabled}
         onChange={(e) => setText(e.target.value)}
       />
-      <Button variant="primary" type="submit" disabled={!text.trim()}>
-        Отправить
+      <Button
+        variant="primary"
+        type="submit"
+        disabled={disabled || !text.trim()}
+      >
+        {disabled ? "Отправка..." : "Отправить"}
       </Button>
     </form>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useHub } from "../../state/HubContext";
 import { profileService } from "../../services/profile";
+import { Skeleton } from "../Skeleton";
 import type { Route } from "../../types/hub";
 import { UserMenu } from "../UserMenu/UserMenu";
 import {
@@ -41,7 +42,7 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const tip = (label: string) => (sidebarCollapsed ? label : undefined);
-  const initials = profileService.getInitials(userProfile.displayName, userProfile.username);
+  const initials = profileService.getInitials(userProfile?.displayName, userProfile?.username);
 
   const navigateTo = (nextRoute: Route) => {
     setRoute(nextRoute);
@@ -168,6 +169,16 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
               Войти
             </button>
           )
+        ) : !userProfile ? (
+          <div className={styles.userBtn} style={{ cursor: "default" }} aria-hidden="true">
+            <div className={styles.avatar} style={{ background: "transparent" }}>
+              <Skeleton variant="circular" width={32} height={32} />
+            </div>
+            <div className={styles.userMeta} style={{ gap: "4px" }}>
+              <Skeleton variant="rounded" width={80} height={14} />
+              <Skeleton variant="rounded" width={50} height={11} />
+            </div>
+          </div>
         ) : (
           <>
             <button

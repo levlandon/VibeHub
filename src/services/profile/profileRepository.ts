@@ -1,5 +1,7 @@
 import { localStorageDriver, STORAGE_KEYS } from "../storage/localStorageDriver";
 import type { UserProfile } from "../../types/profile";
+import { getSupabaseClient } from "../supabase/client";
+import { SupabaseProfileRepository } from "./supabaseProfileRepository";
 
 export const DEFAULT_INTEREST_TAGS = [
   "Coding",
@@ -26,7 +28,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
 };
 
 export interface ProfileRepository {
-  getProfile(userId?: string): Promise<UserProfile>;
+  getProfile(userId?: string): Promise<UserProfile | null>;
   saveProfile(profile: UserProfile): Promise<boolean>;
   resetProfile(): Promise<UserProfile>;
 }
@@ -71,8 +73,6 @@ export class LocalStorageProfileRepository implements ProfileRepository {
       modelIds,
       models: modelIds,
       interests,
-      codingAgents: Array.isArray(data.codingAgents) ? data.codingAgents : undefined,
-      tools: Array.isArray(data.tools) ? data.tools : undefined,
       updatedAt: data.updatedAt || new Date().toISOString(),
     };
   }
@@ -109,5 +109,9 @@ export class LocalStorageProfileRepository implements ProfileRepository {
   }
 }
 
-export const profileRepository = new LocalStorageProfileRepository();
+export const localStorageProfileRepository = new LocalStorageProfileRepository();
+export const profileRepository: ProfileRepository = new SupabaseProfileRepository(
+  getSupabaseClient(),
+  localStorageProfileRepository,
+);
 

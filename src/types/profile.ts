@@ -6,11 +6,9 @@ export interface UserProfile {
   bio: string;
   modelIds: string[];
   interests: string[];
-  // Compatibility fields
+  // Compatibility aliases
   avatar?: string;
   models?: string[];
-  codingAgents?: string[];
-  tools?: string[];
   updatedAt?: string;
 }
 

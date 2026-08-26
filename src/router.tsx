@@ -126,6 +126,15 @@ const profileRoute = createRoute({
   component: ProfilePage,
 });
 
+const profileDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/$",
+  component: ProfilePage,
+  params: {
+    parse: (raw) => (raw._splat ? raw : false),
+  },
+});
+
 const feedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/feed",
@@ -152,6 +161,7 @@ const routeTree = rootRoute.addChildren([
   bookmarksRoute,
   collectionsRoute,
   profileRoute,
+  profileDetailRoute,
   feedRoute,
   peopleRoute,
 ]);

@@ -14,8 +14,7 @@ import { parseSpans } from "../services/content";
 import { mentionIndex } from "../services/entities";
 import { modelsService } from "../services/models";
 import { bookmarksRepository } from "../services/collections";
-import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
-import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
+import { isSaved, toggleSaved } from "../services/saved";
 import type { AuthStatus, CurrentUser } from "../types/auth";
 import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
 import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
@@ -24,7 +23,13 @@ import type { UserProfile } from "../types/profile";
 import { authService } from "../services/auth";
 import { DEFAULT_USER_PROFILE, profileService } from "../services/profile";
 import type { SettingsTab } from "../components/SettingsModal/SettingsModal";
-import { entityFromPath, entityPath, routeFromPath, type EntityView } from "./routing";
+import {
+  entityFromPath,
+  entityPath,
+  profilePath,
+  routeFromPath,
+  type EntityView,
+} from "./routing";
 
 const COLLAPSE_KEY = "vibehub-sidebar-collapsed";
 const CHAT_KEY = "vibehub-chat-open";
@@ -35,8 +40,8 @@ interface HubState {
   currentUser: CurrentUser | null;
   authModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
-  loginDev: () => void;
-  logout: () => void;
+  loginDev: (email?: string) => Promise<void>;
+  logout: () => Promise<void>;
   models: Model[];
   modelsLoading: boolean;
   modelsError: string | null;
@@ -50,7 +55,10 @@ interface HubState {
   chatChannel: ChatChannelId;
   messages: ChatMessage[];
   entityView: EntityView | null;
-  userProfile: UserProfile;
+  userProfile: UserProfile | null;
+  profileLoading: boolean;
+  profileError: string | null;
+  retryLoadProfile: () => void;
   settingsOpen: boolean;
   settingsTab: SettingsTab;
   setRoute: (route: Route) => void;
@@ -64,20 +72,23 @@ interface HubState {
   setSettingsTab: (tab: SettingsTab) => void;
   updateUserProfile: (profile: UserProfile | Partial<UserProfile>) => Promise<boolean>;
   sendMessage: (text: string) => void;
+  openProfile: (identifier?: string) => void;
   openEntity: (kind: EntityKind, id: string) => void;
   toggleModelBookmark: (id: string) => void;
   toggleToolBookmark: (id: string) => void;
-  toggleSavedTarget: (item: Omit<SavedItem, "id" | "savedAt">) => void;
+  toggleSavedTarget: (item: Omit<SavedItem, "id" | "savedAt">) => Promise<void>;
   refreshModels: () => Promise<void>;
 }
 
 const HubContext = createContext<HubState | null>(null);
 
 export function HubProvider({ children }: { children: ReactNode }) {
-  const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const route = routeFromPath(pathname);
-  const entityView = entityFromPath(pathname);
+  const navigate = useNavigate();
+
+  const route = useMemo(() => routeFromPath(pathname), [pathname]);
+  const entityView = useMemo(() => entityFromPath(pathname), [pathname]);
+
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setCollapsedState] = useState(() => {
@@ -89,12 +100,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
   });
   const [chatOpen, setChatOpenState] = useState(() => {
     try {
-      const stored = localStorage.getItem(CHAT_KEY);
-      if (stored === "0") return false;
-      if (stored === "1") return true;
-      return window.innerWidth >= 1280;
+      return localStorage.getItem(CHAT_KEY) === "1";
     } catch {
-      return true;
+      return false;
     }
   });
   const [chatChannel, setChatChannel] = useState<ChatChannelId>("tools");
@@ -103,15 +111,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [tools, setTools] = useState<Tool[]>(TOOLS);
-  const [savedItems, setSavedItems] = useState<SavedItem[]>(() => {
-    const stored = localStorageDriver.getItem<SavedItem[]>(STORAGE_KEYS.BOOKMARKS);
-    if (stored && Array.isArray(stored)) return stored;
-    return fromBookmarks(TOOLS);
-  });
-
-  useEffect(() => {
-    bookmarksRepository.saveBookmarks(savedItems);
-  }, [savedItems]);
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
 
   const fetchModels = useCallback(async (forceRefresh = false) => {
     setModelsLoading(true);
@@ -171,29 +171,141 @@ export function HubProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const loginDev = useCallback(() => {
-    const user = authService.loginDev();
-    setCurrentUser(user);
-    setAuthStatus("authenticated");
+  const loginDev = useCallback(async (email?: string) => {
+    try {
+      const user = await authService.loginDevUser(email);
+      setCurrentUser(user);
+      setAuthStatus("authenticated");
+    } catch (err) {
+      console.warn("Dev login failed, falling back to local dev user:", err);
+      const user = authService.loginDev();
+      setCurrentUser(user);
+      setAuthStatus("authenticated");
+    }
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setCurrentUser(null);
     setAuthStatus("anonymous");
   }, []);
 
-  const [userProfile, setUserProfileState] = useState<UserProfile>(() => DEFAULT_USER_PROFILE);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [userProfile, setUserProfileState] = useState<UserProfile | null>(() => {
+    const authState = authService.getAuthState();
+    if (authState.status === "anonymous") {
+      return DEFAULT_USER_PROFILE;
+    }
+    return null;
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
 
-  useEffect(() => {
-    profileService.getCurrentProfile().then((profile) => {
+  const loadUserProfile = useCallback(async (userId?: string) => {
+    if (!userId) {
+      setUserProfileState(DEFAULT_USER_PROFILE);
+      setProfileLoading(false);
+      setProfileError(null);
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError(null);
+    setUserProfileState(null);
+
+    try {
+      const profile = await profileService.getCurrentProfile(userId);
       if (profile) {
         setUserProfileState(profile);
+      } else {
+        setProfileError("Профиль пользователя не найден");
       }
-    });
+    } catch (err) {
+      console.error("[HubContext] Failed to load user profile:", err);
+      setProfileError(
+        err instanceof Error
+          ? err.message
+          : "Не удалось загрузить профиль пользователя. Проверьте соединение с сервером.",
+      );
+      setUserProfileState(null);
+    } finally {
+      setProfileLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (authStatus === "authenticated" && currentUser?.id) {
+      setProfileLoading(true);
+      setProfileError(null);
+      setUserProfileState(null);
+
+      profileService
+        .getCurrentProfile(currentUser.id)
+        .then((profile) => {
+          if (!active) return;
+          if (profile) {
+            setUserProfileState(profile);
+            setProfileLoading(false);
+          } else {
+            setProfileError("Профиль пользователя не найден");
+            setProfileLoading(false);
+          }
+        })
+        .catch((err) => {
+          if (!active) return;
+          console.error("[HubContext] Failed to load user profile:", err);
+          setProfileError(
+            err instanceof Error
+              ? err.message
+              : "Не удалось загрузить профиль пользователя. Проверьте соединение с сервером.",
+          );
+          setUserProfileState(null);
+          setProfileLoading(false);
+        });
+    } else if (authStatus === "anonymous") {
+      setUserProfileState(DEFAULT_USER_PROFILE);
+      setProfileLoading(false);
+      setProfileError(null);
+    } else if (authStatus === "loading") {
+      setUserProfileState(null);
+      setProfileLoading(true);
+      setProfileError(null);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [authStatus, currentUser?.id]);
+
+  const retryLoadProfile = useCallback(() => {
+    if (currentUser?.id) {
+      loadUserProfile(currentUser.id);
+    }
+  }, [currentUser, loadUserProfile]);
+
+  useEffect(() => {
+    let active = true;
+    setSavedItems([]);
+
+    bookmarksRepository
+      .getBookmarks()
+      .then((items) => {
+        if (!active) return;
+        setSavedItems(items);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("[HubContext] Failed to load bookmarks:", err);
+        setSavedItems([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authStatus, currentUser?.id]);
 
   const updateUserProfile = useCallback(
     async (updates: UserProfile | Partial<UserProfile>): Promise<boolean> => {
@@ -224,12 +336,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
       setMessages((prev) => [
         ...prev,
         {
-          id: `local-${Date.now()}`,
+          id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           channelId: chatChannel,
           author: {
-            name: userProfile.displayName,
-            handle: userProfile.username,
-            initials: profileService.getInitials(userProfile.displayName, userProfile.username),
+            name: userProfile?.displayName || "Пользователь",
+            handle: userProfile?.username || "user",
+            initials: profileService.getInitials(userProfile?.displayName, userProfile?.username),
           },
           text: trimmed,
           spans: parseSpans(trimmed, mentionEntities),
@@ -240,8 +352,19 @@ export function HubProvider({ children }: { children: ReactNode }) {
     [chatChannel, mentionEntities, userProfile],
   );
 
+  const openProfile = useCallback(
+    (identifier?: string) => {
+      navigate({ to: profilePath(identifier) });
+    },
+    [navigate],
+  );
+
   const openEntity = useCallback(
     (kind: EntityKind, id: string) => {
+      if (kind === "user") {
+        navigate({ to: profilePath(id) });
+        return;
+      }
       if (kind !== "model" && kind !== "tool") return;
       navigate({ to: entityPath({ kind, id }) });
     },
@@ -255,11 +378,29 @@ export function HubProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleSavedTarget = useCallback(
-    (item: Omit<SavedItem, "id" | "savedAt">) => {
-      const nextOn = !isSaved(savedItems, item.kind, item.targetId);
+    async (item: Omit<SavedItem, "id" | "savedAt">) => {
+      const currentlySaved = isSaved(savedItems, item.kind, item.targetId);
+      const nextOn = !currentlySaved;
+
+      // Optimistic update
       setSavedItems((prev) => toggleSaved(prev, item));
       if (item.kind === "tool") {
         syncBookmark(item.kind, item.targetId, nextOn);
+      }
+
+      try {
+        if (currentlySaved) {
+          await bookmarksRepository.removeBookmark(item.kind, item.targetId);
+        } else {
+          await bookmarksRepository.saveBookmark(item);
+        }
+      } catch (err) {
+        console.error("[HubContext] Failed to persist bookmark change:", err);
+        // Rollback optimistic update
+        setSavedItems((prev) => toggleSaved(prev, item));
+        if (item.kind === "tool") {
+          syncBookmark(item.kind, item.targetId, currentlySaved);
+        }
       }
     },
     [savedItems, syncBookmark],
@@ -320,6 +461,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
       messages,
       entityView,
       userProfile,
+      profileLoading,
+      profileError,
+      retryLoadProfile,
       settingsOpen,
       settingsTab,
       setRoute,
@@ -333,6 +477,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       setSettingsTab,
       updateUserProfile,
       sendMessage,
+      openProfile,
       openEntity,
       toggleModelBookmark,
       toggleToolBookmark,
@@ -360,6 +505,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
       messages,
       entityView,
       userProfile,
+      profileLoading,
+      profileError,
+      retryLoadProfile,
       settingsOpen,
       settingsTab,
       setRoute,
@@ -368,6 +516,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       setChatOpen,
       updateUserProfile,
       sendMessage,
+      openProfile,
       openEntity,
       toggleModelBookmark,
       toggleToolBookmark,

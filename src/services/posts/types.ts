@@ -1,4 +1,5 @@
-import type { Post, PostComment } from "../../types/posts";
+import type { EntityRef } from "../../types/entities";
+import type { CreatePostInput, Post, PostComment } from "../../types/posts";
 
 export interface PostsCursor {
   createdAt: string;
@@ -14,4 +15,14 @@ export interface PostsRepository {
   getPosts(cursor?: PostsCursor, limit?: number): Promise<PostsPage>;
   getPost(id: string): Promise<Post | null>;
   getComments(postId: string): Promise<PostComment[]>;
+  createPost(input: CreatePostInput, entities?: EntityRef[]): Promise<Post>;
+  updatePost(
+    postId: string,
+    input: Partial<CreatePostInput>,
+    entities?: EntityRef[],
+  ): Promise<Post>;
+  deletePost(postId: string): Promise<void>;
+  createComment(postId: string, content: string): Promise<PostComment>;
+  updateComment(commentId: string, content: string): Promise<PostComment>;
+  deleteComment(commentId: string): Promise<void>;
 }

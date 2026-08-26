@@ -17,6 +17,7 @@ import {
 import { MoveWebsiteModal } from "../../components/MoveWebsiteModal/MoveWebsiteModal";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { QuickAccess } from "../../components/QuickAccess/QuickAccess";
+import { CollectionsGridSkeleton } from "../../components/Skeleton";
 import { SiteIcon } from "../../components/SiteIcon/SiteIcon";
 import { useCollections } from "../../hooks/useCollections";
 import type {
@@ -47,6 +48,7 @@ interface CollectionsPageProps {
 export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
   const {
     collections,
+    loading,
     activeCollection,
     setActiveCollectionId,
     createCollection,
@@ -331,8 +333,11 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
           {!showHeader ? renderPlusButton() : null}
         </div>
 
-        <ul className={styles.collectionsGrid}>
-          {collections.map((col) => (
+        {loading && collections.length === 0 ? (
+          <CollectionsGridSkeleton count={3} />
+        ) : (
+          <ul className={styles.collectionsGrid}>
+            {collections.map((col) => (
             <li key={col.id}>
               <article
                 className={styles.collectionCard}
@@ -428,6 +433,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             </li>
           ))}
         </ul>
+        )}
       </section>
 
       <AddWebsiteModal

@@ -6,7 +6,7 @@ import { IconClose } from "../../components/icons";
 import { isDraftDirty, useUnsavedChanges } from "../../hooks/useUnsavedChanges";
 import { useHub } from "../../state/HubContext";
 import { usePosts } from "../posts";
-import type { PostType } from "../../types/posts";
+import type { CreatePostInput, PostType } from "../../types/posts";
 import { initialDraft } from "./draft";
 import { PostComposer } from "./PostComposer";
 import { PostTypeSelector } from "./PostTypeSelector";
@@ -14,11 +14,12 @@ import type { PostDraft, ShareView } from "./types";
 import styles from "./ShareDialog.module.css";
 
 export function ShareDialog() {
-  const { addOpen, setAddOpen, mentionEntities } = useHub();
-  const { publishPost } = usePosts();
+  const { addOpen, setAddOpen, mentionEntities, authStatus, setAuthModalOpen } = useHub();
+  const { publishPost, isMutating } = usePosts();
   const [view, setView] = useState<ShareView>({ step: "selecting-type" });
   const [draft, setDraft] = useState<PostDraft>(initialDraft("discussion"));
   const [baseline, setBaseline] = useState<PostDraft>(initialDraft("discussion"));
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const composing = view.step === "composing";
   const dirty = composing && isDraftDirty(draft, baseline);
@@ -29,6 +30,7 @@ export function ShareDialog() {
       setView({ step: "selecting-type" });
       setDraft(initialDraft("discussion"));
       setBaseline(initialDraft("discussion"));
+      setSubmitError(null);
     }
   }, [addOpen]);
 
@@ -38,6 +40,7 @@ export function ShareDialog() {
     setView({ step: "selecting-type" });
     setDraft(initialDraft("discussion"));
     setBaseline(initialDraft("discussion"));
+    setSubmitError(null);
   };
 
   const requestClose = useCallback(() => {
@@ -57,10 +60,30 @@ export function ShareDialog() {
   };
 
   const pickType = (type: PostType) => {
+    if (authStatus !== "authenticated") {
+      setAuthModalOpen(true);
+      return;
+    }
     const next = initialDraft(type);
     setDraft(next);
     setBaseline(next);
     setView({ step: "composing", type });
+  };
+
+  const handlePublish = async (input: CreatePostInput) => {
+    if (authStatus !== "authenticated") {
+      setAuthModalOpen(true);
+      return;
+    }
+    setSubmitError(null);
+    try {
+      await publishPost(input, mentionEntities);
+      closeNow();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Не удалось опубликовать запись",
+      );
+    }
   };
 
   useEffect(() => {
@@ -108,6 +131,22 @@ export function ShareDialog() {
           </IconButton>
         </header>
 
+        {submitError ? (
+          <div
+            style={{
+              margin: "12px 18px 0",
+              padding: "8px 12px",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              borderRadius: "var(--radius-sm)",
+              color: "#f87171",
+              fontSize: "12px",
+            }}
+          >
+            {submitError}
+          </div>
+        ) : null}
+
         {view.step === "selecting-type" ? (
           <PostTypeSelector onPick={pickType} />
         ) : (
@@ -115,10 +154,8 @@ export function ShareDialog() {
             type={view.type}
             draft={draft}
             onChange={setDraft}
-            onSubmit={(input) => {
-              publishPost(input, mentionEntities);
-              closeNow();
-            }}
+            onSubmit={handlePublish}
+            disabled={isMutating}
           />
         )}
 
@@ -136,4 +173,3 @@ export function ShareDialog() {
     </div>
   );
 }
-

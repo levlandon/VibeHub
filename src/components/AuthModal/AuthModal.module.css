@@ -25,7 +25,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -76,7 +76,7 @@
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .githubBtn {
@@ -112,6 +112,86 @@
   outline-offset: 2px;
 }
 
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inputLabel {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color var(--ease);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.submitBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--ease);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleModeBtn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-align: center;
+}
+
+.toggleModeBtn:hover {
+  color: var(--text);
+}
+
+.errorBox {
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
 .note {
   font-size: 12px;
   color: var(--text-dim);
@@ -123,50 +203,71 @@
   line-height: 1.4;
 }
 
-.devRow {
+.devSection {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
   display: flex;
-  justify-content: center;
-  margin-top: 4px;
-}
-
-.devBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 8px;
-  width: 100%;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--ease);
 }
 
-.devBtn:hover {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--border-hover);
-}
-
-.devBtn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 2px;
+.devTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .devBadge {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--surface);
   border: 1px solid var(--border);
-  color: var(--text-dim);
-  padding: 1px 5px;
-  border-radius: 4px;
+  color: var(--accent);
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
+.devUsersList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.devUserBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--ease);
+}
+
+.devUserBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  border-color: var(--border-hover);
+}
+
+.devUserName {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.devUserRole {
+  font-size: 11px;
+  color: var(--text-dim);
+}

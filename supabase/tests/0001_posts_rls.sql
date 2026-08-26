@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(22);
+SELECT plan(29);
 
 -- 1. Check tables exist
 SELECT has_table('public', 'profiles', 'public.profiles table should exist');
@@ -117,11 +117,76 @@ BEGIN
 END $$;
 SELECT pass('authenticated user cannot delete another user post');
 
+-- User 1 can insert their own comment
+SELECT lives_ok(
+  $$INSERT INTO public.comments (id, post_id, content, author_id) VALUES ('c0000001-0000-0000-0000-000000000099', 'a0000001-0000-0000-0000-000000000002', 'User 1 comment', '11111111-1111-4111-a111-111111111111')$$,
+  'authenticated user can insert their own comment'
+);
+
+-- User 1 cannot insert comment with user 2 author_id
+SELECT throws_ok(
+  $$INSERT INTO public.comments (id, post_id, content, author_id) VALUES ('c0000001-0000-0000-0000-000000000098', 'a0000001-0000-0000-0000-000000000002', 'Fake comment', '22222222-2222-4222-a222-222222222222')$$,
+  '42501',
+  NULL,
+  'authenticated user cannot insert comment with another author_id'
+);
+
+-- User 1 can update their own comment
+SELECT lives_ok(
+  $$UPDATE public.comments SET content = 'Updated comment content' WHERE id = 'c0000001-0000-0000-0000-000000000099'$$,
+  'authenticated user can update their own comment'
+);
+
+-- User 1 cannot update user 2's comment
+DO $$
+DECLARE
+  v_rows_affected int;
+BEGIN
+  UPDATE public.comments SET content = 'Hacked comment' WHERE id = 'b0000001-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+  IF v_rows_affected != 0 THEN
+    RAISE EXCEPTION 'Non-owner should not be able to update another users comment';
+  END IF;
+END $$;
+SELECT pass('authenticated user cannot update another user comment');
+
+-- User 1 can delete their own comment
+SELECT lives_ok(
+  $$DELETE FROM public.comments WHERE id = 'c0000001-0000-0000-0000-000000000099'$$,
+  'authenticated user can delete their own comment'
+);
+
+-- User 1 cannot delete user 2's comment
+DO $$
+DECLARE
+  v_rows_affected int;
+BEGIN
+  DELETE FROM public.comments WHERE id = 'b0000001-0000-0000-0000-000000000001';
+  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+  IF v_rows_affected != 0 THEN
+    RAISE EXCEPTION 'Non-owner should not be able to delete another users comment';
+  END IF;
+END $$;
+SELECT pass('authenticated user cannot delete another user comment');
+
 -- User 1 can update their own profile
 SELECT lives_ok(
   $$UPDATE public.profiles SET name = 'Алексей Смирнов (Обновлено)' WHERE id = '11111111-1111-4111-a111-111111111111'$$,
   'authenticated user can update their own profile'
 );
+
+-- User 1 cannot update user 2's profile
+DO $$
+DECLARE
+  v_rows_affected int;
+BEGIN
+  UPDATE public.profiles SET name = 'Hacked Profile' WHERE id = '22222222-2222-4222-a222-222222222222';
+  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+  IF v_rows_affected != 0 THEN
+    RAISE EXCEPTION 'Non-owner should not be able to update another users profile';
+  END IF;
+END $$;
+SELECT pass('authenticated user cannot update another user profile');
 
 SELECT * FROM finish();
 ROLLBACK;

@@ -52,6 +52,14 @@ describe("mapAuthor", () => {
     });
   });
 
+  it("маппит id автора если id присутствует в профиле или fallbackId", () => {
+    const authorWithId = mapAuthor(profileRow({ id: "user-123" }));
+    expect(authorWithId.id).toBe("user-123");
+
+    const authorWithFallback = mapAuthor(profileRow(), "fallback-456");
+    expect(authorWithFallback.id).toBe("fallback-456");
+  });
+
   it("возвращает значения по умолчанию для массива", () => {
     const author = mapAuthor([
       profileRow({ name: "Alice" }),

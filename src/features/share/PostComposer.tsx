@@ -19,11 +19,13 @@ export function PostComposer({
   draft,
   onChange,
   onSubmit,
+  disabled = false,
 }: {
   type: PostType;
   draft: PostDraft;
   onChange: (draft: PostDraft) => void;
   onSubmit: (input: CreatePostInput) => void;
+  disabled?: boolean;
 }) {
   const [category, setCategory] = useState<string>("");
   const Form = TYPE_FORMS[type];
@@ -57,8 +59,8 @@ export function PostComposer({
 
       <Form draft={draft} onChange={onChange} />
       <div className={styles.bar}>
-        <Button variant="primary" type="submit" disabled={!ready}>
-          Опубликовать
+        <Button variant="primary" type="submit" disabled={disabled || !ready}>
+          {disabled ? "Публикация..." : "Опубликовать"}
         </Button>
       </div>
     </form>

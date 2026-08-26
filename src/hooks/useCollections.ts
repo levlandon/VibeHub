@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { authService } from "../services/auth";
 import { collectionsRepository } from "../services/collections";
 import type {
   Collection,
@@ -20,14 +21,58 @@ export function useCollections() {
       setCollections(data);
     } catch (err) {
       console.error("[useCollections] Failed to load collections:", err);
+      setCollections([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadCollections();
-  }, [loadCollections]);
+    let active = true;
+    setLoading(true);
+    setCollections([]);
+    setActiveCollectionId(null);
+
+    collectionsRepository
+      .getCollections()
+      .then((data) => {
+        if (!active) return;
+        setCollections(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("[useCollections] Failed to load collections:", err);
+        setCollections([]);
+        setLoading(false);
+      });
+
+    const unsubscribe = authService.onAuthChange(() => {
+      if (!active) return;
+      setLoading(true);
+      setCollections([]);
+      setActiveCollectionId(null);
+
+      collectionsRepository
+        .getCollections()
+        .then((data) => {
+          if (!active) return;
+          setCollections(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (!active) return;
+          console.error("[useCollections] Failed to load collections on auth change:", err);
+          setCollections([]);
+          setLoading(false);
+        });
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   const activeCollection = collections.find((c) => c.id === activeCollectionId) ?? null;
 
@@ -66,10 +111,11 @@ export function useCollections() {
       setCollections((prev) =>
         prev.map((col) => {
           if (col.id !== collectionId) return col;
+          const withoutDuplicate = col.items.filter((it) => it.id !== newItem.id && it.url !== newItem.url);
           return {
             ...col,
             updatedAt: new Date().toISOString(),
-            items: [newItem, ...col.items],
+            items: [newItem, ...withoutDuplicate],
           };
         }),
       );

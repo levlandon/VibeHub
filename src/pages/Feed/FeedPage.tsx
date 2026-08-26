@@ -4,6 +4,7 @@ import { CategoryStrip } from "../../components/CategoryStrip/CategoryStrip";
 import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
+import { FeedSkeletonList } from "../../components/Skeleton";
 import { EditPostModal } from "../../features/community/EditPostModal";
 import { PostCard } from "../../features/community/PostCard";
 import { PostDetailModal } from "../../features/community/PostDetailModal";
@@ -53,9 +54,7 @@ export function FeedPage() {
       </PageHeader>
 
       {loading && posts.length === 0 ? (
-        <EmptyState>
-          <p>Загрузка публикаций…</p>
-        </EmptyState>
+        <FeedSkeletonList count={3} />
       ) : posts.length === 0 ? (
         <EmptyState>
           <p>В ленте пока нет публикаций.</p>
