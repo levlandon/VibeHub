@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePosts } from "../../features/posts";
 import { groupHits, searchHub } from "../../services/search";
 import { useHub } from "../../state/HubContext";
 import { IconSearch } from "../icons";
@@ -21,8 +22,9 @@ function writeRecent(term: string) {
 }
 
 export function CommandPalette() {
-  const { searchOpen, setSearchOpen, models, tools, posts, openEntity, setAddOpen } =
+  const { searchOpen, setSearchOpen, models, tools, openEntity, setAddOpen } =
     useHub();
+  const { posts } = usePosts();
   const [q, setQ] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);

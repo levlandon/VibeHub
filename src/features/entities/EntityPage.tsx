@@ -10,6 +10,7 @@ import {
 import { postsForEntity } from "../../services/posts";
 import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
+import { usePosts } from "../posts";
 import type { CatalogKind } from "../../types/entities";
 import type { Model, Tool } from "../../types/hub";
 import { ENTITY_TABS } from "./entityTabs";
@@ -23,11 +24,11 @@ export function EntityPage() {
     models,
     modelsLoading,
     tools,
-    posts,
     savedItems,
     setEntityView,
     toggleSavedTarget,
   } = useHub();
+  const { posts } = usePosts();
 
   if (!entityView || (entityView.kind !== "model" && entityView.kind !== "tool")) {
     return null;

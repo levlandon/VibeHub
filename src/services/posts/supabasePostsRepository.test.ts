@@ -2,33 +2,33 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SupabasePostsRepository } from "./supabasePostsRepository";
 
-const ISO_DATE = "2026-08-18T10:00:00.000Z";
+const ISO_DATE_1 = "2026-08-20T10:00:00.000Z";
+const ISO_DATE_2 = "2026-08-19T10:00:00.000Z";
 
 function profileRow() {
   return { name: "Alice", handle: "alice", initials: "A" };
 }
 
-function postRow() {
+function postRow(id = "post-1", createdAt = ISO_DATE_1) {
   return {
-    id: "post-1",
+    id,
     type: "discussion",
-    title: "Title",
-    content: "Content",
-    created_at: ISO_DATE,
+    title: `Title ${id}`,
+    content: `Content ${id}`,
+    created_at: createdAt,
     author: profileRow(),
     tags: ["tag1"],
     related_entities: [],
     reactions: [],
-    comments: [],
     extras: {},
   };
 }
 
-function commentRow() {
+function commentRow(id = "c1", createdAt = ISO_DATE_1) {
   return {
-    id: "c1",
+    id,
     content: "comment",
-    created_at: ISO_DATE,
+    created_at: createdAt,
     author: profileRow(),
   };
 }
@@ -38,13 +38,18 @@ interface MockCalls {
   select: string;
   eq: { column: string; value: string }[];
   order: { column: string; ascending: boolean; referencedTable?: string }[];
+  or: string[];
+  limit: number | null;
   single: boolean;
 }
 
 interface MockQueryBuilder extends PromiseLike<{ data: unknown; error: unknown | null }> {
   order(column: string, opts: { ascending: boolean; referencedTable?: string }): MockQueryBuilder;
   eq(column: string, value: string): MockQueryBuilder;
+  or(filter: string): MockQueryBuilder;
+  limit(count: number): MockQueryBuilder;
   single(): Promise<{ data: unknown; error: unknown | null }>;
+  maybeSingle(): Promise<{ data: unknown; error: unknown | null }>;
 }
 
 function createMockClient(
@@ -58,6 +63,8 @@ function createMockClient(
     select: "",
     eq: [],
     order: [],
+    or: [],
+    limit: null,
     single: false,
   };
 
@@ -78,7 +85,22 @@ function createMockClient(
         calls.eq.push({ column, value });
         return builder;
       },
+      or: (filter: string) => {
+        calls.or.push(filter);
+        return builder;
+      },
+      limit: (count: number) => {
+        calls.limit = count;
+        return builder;
+      },
       single: () => {
+        calls.single = true;
+        return Promise.resolve({
+          data: response.data ?? null,
+          error: response.error ?? null,
+        });
+      },
+      maybeSingle: () => {
         calls.single = true;
         return Promise.resolve({
           data: response.data ?? null,
@@ -105,61 +127,129 @@ function createMockClient(
 }
 
 describe("SupabasePostsRepository", () => {
-  describe("null client", () => {
-    it("getPosts возвращает [] без throw", async () => {
+  describe("null client (demo fallback)", () => {
+    it("getPosts с дефолтным INITIAL_POSTS возвращает пустую страницу без ошибок", async () => {
       const repo = new SupabasePostsRepository(null);
+      const page = await repo.getPosts(undefined, 2);
 
-      await expect(repo.getPosts()).resolves.toEqual([]);
+      expect(page.posts).toEqual([]);
+      expect(page.nextCursor).toBeNull();
     });
 
-    it("getPost возвращает null без throw", async () => {
-      const repo = new SupabasePostsRepository(null);
+    it("getPosts с переданными fallbackPosts возвращает пагинированные страницы", async () => {
+      const demoData = [
+        {
+          id: "p1",
+          type: "discussion" as const,
+          author: { name: "Alice", handle: "alice", initials: "A" },
+          title: "Title 1",
+          content: "Content 1",
+          createdAt: "2026-08-20T10:00:00.000Z",
+          tags: [],
+          relatedEntities: [],
+          reactions: [],
+          comments: [{ id: "c1", author: { name: "A", handle: "a", initials: "A" }, content: "c", createdAt: "2026-08-20T10:00:00.000Z" }],
+          extras: {},
+        },
+        {
+          id: "p2",
+          type: "discussion" as const,
+          author: { name: "Bob", handle: "bob", initials: "B" },
+          title: "Title 2",
+          content: "Content 2",
+          createdAt: "2026-08-19T10:00:00.000Z",
+          tags: [],
+          relatedEntities: [],
+          reactions: [],
+          comments: [],
+          extras: {},
+        },
+        {
+          id: "p3",
+          type: "discussion" as const,
+          author: { name: "Carol", handle: "carol", initials: "C" },
+          title: "Title 3",
+          content: "Content 3",
+          createdAt: "2026-08-18T10:00:00.000Z",
+          tags: [],
+          relatedEntities: [],
+          reactions: [],
+          comments: [],
+          extras: {},
+        },
+      ];
 
-      await expect(repo.getPost("post-1")).resolves.toBeNull();
-    });
+      const repo = new SupabasePostsRepository(null, demoData);
+      const page1 = await repo.getPosts(undefined, 2);
 
-    it("getComments возвращает [] без throw", async () => {
-      const repo = new SupabasePostsRepository(null);
+      expect(page1.posts).toHaveLength(2);
+      expect(page1.posts.map((p) => p.id)).toEqual(["p1", "p2"]);
+      expect(page1.nextCursor).toEqual({
+        createdAt: "2026-08-19T10:00:00.000Z",
+        id: "p2",
+      });
 
-      await expect(repo.getComments("post-1")).resolves.toEqual([]);
+      const page2 = await repo.getPosts(page1.nextCursor ?? undefined, 2);
+      expect(page2.posts).toHaveLength(1);
+      expect(page2.posts[0].id).toBe("p3");
+      expect(page2.nextCursor).toBeNull();
+
+      const post1 = await repo.getPost("p1");
+      expect(post1?.id).toBe("p1");
+
+      const missing = await repo.getPost("missing");
+      expect(missing).toBeNull();
+
+      const comments = await repo.getComments("p1");
+      expect(comments).toHaveLength(1);
+      expect(comments[0].id).toBe("c1");
     });
   });
 
   describe("fluent client calls", () => {
-    it("getPosts вызывает posts.select.order с правильными параметрами", async () => {
-      const { client, calls } = createMockClient();
+    it("getPosts без cursor запрашивает lightweight feed (без comments), сортирует created_at/id DESC и ставит limit + 1", async () => {
+      const { client, calls } = createMockClient({ data: [postRow("p1"), postRow("p2")] });
       const repo = new SupabasePostsRepository(client);
 
-      await repo.getPosts();
+      const limit = 5;
+      await repo.getPosts(undefined, limit);
 
       expect(client.from).toHaveBeenCalledTimes(1);
       expect(client.from).toHaveBeenCalledWith("posts");
       expect(calls.table).toBe("posts");
       expect(calls.select).toContain("author:profiles!author_id(*)");
-      expect(calls.select).toContain(
-        "comments(*, author:profiles!author_id(*))",
-      );
-      expect(calls.order).toHaveLength(2);
-      expect(calls.order).toContainEqual({
-        column: "created_at",
-        ascending: false,
-      });
-      expect(calls.order).toContainEqual({
-        column: "created_at",
-        ascending: true,
-        referencedTable: "comments",
-      });
+      expect(calls.select).not.toContain("comments(*");
+      expect(calls.limit).toBe(limit + 1);
+      expect(calls.order).toEqual([
+        { column: "created_at", ascending: false, referencedTable: undefined },
+        { column: "id", ascending: false, referencedTable: undefined },
+      ]);
+      expect(calls.or).toHaveLength(0);
     });
 
-    it("getPost вызывает posts.select.order.eq.single", async () => {
-      const { client, calls } = createMockClient();
+    it("getPosts с cursor применяет составной .or() фильтр", async () => {
+      const { client, calls } = createMockClient({ data: [postRow("p2")] });
       const repo = new SupabasePostsRepository(client);
 
-      await repo.getPost("post-1");
+      const cursor = { createdAt: ISO_DATE_1, id: "p1" };
+      await repo.getPosts(cursor, 5);
+
+      expect(calls.or).toHaveLength(1);
+      expect(calls.or[0]).toBe(
+        `created_at.lt.${ISO_DATE_1},and(created_at.eq.${ISO_DATE_1},id.lt.p1)`,
+      );
+    });
+
+    it("getPost запрашивает пост со всеми комментариями и их авторами", async () => {
+      const { client, calls } = createMockClient({ data: postRow("p1") });
+      const repo = new SupabasePostsRepository(client);
+
+      await repo.getPost("p1");
 
       expect(client.from).toHaveBeenCalledWith("posts");
       expect(calls.table).toBe("posts");
-      expect(calls.eq).toContainEqual({ column: "id", value: "post-1" });
+      expect(calls.select).toContain("comments:comments!post_id(*, author:profiles!author_id(*))");
+      expect(calls.eq).toContainEqual({ column: "id", value: "p1" });
       expect(calls.single).toBe(true);
       expect(calls.order).toContainEqual({
         column: "created_at",
@@ -168,16 +258,16 @@ describe("SupabasePostsRepository", () => {
       });
     });
 
-    it("getComments вызывает comments.select.eq.order", async () => {
-      const { client, calls } = createMockClient();
+    it("getComments запрашивает комментарии по post_id", async () => {
+      const { client, calls } = createMockClient({ data: [commentRow("c1")] });
       const repo = new SupabasePostsRepository(client);
 
-      await repo.getComments("post-1");
+      await repo.getComments("p1");
 
       expect(client.from).toHaveBeenCalledWith("comments");
       expect(calls.table).toBe("comments");
       expect(calls.select).toContain("author:profiles!author_id(*)");
-      expect(calls.eq).toContainEqual({ column: "post_id", value: "post-1" });
+      expect(calls.eq).toContainEqual({ column: "post_id", value: "p1" });
       expect(calls.order).toContainEqual({
         column: "created_at",
         ascending: true,
@@ -185,46 +275,45 @@ describe("SupabasePostsRepository", () => {
     });
   });
 
-  describe("data mapping", () => {
-    it("getPosts маппит строки в Post[]", async () => {
-      const { client } = createMockClient({ data: [postRow()] });
+  describe("cursor pagination slice & nextCursor", () => {
+    it("при возврате limit + 1 элементов отсекает лишний и формирует nextCursor", async () => {
+      const rows = [
+        postRow("p1", ISO_DATE_1),
+        postRow("p2", ISO_DATE_1),
+        postRow("p3", ISO_DATE_2), // лишний 3-й элемент для limit=2
+      ];
+      const { client } = createMockClient({ data: rows });
       const repo = new SupabasePostsRepository(client);
 
-      const posts = await repo.getPosts();
+      const page = await repo.getPosts(undefined, 2);
 
-      expect(posts).toHaveLength(1);
-      expect(posts[0].id).toBe("post-1");
-      expect(posts[0].type).toBe("discussion");
+      expect(page.posts).toHaveLength(2);
+      expect(page.posts.map((p) => p.id)).toEqual(["p1", "p2"]);
+      expect(page.nextCursor).toEqual({
+        createdAt: ISO_DATE_1,
+        id: "p2",
+      });
     });
 
-    it("getPost маппит строку в Post", async () => {
-      const { client } = createMockClient({ data: postRow() });
+    it("при возврате <= limit элементов возвращает nextCursor: null (последняя страница)", async () => {
+      const rows = [postRow("p1", ISO_DATE_1), postRow("p2", ISO_DATE_2)];
+      const { client } = createMockClient({ data: rows });
       const repo = new SupabasePostsRepository(client);
 
-      const post = await repo.getPost("post-1");
+      const page = await repo.getPosts(undefined, 2);
 
-      expect(post).not.toBeNull();
-      expect(post?.id).toBe("post-1");
+      expect(page.posts).toHaveLength(2);
+      expect(page.nextCursor).toBeNull();
     });
 
-    it("getComments маппит строки в PostComment[]", async () => {
-      const { client } = createMockClient({ data: [commentRow()] });
+    it("пропускает невалидные строки при маппинге", async () => {
+      const { client } = createMockClient({ data: [postRow("p1"), { id: "bad" }] });
       const repo = new SupabasePostsRepository(client);
 
-      const comments = await repo.getComments("post-1");
+      const page = await repo.getPosts(undefined, 10);
 
-      expect(comments).toHaveLength(1);
-      expect(comments[0].id).toBe("c1");
-    });
-
-    it("пропускает невалидные строки", async () => {
-      const { client } = createMockClient({ data: [postRow(), { id: "bad" }] });
-      const repo = new SupabasePostsRepository(client);
-
-      const posts = await repo.getPosts();
-
-      expect(posts).toHaveLength(1);
-      expect(posts[0].id).toBe("post-1");
+      expect(page.posts).toHaveLength(1);
+      expect(page.posts[0].id).toBe("p1");
     });
   });
 
@@ -238,36 +327,36 @@ describe("SupabasePostsRepository", () => {
       await expect(repo.getPost("missing")).resolves.toBeNull();
     });
 
-    it("другие ошибки пробрасываются из getPosts", async () => {
+    it("ошибки getPosts пробрасываются", async () => {
       const { client } = createMockClient({
-        error: { code: "PGRST999", message: "fail" },
+        error: { code: "PGRST500", message: "Internal server error" },
       });
       const repo = new SupabasePostsRepository(client);
 
       await expect(repo.getPosts()).rejects.toEqual(
-        expect.objectContaining({ code: "PGRST999" }),
+        expect.objectContaining({ code: "PGRST500" }),
       );
     });
 
-    it("другие ошибки пробрасываются из getPost", async () => {
+    it("ошибки getPost (кроме PGRST116) пробрасываются", async () => {
       const { client } = createMockClient({
-        error: { code: "PGRST999", message: "fail" },
+        error: { code: "PGRST500", message: "Internal server error" },
       });
       const repo = new SupabasePostsRepository(client);
 
-      await expect(repo.getPost("post-1")).rejects.toEqual(
-        expect.objectContaining({ code: "PGRST999" }),
+      await expect(repo.getPost("p1")).rejects.toEqual(
+        expect.objectContaining({ code: "PGRST500" }),
       );
     });
 
-    it("другие ошибки пробрасываются из getComments", async () => {
+    it("ошибки getComments пробрасываются", async () => {
       const { client } = createMockClient({
-        error: { code: "PGRST999", message: "fail" },
+        error: { code: "PGRST500", message: "Internal server error" },
       });
       const repo = new SupabasePostsRepository(client);
 
-      await expect(repo.getComments("post-1")).rejects.toEqual(
-        expect.objectContaining({ code: "PGRST999" }),
+      await expect(repo.getComments("p1")).rejects.toEqual(
+        expect.objectContaining({ code: "PGRST500" }),
       );
     });
   });

@@ -9,11 +9,14 @@ import { ToolsPage } from "./pages/Tools/Tools";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { FeedPage } from "./pages/Feed/FeedPage";
 import { HubProvider } from "./state/HubContext";
+import { PostsProvider } from "./features/posts";
 
 const rootRoute = createRootRoute({
   component: () => (
     <HubProvider>
-      <Shell />
+      <PostsProvider>
+        <Shell />
+      </PostsProvider>
     </HubProvider>
   ),
   notFoundComponent: NotFound,

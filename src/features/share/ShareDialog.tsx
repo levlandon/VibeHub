@@ -5,6 +5,7 @@ import { IconButton } from "../../components/IconButton/IconButton";
 import { IconClose } from "../../components/icons";
 import { isDraftDirty, useUnsavedChanges } from "../../hooks/useUnsavedChanges";
 import { useHub } from "../../state/HubContext";
+import { usePosts } from "../posts";
 import type { PostType } from "../../types/posts";
 import { initialDraft } from "./draft";
 import { PostComposer } from "./PostComposer";
@@ -13,7 +14,8 @@ import type { PostDraft, ShareView } from "./types";
 import styles from "./ShareDialog.module.css";
 
 export function ShareDialog() {
-  const { addOpen, setAddOpen, publishPost } = useHub();
+  const { addOpen, setAddOpen, mentionEntities } = useHub();
+  const { publishPost } = usePosts();
   const [view, setView] = useState<ShareView>({ step: "selecting-type" });
   const [draft, setDraft] = useState<PostDraft>(initialDraft("discussion"));
   const [baseline, setBaseline] = useState<PostDraft>(initialDraft("discussion"));
@@ -114,7 +116,7 @@ export function ShareDialog() {
             draft={draft}
             onChange={setDraft}
             onSubmit={(input) => {
-              publishPost(input);
+              publishPost(input, mentionEntities);
               closeNow();
             }}
           />

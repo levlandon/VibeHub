@@ -9,27 +9,16 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { INITIAL_MESSAGES } from "../data/chat";
-import { INITIAL_POSTS } from "../data/posts";
 import { TOOLS } from "../data/tools";
 import { parseSpans } from "../services/content";
 import { mentionIndex } from "../services/entities";
 import { modelsService } from "../services/models";
 import { bookmarksRepository } from "../services/collections";
-import {
-  acceptAnswer as acceptAnswerOn,
-  addComment as addCommentOn,
-  createPost,
-  deletePost as deletePostOn,
-  updatePost as updatePostOn,
-} from "../services/posts";
-import { SupabasePostsRepository } from "../services/posts/supabasePostsRepository";
-import { getSupabaseClient } from "../services/supabase/client";
 import { fromBookmarks, isSaved, toggleSaved } from "../services/saved";
 import { localStorageDriver, STORAGE_KEYS } from "../services/storage/localStorageDriver";
 import type { AuthStatus, CurrentUser } from "../types/auth";
 import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
 import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
-import type { CreatePostInput, Post } from "../types/posts";
 import type { SavedItem } from "../types/saved";
 import type { UserProfile } from "../types/profile";
 import { authService } from "../services/auth";
@@ -52,9 +41,6 @@ interface HubState {
   modelsLoading: boolean;
   modelsError: string | null;
   tools: Tool[];
-  posts: Post[];
-  postsLoading: boolean;
-  postsError: string | null;
   savedItems: SavedItem[];
   mentionEntities: EntityRef[];
   addOpen: boolean;
@@ -82,11 +68,6 @@ interface HubState {
   toggleModelBookmark: (id: string) => void;
   toggleToolBookmark: (id: string) => void;
   toggleSavedTarget: (item: Omit<SavedItem, "id" | "savedAt">) => void;
-  publishPost: (input: CreatePostInput) => void;
-  updatePost: (postId: string, input: Partial<CreatePostInput>) => void;
-  deletePost: (postId: string) => void;
-  addComment: (postId: string, content: string) => void;
-  acceptAnswer: (postId: string, commentId: string) => void;
   refreshModels: () => Promise<void>;
 }
 
@@ -122,9 +103,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [tools, setTools] = useState<Tool[]>(TOOLS);
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
-  const [postsLoading, setPostsLoading] = useState(true);
-  const [postsError, setPostsError] = useState<string | null>(null);
   const [savedItems, setSavedItems] = useState<SavedItem[]>(() => {
     const stored = localStorageDriver.getItem<SavedItem[]>(STORAGE_KEYS.BOOKMARKS);
     if (stored && Array.isArray(stored)) return stored;
@@ -151,35 +129,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchModels();
   }, [fetchModels]);
-
-  const postsRepository = useMemo(
-    () => new SupabasePostsRepository(getSupabaseClient()),
-    []
-  );
-
-  const fetchPosts = useCallback(async () => {
-    setPostsLoading(true);
-    setPostsError(null);
-    try {
-      if (!getSupabaseClient()) {
-        setPosts(INITIAL_POSTS);
-        return;
-      }
-      const data = await postsRepository.getPosts();
-      setPosts(data);
-    } catch (err) {
-      setPosts(INITIAL_POSTS);
-      setPostsError(
-        err instanceof Error ? err.message : "Не удалось загрузить посты"
-      );
-    } finally {
-      setPostsLoading(false);
-    }
-  }, [postsRepository]);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
 
   const mentionEntities = useMemo(() => mentionIndex(models, tools), [models, tools]);
 
@@ -344,32 +293,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
     [tools, toggleSavedTarget],
   );
 
-  const publishPost = useCallback(
-    (input: CreatePostInput) => {
-      setPosts((prev) => [createPost(input, mentionEntities), ...prev]);
-    },
-    [mentionEntities],
-  );
-
-  const updatePost = useCallback(
-    (postId: string, input: Partial<CreatePostInput>) => {
-      setPosts((prev) => updatePostOn(prev, postId, input, mentionEntities));
-    },
-    [mentionEntities],
-  );
-
-  const deletePost = useCallback((postId: string) => {
-    setPosts((prev) => deletePostOn(prev, postId));
-  }, []);
-
-  const addComment = useCallback((postId: string, content: string) => {
-    setPosts((prev) => addCommentOn(prev, postId, content));
-  }, []);
-
-  const acceptAnswer = useCallback((postId: string, commentId: string) => {
-    setPosts((prev) => acceptAnswerOn(prev, postId, commentId));
-  }, []);
-
   const refreshModels = useCallback(async () => {
     await fetchModels(true);
   }, [fetchModels]);
@@ -387,9 +310,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
       modelsLoading,
       modelsError,
       tools,
-      posts,
-      postsLoading,
-      postsError,
       savedItems,
       mentionEntities,
       addOpen,
@@ -417,11 +337,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
       toggleModelBookmark,
       toggleToolBookmark,
       toggleSavedTarget,
-      publishPost,
-      updatePost,
-      deletePost,
-      addComment,
-      acceptAnswer,
       refreshModels,
     }),
     [
@@ -435,9 +350,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
       modelsLoading,
       modelsError,
       tools,
-      posts,
-      postsLoading,
-      postsError,
       savedItems,
       mentionEntities,
       addOpen,
@@ -460,11 +372,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
       toggleModelBookmark,
       toggleToolBookmark,
       toggleSavedTarget,
-      publishPost,
-      updatePost,
-      deletePost,
-      addComment,
-      acceptAnswer,
       refreshModels,
     ],
   );
@@ -477,4 +384,3 @@ export function useHub() {
   if (!ctx) throw new Error("useHub must be used within HubProvider");
   return ctx;
 }
-

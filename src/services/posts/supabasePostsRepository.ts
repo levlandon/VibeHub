@@ -1,60 +1,105 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { INITIAL_POSTS } from "../../data/posts";
 import type { Post, PostComment } from "../../types/posts";
 import { mapComment, mapPost } from "./mapper";
-import type { PostsRepository } from "./types";
+import { buildPostgrestCursorFilter, paginateInMemory } from "./pagination";
+import type { PostsCursor, PostsPage, PostsRepository } from "./types";
 
-const POSTS_SELECT =
-  "*, author:profiles!author_id(*), comments(*, author:profiles!author_id(*))";
+const POSTS_LIST_SELECT = "*, author:profiles!author_id(*)";
+
+const POSTS_DETAIL_SELECT =
+  "*, author:profiles!author_id(*), comments:comments!post_id(*, author:profiles!author_id(*))";
 
 const COMMENTS_SELECT = "*, author:profiles!author_id(*)";
 
 /** PostgREST code for "JSON object requested, multiple (or no) rows returned". */
 const SINGLE_ROW_ERROR_CODE = "PGRST116";
 
+export const DEFAULT_POSTS_LIMIT = 10;
+
 export class SupabasePostsRepository implements PostsRepository {
   private client: SupabaseClient | null;
+  private fallbackPosts: readonly Post[];
 
-  constructor(client: SupabaseClient | null) {
+  constructor(
+    client: SupabaseClient | null,
+    fallbackPosts: readonly Post[] = INITIAL_POSTS,
+  ) {
     this.client = client;
+    this.fallbackPosts = fallbackPosts;
   }
 
-  async getPosts(): Promise<Post[]> {
-    if (!this.client) return [];
+  async getPosts(
+    cursor?: PostsCursor,
+    limit = DEFAULT_POSTS_LIMIT,
+  ): Promise<PostsPage> {
+    const safeLimit = Math.max(1, limit);
 
-    const { data, error } = await this.client
+    if (!this.client) {
+      const { items, nextCursor } = paginateInMemory(
+        this.fallbackPosts,
+        cursor,
+        safeLimit,
+      );
+      return { posts: items, nextCursor };
+    }
+
+    let query = this.client
       .from("posts")
-      .select(POSTS_SELECT)
+      .select(POSTS_LIST_SELECT)
       .order("created_at", { ascending: false })
-      .order("created_at", { ascending: true, referencedTable: "comments" });
+      .order("id", { ascending: false })
+      .limit(safeLimit + 1);
 
+    if (cursor) {
+      query = query.or(buildPostgrestCursorFilter(cursor));
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
-    if (!data || !Array.isArray(data)) return [];
 
-    return data
+    const rows = data ?? [];
+    const hasMore = rows.length > safeLimit;
+    const pageRows = hasMore ? rows.slice(0, safeLimit) : rows;
+
+    const posts = pageRows
       .map(mapPost)
-      .filter((post): post is Post => post !== null);
+      .filter((p): p is Post => p !== null);
+
+    let nextCursor: PostsCursor | null = null;
+    if (hasMore && posts.length > 0) {
+      const last = posts[posts.length - 1];
+      nextCursor = { createdAt: last.createdAt, id: last.id };
+    }
+
+    return { posts, nextCursor };
   }
 
   async getPost(id: string): Promise<Post | null> {
-    if (!this.client) return null;
+    if (!this.client) {
+      return this.fallbackPosts.find((p) => p.id === id) ?? null;
+    }
 
     const { data, error } = await this.client
       .from("posts")
-      .select(POSTS_SELECT)
-      .order("created_at", { ascending: true, referencedTable: "comments" })
+      .select(POSTS_DETAIL_SELECT)
       .eq("id", id)
-      .single();
+      .order("created_at", { referencedTable: "comments", ascending: true })
+      .maybeSingle();
 
     if (error) {
       if (error.code === SINGLE_ROW_ERROR_CODE) return null;
       throw error;
     }
-
+    if (!data) return null;
     return mapPost(data);
   }
 
   async getComments(postId: string): Promise<PostComment[]> {
-    if (!this.client) return [];
+    if (!this.client) {
+      const post = this.fallbackPosts.find((p) => p.id === postId);
+      return post?.comments ?? [];
+    }
 
     const { data, error } = await this.client
       .from("comments")
@@ -63,10 +108,8 @@ export class SupabasePostsRepository implements PostsRepository {
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-    if (!data || !Array.isArray(data)) return [];
-
-    return data
+    return (data ?? [])
       .map(mapComment)
-      .filter((comment): comment is PostComment => comment !== null);
+      .filter((c): c is PostComment => c !== null);
   }
 }

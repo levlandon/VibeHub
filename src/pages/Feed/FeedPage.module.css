@@ -39,3 +39,21 @@
   }
 }
 
+.paginationWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.loadMoreBtn {
+  min-width: 160px;
+}
+
+.errorMessage {
+  color: var(--danger, #ef4444);
+  font-size: 0.875rem;
+}
+
+

@@ -155,6 +155,22 @@ describe("mapPost", () => {
     expect(post?.comments[0].content).toBe("reply");
   });
 
+  it("возвращает comments: [] если comments отсутствует в строке (lightweight list response)", () => {
+    const raw = postRow();
+    delete (raw as Record<string, unknown>).comments;
+    const post = mapPost(raw);
+
+    expect(post?.comments).toEqual([]);
+  });
+
+  it("возвращает comments: [] если comments === null или comments === undefined", () => {
+    const postNull = mapPost(postRow({ comments: null }));
+    const postUndefined = mapPost(postRow({ comments: undefined }));
+
+    expect(postNull?.comments).toEqual([]);
+    expect(postUndefined?.comments).toEqual([]);
+  });
+
   it("question solved=true с acceptedAnswerId", () => {
     const post = mapPost(
       postRow({

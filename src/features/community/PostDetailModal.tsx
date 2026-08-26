@@ -6,6 +6,7 @@ import { RichText } from "../../components/mentions/RichText";
 import { formatDateTime } from "../../lib/datetime";
 import { describePost, isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
+import { usePosts } from "../posts";
 import type { Post, PostComment } from "../../types/posts";
 import { postTypeConfig, questionStatus } from "./postTypes";
 import styles from "./PostDetailModal.module.css";
@@ -25,12 +26,18 @@ interface PostDetailModalProps {
 export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
   const {
     mentionEntities,
-    acceptAnswer,
-    addComment,
     savedItems,
     toggleSavedTarget,
     setRoute,
   } = useHub();
+
+  const { acceptAnswer, addComment, getComments } = usePosts();
+
+  useEffect(() => {
+    if (post?.id && (!post.comments || post.comments.length === 0)) {
+      getComments(post.id);
+    }
+  }, [post?.id, post?.comments, getComments]);
 
   useEffect(() => {
     if (!post) return;
