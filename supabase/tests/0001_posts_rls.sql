@@ -1,6 +1,18 @@
 BEGIN;
 SELECT plan(29);
 
+-- Ensure test fixture posts exist within the test transaction
+INSERT INTO public.posts (id, type, title, content, author_id)
+VALUES 
+  ('a0000001-0000-0000-0000-000000000001', 'discussion', 'Post 1', 'Content 1', '11111111-1111-4111-a111-111111111111'),
+  ('a0000001-0000-0000-0000-000000000002', 'guide', 'Post 2', 'Content 2', '22222222-2222-4222-a222-222222222222')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (id, post_id, content, author_id)
+VALUES
+  ('b0000001-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000002', 'Comment 1', '22222222-2222-4222-a222-222222222222')
+ON CONFLICT (id) DO NOTHING;
+
 -- 1. Check tables exist
 SELECT has_table('public', 'profiles', 'public.profiles table should exist');
 SELECT has_table('public', 'posts', 'public.posts table should exist');

@@ -16,7 +16,14 @@ export function getSupabaseClient(): ReturnType<typeof createClient> | null {
   }
 
   if (!client) {
-    client = createClient(url, key);
+    client = createClient(url, key, {
+      auth: {
+        flowType: "pkce",
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
   }
 
   return client;

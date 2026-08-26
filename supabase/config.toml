@@ -1,0 +1,15 @@
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173/**",
+  "http://127.0.0.1:5173/**",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+]
+
+[auth.external.github]
+enabled = true
+client_id = "Ov23lilOPbbSLmhh5mrU"
+secret = "env(GITHUB_CLIENT_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"

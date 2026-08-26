@@ -21,7 +21,7 @@ import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hu
 import type { SavedItem } from "../types/saved";
 import type { UserProfile } from "../types/profile";
 import { authService } from "../services/auth";
-import { DEFAULT_USER_PROFILE, profileService } from "../services/profile";
+import { profileService } from "../services/profile";
 import type { SettingsTab } from "../components/SettingsModal/SettingsModal";
 import {
   entityFromPath,
@@ -192,19 +192,40 @@ export function HubProvider({ children }: { children: ReactNode }) {
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [userProfile, setUserProfileState] = useState<UserProfile | null>(() => {
-    const authState = authService.getAuthState();
-    if (authState.status === "anonymous") {
-      return DEFAULT_USER_PROFILE;
-    }
-    return null;
-  });
+  const [userProfile, setUserProfileState] = useState<UserProfile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
 
+  // OAuth URL cleanup: remove code/state/error fragments once loaded without full reload
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const url = new URL(window.location.href);
+      const hasOAuthParams =
+        url.searchParams.has("code") ||
+        url.searchParams.has("error") ||
+        url.searchParams.has("error_description") ||
+        url.searchParams.has("error_code");
+
+      if (hasOAuthParams) {
+        url.searchParams.delete("code");
+        url.searchParams.delete("state");
+        url.searchParams.delete("error");
+        url.searchParams.delete("error_description");
+        url.searchParams.delete("error_code");
+        const cleanUrl =
+          url.pathname + (url.search ? url.search : "") + url.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+  }, []);
+
   const loadUserProfile = useCallback(async (userId?: string) => {
     if (!userId) {
-      setUserProfileState(DEFAULT_USER_PROFILE);
+      setUserProfileState(null);
       setProfileLoading(false);
       setProfileError(null);
       return;
@@ -266,7 +287,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
           setProfileLoading(false);
         });
     } else if (authStatus === "anonymous") {
-      setUserProfileState(DEFAULT_USER_PROFILE);
+      setUserProfileState(null);
       setProfileLoading(false);
       setProfileError(null);
     } else if (authStatus === "loading") {

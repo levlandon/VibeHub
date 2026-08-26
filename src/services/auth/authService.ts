@@ -34,23 +34,78 @@ export const DEV_SEED_USERS = [
   },
 ] as const;
 
+export function getSafeRedirectUrl(targetUrl?: string): string {
+  try {
+    const baseOrigin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:5173";
+    const raw =
+      targetUrl ||
+      (typeof window !== "undefined" ? window.location.href : "/");
+    const parsed = new URL(raw, baseOrigin);
+
+    // Disallow external redirects: return URL must match baseOrigin
+    if (parsed.origin !== baseOrigin) {
+      return baseOrigin;
+    }
+
+    // Strip OAuth service parameters
+    parsed.searchParams.delete("code");
+    parsed.searchParams.delete("state");
+    parsed.searchParams.delete("error");
+    parsed.searchParams.delete("error_description");
+    parsed.searchParams.delete("error_code");
+
+    // Strip hash fragments containing OAuth params
+    if (parsed.hash.includes("access_token") || parsed.hash.includes("error")) {
+      parsed.hash = "";
+    }
+
+    return parsed.toString();
+  } catch {
+    return typeof window !== "undefined"
+      ? window.location.origin
+      : "http://localhost:5173";
+  }
+}
+
 export function mapSupabaseUser(user: User): CurrentUser {
   const meta = user.user_metadata || {};
-  const handle =
+
+  // Defensive handle resolution: handle -> user_name -> preferred_username -> login -> username -> email split -> 'user'
+  const rawHandle =
     meta.handle ||
+    meta.user_name ||
+    meta.preferred_username ||
+    meta.login ||
     meta.username ||
-    (user.email ? user.email.split("@")[0].toLowerCase() : "user");
+    (user.email ? user.email.split("@")[0].toLowerCase() : "");
+
+  const handle = rawHandle
+    ? rawHandle
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_")
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 30)
+    : "user";
+
+  // Defensive display name resolution: name/full_name -> user_name/login -> email prefix -> 'GitHub User'
   const displayName =
     meta.name ||
     meta.full_name ||
     meta.displayName ||
-    (user.email ? user.email.split("@")[0] : "User");
+    meta.user_name ||
+    meta.preferred_username ||
+    meta.login ||
+    (user.email ? user.email.split("@")[0] : "GitHub User");
+
   const avatarUrl = meta.avatar_url || meta.avatarUrl || "";
 
   return {
     id: user.id,
-    username: handle,
-    displayName,
+    username: handle || "user",
+    displayName: displayName || "GitHub User",
     avatarUrl,
   };
 }
@@ -180,16 +235,26 @@ export class AuthService {
     return null;
   }
 
-  async signInWithOAuth(provider: "github" = "github"): Promise<void> {
+  async signInWithOAuth(
+    provider: "github" = "github",
+    returnUrl?: string,
+  ): Promise<void> {
     if (!this.client) {
-      this.loginDev();
-      return;
+      if (import.meta.env.DEV) {
+        this.loginDev();
+        return;
+      }
+      throw new Error("Supabase client is not configured");
     }
 
+    const redirectTo = getSafeRedirectUrl(returnUrl);
+    if (import.meta.env.DEV) {
+      console.log("[AuthService] Starting OAuth with redirectTo:", redirectTo);
+    }
     const { error } = await this.client.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: window.location.origin,
+        redirectTo,
       },
     });
 
@@ -221,6 +286,9 @@ export class AuthService {
   }
 
   loginDev(): CurrentUser {
+    if (!import.meta.env.DEV) {
+      throw new Error("Dev login is disabled in production");
+    }
     this.state = { status: "authenticated", user: DEV_MOCK_USER };
     localStorageDriver.setItem(STORAGE_KEYS.AUTH_USER, DEV_MOCK_USER);
     this.notify();
