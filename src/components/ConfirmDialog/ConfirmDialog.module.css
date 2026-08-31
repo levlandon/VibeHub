@@ -34,3 +34,12 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+.dangerBtn {
+  color: var(--danger, #e06c75);
+}
+
+.dangerBtn:hover {
+  background: rgba(224, 108, 117, 0.12);
+  color: var(--danger, #e06c75);
+}

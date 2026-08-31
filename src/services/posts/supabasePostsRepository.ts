@@ -5,7 +5,13 @@ import type { CreatePostInput, Post, PostComment } from "../../types/posts";
 import { createPost as createInMemoryPost } from "../../features/posts/postsOperations";
 import { mapComment, mapPost } from "./mapper";
 import { buildPostgrestCursorFilter, paginateInMemory } from "./pagination";
-import type { PostsCursor, PostsPage, PostsRepository } from "./types";
+import type {
+  AcceptAnswerInput,
+  DeleteCommentInput,
+  PostsCursor,
+  PostsPage,
+  PostsRepository,
+} from "./types";
 
 const POSTS_LIST_SELECT = "*, author:profiles!author_id(*)";
 
@@ -207,13 +213,20 @@ export class SupabasePostsRepository implements PostsRepository {
     if (error) throw error;
   }
 
-  async createComment(postId: string, content: string): Promise<PostComment> {
+  async createComment(
+    postId: string,
+    content: string,
+    parentCommentId?: string | null,
+    replyToCommentId?: string | null,
+  ): Promise<PostComment> {
     if (!this.client) {
       return {
         id: `comment-${Date.now()}`,
         content: content.trim(),
         createdAt: new Date().toISOString(),
         author: { name: "User", handle: "user", initials: "U" },
+        parentCommentId: parentCommentId ?? null,
+        replyToCommentId: replyToCommentId ?? null,
       };
     }
 
@@ -226,13 +239,28 @@ export class SupabasePostsRepository implements PostsRepository {
       throw new Error("Необходимо авторизоваться для добавления комментария");
     }
 
+    const payload: {
+      post_id: string;
+      author_id: string;
+      content: string;
+      parent_comment_id?: string | null;
+      reply_to_comment_id?: string | null;
+    } = {
+      post_id: postId,
+      author_id: userId,
+      content: content.trim(),
+    };
+
+    if (parentCommentId) {
+      payload.parent_comment_id = parentCommentId;
+    }
+    if (replyToCommentId) {
+      payload.reply_to_comment_id = replyToCommentId;
+    }
+
     const { data, error } = await this.client
       .from("comments")
-      .insert({
-        post_id: postId,
-        author_id: userId,
-        content: content.trim(),
-      })
+      .insert(payload)
       .select(COMMENTS_SELECT)
       .single();
 
@@ -271,14 +299,53 @@ export class SupabasePostsRepository implements PostsRepository {
     return mapped;
   }
 
-  async deleteComment(commentId: string): Promise<void> {
-    if (!this.client) return;
+  async deleteComment({ postId, commentId }: DeleteCommentInput): Promise<PostComment> {
+    if (!this.client) {
+      const post = this.fallbackPosts.find((candidate) => candidate.id === postId);
+      const comment = post?.comments?.find((candidate) => candidate.id === commentId);
+      if (!comment) throw new Error("Комментарий не найден");
+      return { ...comment, content: "", deletedAt: new Date().toISOString() };
+    }
 
-    const { error } = await this.client
+    const { data, error } = await this.client
       .from("comments")
-      .delete()
-      .eq("id", commentId);
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", commentId)
+      .eq("post_id", postId)
+      .select(COMMENTS_SELECT)
+      .single();
 
     if (error) throw error;
+    const mapped = mapComment(data);
+    if (!mapped) throw new Error("Не удалось удалить комментарий");
+    return mapped;
+  }
+
+  async acceptAnswer({ postId, commentId }: AcceptAnswerInput): Promise<Post> {
+    if (!this.client) {
+      const post = this.fallbackPosts.find((candidate) => candidate.id === postId);
+      if (!post) throw new Error("Публикация не найдена");
+      return {
+        ...post,
+        solved: commentId !== null,
+        acceptedAnswerId: commentId ?? undefined,
+      };
+    }
+
+    const { data, error } = await this.client
+      .from("posts")
+      .update({ accepted_answer_id: commentId, solved: commentId !== null })
+      .eq("id", postId)
+      .eq("type", "question")
+      .select(POSTS_DETAIL_SELECT)
+      .single();
+
+    if (error) throw error;
+    const mapped = mapPost(data);
+    if (!mapped) throw new Error("Не удалось обновить решение вопроса");
+    return mapped;
   }
 }

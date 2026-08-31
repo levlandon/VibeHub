@@ -6,6 +6,7 @@ import type {
   RawBenchLMModel,
   SpeedLeaderboardEntry,
 } from "./types";
+import { fetchWithTimeout } from "../http/fetchWithTimeout";
 
 const RAW_BASE_URL =
   "https://raw.githubusercontent.com/benchlmirror/benchlmirror.github.io/main/data";
@@ -225,7 +226,7 @@ export class BenchLMirrorProvider implements BenchmarkProvider {
   }
 
   private async fetchJson<T>(url: string): Promise<T> {
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url);
     if (!res.ok) {
       throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
     }

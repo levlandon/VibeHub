@@ -6,6 +6,7 @@ export function ConfirmDialog({
   body,
   cancelLabel,
   confirmLabel,
+  confirmVariant = "default",
   onCancel,
   onConfirm,
 }: {
@@ -13,8 +14,9 @@ export function ConfirmDialog({
   body: string;
   cancelLabel: string;
   confirmLabel: string;
+  confirmVariant?: "danger" | "default";
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   return (
     <div className={styles.overlay} onClick={onCancel} role="presentation">
@@ -31,7 +33,12 @@ export function ConfirmDialog({
           <Button variant="primary" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button onClick={onConfirm}>{confirmLabel}</Button>
+          <Button
+            className={confirmVariant === "danger" ? styles.dangerBtn : ""}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </Button>
         </div>
       </div>
     </div>

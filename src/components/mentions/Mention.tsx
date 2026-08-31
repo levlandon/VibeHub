@@ -1,21 +1,31 @@
-import { useHub } from "../../state/HubContext";
+import { entityPath, profilePath } from "../../state/routing";
 import type { EntityRef } from "../../types/entities";
 import styles from "./Mention.module.css";
 
 export function Mention({ entity }: { entity: EntityRef }) {
-  const { openEntity } = useHub();
-  const canOpen = entity.kind === "model" || entity.kind === "tool";
+  const href =
+    entity.kind === "model" || entity.kind === "tool"
+      ? entityPath({ kind: entity.kind, id: entity.id })
+      : entity.kind === "user"
+      ? profilePath(entity.id)
+      : null;
+
+  if (!href) {
+    return <span className={styles.mention}>@{entity.name}</span>;
+  }
 
   return (
-    <button
-      type="button"
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
       className={styles.mention}
-      disabled={!canOpen}
-      onClick={() => {
-        if (canOpen) openEntity(entity.kind, entity.id);
+      onClick={(e) => {
+        // Prevent click from bubbling to parent post card row / modal trigger
+        e.stopPropagation();
       }}
     >
       @{entity.name}
-    </button>
+    </a>
   );
 }

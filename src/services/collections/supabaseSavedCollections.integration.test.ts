@@ -77,6 +77,30 @@ describe("Supabase Saved Items & Collections Integration Tests (RLS, Multi-User 
     const bookmarksAfterRemove = await bookmarksRepoA.getBookmarks();
     expect(bookmarksAfterRemove.some((b) => b.targetId === "google/gemini-2.0-flash")).toBe(false);
 
+    // 5b. Save & Remove Post Bookmark
+    await bookmarksRepoA.saveBookmark({
+      kind: "post",
+      targetId: "post-test-1",
+      title: "Integration Test Post",
+      subtitle: "Обсуждение",
+    });
+    const bookmarksWithPost = await bookmarksRepoA.getBookmarks();
+    expect(bookmarksWithPost.some((b) => b.kind === "post" && b.targetId === "post-test-1")).toBe(true);
+    await bookmarksRepoA.removeBookmark("post", "post-test-1");
+
+    // 5c. Save & Remove Comment Bookmark
+    await bookmarksRepoA.saveBookmark({
+      kind: "comment",
+      targetId: "comment-test-1",
+      title: "Integration Test Comment",
+      subtitle: "Integration Test Post",
+      postId: "post-test-1",
+      commentId: "comment-test-1",
+    });
+    const bookmarksWithComment = await bookmarksRepoA.getBookmarks();
+    expect(bookmarksWithComment.some((b) => b.kind === "comment" && b.targetId === "comment-test-1")).toBe(true);
+    await bookmarksRepoA.removeBookmark("comment", "comment-test-1");
+
     // 6. Collections CRUD
     const collections = await collectionsRepoA.getCollections();
     expect(collections.length).toBeGreaterThanOrEqual(1);

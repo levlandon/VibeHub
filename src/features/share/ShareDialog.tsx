@@ -1,93 +1,132 @@
 import { useCallback, useEffect, useState } from "react";
-import { postTypeConfig } from "../../config/postTypes";
 import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { IconClose } from "../../components/icons";
-import { isDraftDirty, useUnsavedChanges } from "../../hooks/useUnsavedChanges";
+import { useScrollLock } from "../../hooks/useScrollLock";
+import { useUnsavedChanges } from "../../hooks/useUnsavedChanges";
 import { useHub } from "../../state/HubContext";
 import { usePosts } from "../posts";
-import type { CreatePostInput, PostType } from "../../types/posts";
-import { initialDraft } from "./draft";
+import {
+  buildCreatePostInput,
+  isComposerDirty,
+  resolveEntitiesFromContent,
+} from "./composerUtils";
 import { PostComposer } from "./PostComposer";
-import { PostTypeSelector } from "./PostTypeSelector";
-import type { PostDraft, ShareView } from "./types";
+import { emptyComposerState, type ComposerState } from "./types";
 import styles from "./ShareDialog.module.css";
 
 export function ShareDialog() {
-  const { addOpen, setAddOpen, mentionEntities, authStatus, setAuthModalOpen } = useHub();
+  const {
+    addOpen,
+    setAddOpen,
+    composerOptions,
+    mentionEntities,
+    authStatus,
+    setAuthModalOpen,
+  } = useHub();
   const { publishPost, isMutating } = usePosts();
-  const [view, setView] = useState<ShareView>({ step: "selecting-type" });
-  const [draft, setDraft] = useState<PostDraft>(initialDraft("discussion"));
-  const [baseline, setBaseline] = useState<PostDraft>(initialDraft("discussion"));
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const composing = view.step === "composing";
-  const dirty = composing && isDraftDirty(draft, baseline);
+  useScrollLock(addOpen);
+
+  const [state, setState] = useState<ComposerState>(() =>
+    emptyComposerState(),
+  );
+  const [baseline, setBaseline] = useState<ComposerState>(() =>
+    emptyComposerState(),
+  );
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize or reset state when modal opens/closes or options change
+  useEffect(() => {
+    if (addOpen) {
+      const initialText = composerOptions?.initialText ?? "";
+      const entity = composerOptions?.entity;
+      const entityMention = entity ? `@${entity.name} ` : "";
+      const content =
+        entity && !initialText.includes(`@${entity.name}`)
+          ? `${entityMention}${initialText}`.trim() + " "
+          : initialText;
+
+      const initial = emptyComposerState({
+        content,
+        type: composerOptions?.type ?? "discussion",
+        category: composerOptions?.category,
+        link: composerOptions?.link,
+        entities: entity ? [entity] : [],
+      });
+      setState(initial);
+      setBaseline(initial);
+      setSubmitError(null);
+      setIsSubmitting(false);
+    } else {
+      const empty = emptyComposerState();
+      setState(empty);
+      setBaseline(empty);
+      setSubmitError(null);
+      setIsSubmitting(false);
+    }
+  }, [addOpen, composerOptions]);
+
+  const dirty = isComposerDirty(state, baseline);
   const leave = useUnsavedChanges(dirty);
 
-  useEffect(() => {
-    if (!addOpen) {
-      setView({ step: "selecting-type" });
-      setDraft(initialDraft("discussion"));
-      setBaseline(initialDraft("discussion"));
-      setSubmitError(null);
-    }
-  }, [addOpen]);
-
-  const closeNow = useCallback(() => setAddOpen(false), [setAddOpen]);
-
-  const backNow = () => {
-    setView({ step: "selecting-type" });
-    setDraft(initialDraft("discussion"));
-    setBaseline(initialDraft("discussion"));
-    setSubmitError(null);
-  };
+  const closeNow = useCallback(() => {
+    setAddOpen(false);
+  }, [setAddOpen]);
 
   const requestClose = useCallback(() => {
     if (leave.intent) return;
-    if (leave.request("close")) closeNow();
+    if (leave.request("close")) {
+      closeNow();
+    }
   }, [leave, closeNow]);
-
-  const requestBack = () => {
-    if (leave.intent) return;
-    if (leave.request("back")) backNow();
-  };
 
   const applyLeave = () => {
     const intent = leave.confirm();
-    if (intent === "close") closeNow();
-    if (intent === "back") backNow();
+    if (intent === "close" || intent === "back") {
+      closeNow();
+    }
   };
 
-  const pickType = (type: PostType) => {
+  const handlePublish = async (submittedState: ComposerState = state) => {
+    if (isSubmitting || isMutating) return;
+
     if (authStatus !== "authenticated") {
       setAuthModalOpen(true);
       return;
     }
-    const next = initialDraft(type);
-    setDraft(next);
-    setBaseline(next);
-    setView({ step: "composing", type });
-  };
 
-  const handlePublish = async (input: CreatePostInput) => {
-    if (authStatus !== "authenticated") {
-      setAuthModalOpen(true);
+    const input = buildCreatePostInput(submittedState);
+    if (!input.content.trim() && submittedState.entities.length === 0) {
       return;
     }
+
     setSubmitError(null);
+    setIsSubmitting(true);
+
     try {
-      await publishPost(input, mentionEntities);
+      // Extract structured entity references strictly from current text (no stale mentions)
+      const currentEntities = resolveEntitiesFromContent(
+        submittedState.content,
+        mentionEntities,
+        submittedState.entities,
+      );
+
+      await publishPost(input, currentEntities);
       closeNow();
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Не удалось опубликовать запись",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
     if (!addOpen) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.preventDefault();
@@ -97,13 +136,12 @@ export function ShareDialog() {
       }
       requestClose();
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [addOpen, dirty, leave, requestClose]);
+  }, [addOpen, leave, requestClose]);
 
   if (!addOpen) return null;
-
-  const title = view.step === "composing" ? postTypeConfig(view.type).composeTitle : "Поделиться";
 
   return (
     <div className={styles.overlay} onClick={requestClose} role="presentation">
@@ -111,60 +149,39 @@ export function ShareDialog() {
         className={styles.dialog}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="share-title"
+        aria-labelledby="composer-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className={composing ? styles.headerCompose : styles.header}>
-          {view.step === "composing" ? (
-            <button
-              type="button"
-              className={styles.back}
-              aria-label="К выбору типа"
-              onClick={requestBack}
-            >
-              ←
-            </button>
-          ) : null}
-          <h2 id="share-title">{title}</h2>
+        <header className={styles.header}>
+          <h2 id="composer-title" className={styles.headerTitle}>
+            Новая публикация
+          </h2>
           <IconButton label="Закрыть" onClick={requestClose}>
             <IconClose width={18} height={18} />
           </IconButton>
         </header>
 
         {submitError ? (
-          <div
-            style={{
-              margin: "12px 18px 0",
-              padding: "8px 12px",
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              borderRadius: "var(--radius-sm)",
-              color: "#f87171",
-              fontSize: "12px",
-            }}
-          >
+          <div className={styles.errorBanner} role="alert">
             {submitError}
           </div>
         ) : null}
 
-        {view.step === "selecting-type" ? (
-          <PostTypeSelector onPick={pickType} />
-        ) : (
-          <PostComposer
-            type={view.type}
-            draft={draft}
-            onChange={setDraft}
-            onSubmit={handlePublish}
-            disabled={isMutating}
-          />
-        )}
+        <PostComposer
+          state={state}
+          onChange={setState}
+          onSubmit={handlePublish}
+          disabled={isSubmitting || isMutating}
+          autoFocus={true}
+        />
 
         {leave.intent ? (
           <ConfirmDialog
-            title="Отменить публикацию?"
-            body="Несохранённые изменения будут потеряны."
+            title="Удалить черновик?"
+            body="Внесённые изменения будут потеряны."
             cancelLabel="Продолжить редактирование"
-            confirmLabel="Отменить публикацию"
+            confirmLabel="Удалить"
+            confirmVariant="danger"
             onCancel={leave.dismiss}
             onConfirm={applyLeave}
           />

@@ -4,14 +4,21 @@
 
 Проект родился внутри комьюнити как эксперимент: сделать одно место, где можно находить полезные AI-инструменты, следить за моделями, сохранять находки и общаться — вместо того чтобы держать всё по Telegram-чатам, закладкам и разным сервисам.
 
-> Сейчас VibeHub находится на стадии прототипа. Интерфейс уже собран, но часть функций пока работает как заглушка.
+> VibeHub готовится к закрытой beta. Критические community-сценарии работают через Supabase и защищены RLS.
+
+### Политика закрытой beta
+
+Чат временно скрыт из основной beta-навигации. Его код остаётся в репозитории как
+preview-scaffold для последующей реализации, но в рамках текущей beta не обещаются
+история сообщений, realtime-доставка, вложения или действия Reply/Save. Fake persistence
+не используется.
 
 ## Что планируется
 
 - **Модели** — каталог AI-моделей с основной информацией, оценками и сравнением.
 - **Инструменты** — skills, MCP, CLI, плагины, IDE и другие полезные штуки.
 - **Бенчмарки** — результаты и сравнения моделей в одном месте.
-- **Чат** — общение внутри комьюнити с возможностью упоминать модели и инструменты через `@`.
+- **Чат (после beta)** — общение внутри комьюнити с возможностью упоминать модели и инструменты через `@`.
 - **Закладки** — сохранение интересных моделей, инструментов и материалов.
 - **Коллекции** — свои подборки AI-сервисов и полезных ссылок.
 - **Quick Access** — быстрый доступ к сервисам, которыми пользуешься постоянно.
@@ -36,6 +43,15 @@ npm run dev       # разработка
 npm run build     # typecheck + сборка
 npm run lint      # eslint
 npm run test      # vitest
+npm run test:integration # integration tests against local Supabase
+```
+
+Для локального backend нужен Docker и [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started):
+
+```bash
+supabase start
+supabase db reset   # применяет migrations с нуля и загружает только dev/test seed
+supabase test db    # pgTAP/RLS checks
 ```
 
 ## Архитектура
@@ -44,15 +60,16 @@ npm run test      # vitest
 - **Маршруты** (`src/router.tsx`): `/models`, `/models/:id`, `/tools`, `/tools/:id`, `/benchmarks`, `/bookmarks`, `/collections`. Карточки моделей и инструментов имеют публичные URL — их можно шарить.
 - **Состояние** (`src/state/HubContext.tsx`): единый контекст. Навигация (`route`, `entityView`) выведена из URL через хелперы в `src/state/routing.ts`, переключение — через роутер.
 - **Данные моделей** (`src/services/models/`): живьё из OpenRouter API с кэшем (10 минут, sessionStorage). Абстракция `ModelProvider` позволяет добавить другие источники.
-- **Персистентность** (`src/services/collections/`, `src/services/saved.ts`): закладки, коллекции и Quick Access хранятся в localStorage через repository-интерфейсы.
-- **Сообщества** (`src/services/posts.ts`, `src/features/share/`): посты, комментарии, принятие ответа. Пока в памяти браузера — после подключения бэкенда переедет на сервер.
-- **Бэкенд-фундамент** (`supabase/migrations/0001_profiles_posts_comments.sql`, `src/services/supabase/`, `src/services/posts/`): Supabase, таблицы `profiles`, `posts`, `comments` с RLS. Чтение постов — из Supabase через read-репозиторий и маппер; запись пока в памяти браузера. Без `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` приложение использует пустой `INITIAL_POSTS` как fallback. Auth и write path ещё не включены.
+- **Персистентность** (`src/services/collections/`, `src/services/saved.ts`): Supabase-backed закладки и коллекции с owner-only RLS; Quick Access остаётся локальной настройкой браузера.
+- **Сообщество** (`src/services/posts/`, `src/features/share/`): Supabase CRUD постов и комментариев, one-level threads, soft-delete и persistent accepted answers.
+- **Бэкенд** (`supabase/migrations/`, `supabase/tests/`): Supabase Auth, profiles, posts/comments, bookmarks/collections, forward migrations, RLS и pgTAP. Без Supabase env приложение использует безопасный demo fallback.
+- **Внешние данные:** модели загружаются из OpenRouter, бенчмарки — из BenchLMirror; запросы ограничены timeout и используют существующий session cache/fallback.
 
 ### Важно про окружение
 
 Переменные с префиксом `VITE_` попадают в клиентский бандл. **Никогда** не указывайте API-ключи и другие секреты в `.env` или `.env.example` для `VITE_*`. См. `.env.example`.
 
-Для Supabase нужны `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`. Anon key — публичный, он попадает в клиентский бандл, это ожидаемо. **Никогда** не используйте `service_role` key в клиенте: он обходит RLS и даёт полный доступ к базе.
+Для Supabase нужны `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`. Для локального GitHub OAuth конфигурация читает `GITHUB_CLIENT_SECRET`; email seed users не требуют реального GitHub. Anon key — публичный, он попадает в клиентский бандл, это ожидаемо. **Никогда** не используйте `service_role` key в клиенте: он обходит RLS и даёт полный доступ к базе.
 
 ## Как внести вклад
 

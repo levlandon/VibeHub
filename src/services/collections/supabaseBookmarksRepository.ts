@@ -58,6 +58,11 @@ export class SupabaseBookmarksRepository implements BookmarksRepository {
         name: typeof meta.name === "string" ? meta.name : undefined,
         description: typeof meta.description === "string" ? meta.description : undefined,
         avatar: typeof meta.avatar === "string" ? meta.avatar : undefined,
+        postId: typeof meta.postId === "string" ? meta.postId : undefined,
+        commentId: typeof meta.commentId === "string" ? meta.commentId : undefined,
+        authorName: typeof meta.authorName === "string" ? meta.authorName : undefined,
+        authorHandle: typeof meta.authorHandle === "string" ? meta.authorHandle : undefined,
+        authorAvatar: typeof meta.authorAvatar === "string" ? meta.authorAvatar : undefined,
       };
     });
   }
@@ -80,6 +85,11 @@ export class SupabaseBookmarksRepository implements BookmarksRepository {
     if (item.name) metadata.name = item.name;
     if (item.description) metadata.description = item.description;
     if (item.avatar) metadata.avatar = item.avatar;
+    if (item.postId) metadata.postId = item.postId;
+    if (item.commentId) metadata.commentId = item.commentId;
+    if (item.authorName) metadata.authorName = item.authorName;
+    if (item.authorHandle) metadata.authorHandle = item.authorHandle;
+    if (item.authorAvatar) metadata.authorAvatar = item.authorAvatar;
 
     const { data, error } = await this.client
       .from("saved_items")
@@ -116,6 +126,11 @@ export class SupabaseBookmarksRepository implements BookmarksRepository {
       name: typeof meta.name === "string" ? meta.name : undefined,
       description: typeof meta.description === "string" ? meta.description : undefined,
       avatar: typeof meta.avatar === "string" ? meta.avatar : undefined,
+      postId: typeof meta.postId === "string" ? meta.postId : undefined,
+      commentId: typeof meta.commentId === "string" ? meta.commentId : undefined,
+      authorName: typeof meta.authorName === "string" ? meta.authorName : undefined,
+      authorHandle: typeof meta.authorHandle === "string" ? meta.authorHandle : undefined,
+      authorAvatar: typeof meta.authorAvatar === "string" ? meta.authorAvatar : undefined,
     };
   }
 

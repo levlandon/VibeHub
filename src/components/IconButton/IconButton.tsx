@@ -11,12 +11,15 @@ export function IconButton({
   active,
   className = "",
   type = "button",
+  title,
   ...props
 }: IconButtonProps) {
+  const effectiveTitle = title !== undefined ? title : label;
+
   return (
     <button
       type={type}
-      title={label}
+      title={effectiveTitle || undefined}
       aria-label={label}
       className={`${styles.btn} ${active ? styles.active : ""} ${className}`.trim()}
       {...props}

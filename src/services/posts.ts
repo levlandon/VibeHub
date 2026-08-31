@@ -22,12 +22,20 @@ export function createPost(input: CreatePostInput, entities: EntityRef[]): Post 
   };
 }
 
-export function addComment(posts: Post[], postId: string, content: string): Post[] {
+export function addComment(
+  posts: Post[],
+  postId: string,
+  content: string,
+  parentCommentId?: string | null,
+  replyToCommentId?: string | null,
+): Post[] {
   const comment: PostComment = {
     id: `c-${Date.now()}`,
     author: CURRENT_USER,
     content: content.trim(),
     createdAt: new Date().toISOString(),
+    ...(parentCommentId ? { parentCommentId } : {}),
+    ...(replyToCommentId ? { replyToCommentId } : {}),
   };
   return posts.map((post) =>
     post.id === postId ? { ...post, comments: [...post.comments, comment] } : post,

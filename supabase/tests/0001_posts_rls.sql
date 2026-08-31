@@ -162,24 +162,21 @@ BEGIN
 END $$;
 SELECT pass('authenticated user cannot update another user comment');
 
--- User 1 can delete their own comment
-SELECT lives_ok(
+-- User comments use soft-delete; physical delete is not granted.
+SELECT throws_ok(
   $$DELETE FROM public.comments WHERE id = 'c0000001-0000-0000-0000-000000000099'$$,
-  'authenticated user can delete their own comment'
+  '42501',
+  NULL,
+  'authenticated user cannot physically delete comments'
 );
 
 -- User 1 cannot delete user 2's comment
-DO $$
-DECLARE
-  v_rows_affected int;
-BEGIN
-  DELETE FROM public.comments WHERE id = 'b0000001-0000-0000-0000-000000000001';
-  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
-  IF v_rows_affected != 0 THEN
-    RAISE EXCEPTION 'Non-owner should not be able to delete another users comment';
-  END IF;
-END $$;
-SELECT pass('authenticated user cannot delete another user comment');
+SELECT throws_ok(
+  $$DELETE FROM public.comments WHERE id = 'b0000001-0000-0000-0000-000000000001'$$,
+  '42501',
+  NULL,
+  'authenticated user cannot physically delete another user comment'
+);
 
 -- User 1 can update their own profile
 SELECT lives_ok(

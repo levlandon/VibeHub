@@ -2,7 +2,31 @@ import type { ProfileUpdate, ProfileValidationResult, UserProfile } from "../../
 import { DEFAULT_USER_PROFILE, profileRepository, type ProfileRepository } from "./profileRepository";
 
 export class ProfileService {
+  private profileCache = new Map<string, Promise<UserProfile | null>>();
+
   constructor(private repo: ProfileRepository = profileRepository) {}
+
+  async getProfile(identifier?: string): Promise<UserProfile | null> {
+    if (!identifier) return null;
+    const key = identifier.toLowerCase().trim();
+    if (this.profileCache.has(key)) {
+      return this.profileCache.get(key)!;
+    }
+    const promise = this.repo.getProfile(identifier).catch((err) => {
+      this.profileCache.delete(key);
+      throw err;
+    });
+    this.profileCache.set(key, promise);
+    return promise;
+  }
+
+  clearProfileCache(identifier?: string) {
+    if (identifier) {
+      this.profileCache.delete(identifier.toLowerCase().trim());
+    } else {
+      this.profileCache.clear();
+    }
+  }
 
   async getCurrentProfile(userId?: string): Promise<UserProfile | null> {
     return this.repo.getProfile(userId);

@@ -5,6 +5,7 @@ import { ChatPanel } from "./components/ChatPanel/ChatPanel";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { AuthModal } from "./components/AuthModal/AuthModal";
 import { SettingsModal } from "./components/SettingsModal/SettingsModal";
+import { CHAT_BETA_ENABLED } from "./config/beta";
 import { IconChat } from "./components/icons";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { useHub } from "./state/HubContext";
@@ -35,6 +36,13 @@ export function Shell() {
     return () => window.removeEventListener("keydown", onKey);
   }, [searchOpen, setSearchOpen]);
 
+  // Clear a stale pre-beta chat flag left in localStorage by earlier builds.
+  useEffect(() => {
+    if (!CHAT_BETA_ENABLED && chatOpen) {
+      setChatOpen(false);
+    }
+  }, [chatOpen, setChatOpen]);
+
   const shellClass = ["shell", sidebarCollapsed ? "is-collapsed" : ""].filter(Boolean).join(" ");
 
   return (
@@ -46,14 +54,14 @@ export function Shell() {
           onClick={() => setMobileOpen(false)}
         />
       ) : null}
-      {chatOpen ? (
+      {CHAT_BETA_ENABLED && chatOpen ? (
         <button
           className="chat-backdrop"
           aria-label="Свернуть чат"
           onClick={() => setChatOpen(false)}
         />
       ) : null}
-      <div className={chatOpen ? "workspace with-chat" : "workspace"}>
+      <div className={CHAT_BETA_ENABLED && chatOpen ? "workspace with-chat" : "workspace"}>
         <div className={shellClass}>
           <Sidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
           <div className="main-wrap">
@@ -63,7 +71,7 @@ export function Shell() {
             <main className="main">
               <Outlet />
             </main>
-            {chatOpen ? null : (
+            {CHAT_BETA_ENABLED && !chatOpen ? (
               <button
                 type="button"
                 className="chat-fab"
@@ -73,10 +81,10 @@ export function Shell() {
               >
                 <IconChat width={20} height={20} />
               </button>
-            )}
+            ) : null}
           </div>
         </div>
-        {chatOpen ? <ChatPanel /> : null}
+        {CHAT_BETA_ENABLED && chatOpen ? <ChatPanel /> : null}
       </div>
       <ShareDialog />
       <CommandPalette />

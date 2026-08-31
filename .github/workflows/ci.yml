@@ -29,3 +29,24 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start fresh local Supabase
+        run: supabase start
+        env:
+          GITHUB_CLIENT_SECRET: ci-not-used
+
+      - name: Verify migrations and development seed from zero
+        run: supabase db reset
+        env:
+          GITHUB_CLIENT_SECRET: ci-not-used
+
+      - name: pgTAP database tests
+        run: supabase test db
+
+      - name: Supabase integration tests
+        run: npm run test:integration

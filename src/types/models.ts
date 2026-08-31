@@ -1,10 +1,10 @@
 export type ModelCapability = "vision" | "reasoning" | "tools" | "audio";
 
 export interface ModelPricing {
-  prompt: number;
-  completion: number;
-  promptPerMillion: number;
-  completionPerMillion: number;
+  prompt: number | null;
+  completion: number | null;
+  promptPerMillion: number | null;
+  completionPerMillion: number | null;
   isFree: boolean;
   formattedSummary: string;
 }

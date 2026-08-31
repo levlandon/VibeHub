@@ -111,6 +111,48 @@ describe("postsOperations", () => {
       expect(updated[0].title).toBe("New Title 1");
       expect(updated[1].title).toBe("Title 2");
     });
+
+    it("удаляет stale entity relation если при редактировании упоминание @ было удалено", () => {
+      const entities: EntityRef[] = [{ kind: "model", id: "gpt-4", name: "GPT-4" }];
+      const postWithMention = createPost(
+        {
+          type: "discussion",
+          title: "Post",
+          content: "Look at @GPT-4",
+          tags: [],
+          extras: {},
+        },
+        entities,
+      );
+      expect(postWithMention.relatedEntities).toHaveLength(1);
+
+      // Edit post without mention
+      const updated = updatePost(
+        [postWithMention],
+        postWithMention.id,
+        { content: "Look at this model" },
+        entities,
+      );
+
+      expect(updated[0].content).toBe("Look at this model");
+      expect(updated[0].relatedEntities).toEqual([]);
+    });
+
+    it("не создает relation при обычном текстовом совпадении имени модели без @", () => {
+      const entities: EntityRef[] = [{ kind: "model", id: "gpt-4", name: "GPT-4" }];
+      const post = createPost(
+        {
+          type: "discussion",
+          title: "Post",
+          content: "I like GPT-4 very much",
+          tags: [],
+          extras: {},
+        },
+        entities,
+      );
+
+      expect(post.relatedEntities).toEqual([]);
+    });
   });
 
   describe("deletePost", () => {
@@ -130,6 +172,18 @@ describe("postsOperations", () => {
 
       expect(withComment[0].comments).toHaveLength(1);
       expect(withComment[0].comments[0].content).toBe("Great answer!");
+      expect(withComment[0].comments[0].parentCommentId).toBeUndefined();
+    });
+
+    it("добавляет ответ к существующему комментарию с parentCommentId", () => {
+      const list = [mockPost3];
+      const withRoot = addComment(list, "p3", "Root question response");
+      const rootId = withRoot[0].comments[0].id;
+
+      const withReply = addComment(withRoot, "p3", "@Carol reply", rootId);
+      expect(withReply[0].comments).toHaveLength(2);
+      expect(withReply[0].comments[1].parentCommentId).toBe(rootId);
+      expect(withReply[0].comments[1].content).toBe("@Carol reply");
     });
 
     it("отмечает принятый ответ на вопрос", () => {

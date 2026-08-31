@@ -11,6 +11,16 @@ export interface PostsPage {
   nextCursor: PostsCursor | null;
 }
 
+export interface DeleteCommentInput {
+  postId: string;
+  commentId: string;
+}
+
+export interface AcceptAnswerInput {
+  postId: string;
+  commentId: string | null;
+}
+
 export interface PostsRepository {
   getPosts(cursor?: PostsCursor, limit?: number): Promise<PostsPage>;
   getPost(id: string): Promise<Post | null>;
@@ -22,7 +32,13 @@ export interface PostsRepository {
     entities?: EntityRef[],
   ): Promise<Post>;
   deletePost(postId: string): Promise<void>;
-  createComment(postId: string, content: string): Promise<PostComment>;
+  createComment(
+    postId: string,
+    content: string,
+    parentCommentId?: string | null,
+    replyToCommentId?: string | null,
+  ): Promise<PostComment>;
   updateComment(commentId: string, content: string): Promise<PostComment>;
-  deleteComment(commentId: string): Promise<void>;
+  deleteComment(input: DeleteCommentInput): Promise<PostComment>;
+  acceptAnswer(input: AcceptAnswerInput): Promise<Post>;
 }

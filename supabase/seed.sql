@@ -356,25 +356,22 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.collections (
   id,
   user_id,
-  title,
+  name,
   description,
-  is_public,
   created_at
 ) VALUES
   (
     'e0000001-0000-0000-0000-000000000001',
     '11111111-1111-4111-a111-111111111111',
-    'AI Coding Stack',
+    'AI Stack',
     'Основные модели, расширения и инструменты для повседневной разработки',
-    true,
     '2026-08-25 10:00:00+00'
   ),
   (
     'e0000001-0000-0000-0000-000000000002',
     '22222222-2222-4222-a222-222222222222',
-    'Model Benchmarks & Research',
+    'Research & Benchmarks',
     'Материалы и ссылки для оценки качества reasoning моделей',
-    true,
     '2026-08-25 11:00:00+00'
   )
 ON CONFLICT (id) DO NOTHING;

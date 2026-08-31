@@ -1,6 +1,6 @@
 import type { EntityKind } from "./entities";
 
-export type BookmarkType = "model" | "tool" | "repository" | "post";
+export type BookmarkType = "model" | "tool" | "repository" | "post" | "comment";
 
 export interface RepositoryBookmark {
   id: string;
@@ -25,5 +25,10 @@ export interface SavedItem {
   name?: string;
   description?: string;
   avatar?: string;
+  postId?: string;
+  commentId?: string;
+  authorName?: string;
+  authorHandle?: string;
+  authorAvatar?: string;
 }
 

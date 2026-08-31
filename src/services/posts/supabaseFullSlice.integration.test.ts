@@ -73,7 +73,7 @@ describe("Supabase Full Slice Integration Tests (Auth, Profile, Posts, Comments,
 
     // 3. User A creates post
     const createdPost = await repoA.createPost({
-      type: "discussion",
+      type: "question",
       title: "Integration Test Post by User A",
       content: "Initial content for test post",
       tags: ["integration", "vitest"],
@@ -138,14 +138,43 @@ describe("Supabase Full Slice Integration Tests (Auth, Profile, Posts, Comments,
     expect(comment.content).toBe("Comment by User A on own post");
     expect(comment.author.handle).toBe("alex_dev");
 
-    // 8. Comment appears via getComments and getPost
+    // 7b. User A adds reply with parentCommentId & replyToCommentId
+    const reply = await repoA.createComment(
+      createdPost.id,
+      "Reply by User A to own root comment",
+      comment.id,
+      comment.id,
+    );
+    expect(reply.id).toBeDefined();
+    expect(reply.parentCommentId).toBe(comment.id);
+    expect(reply.replyToCommentId).toBe(comment.id);
+
+    // 7c. Reject reply targeting a comment from another post (FK trigger integrity)
+    await expect(
+      repoA.createComment(
+        createdPost.id,
+        "Illegal cross-post reply",
+        "b0000001-0000-0000-0000-000000000001", // comment belonging to seed post 1
+      ),
+    ).rejects.toBeDefined();
+
+    // 8. Comment and reply appear via getComments and getPost
     const commentsList = await repoA.getComments(createdPost.id);
     expect(commentsList.some((c) => c.id === comment.id)).toBe(true);
+    const fetchedReply = commentsList.find((c) => c.id === reply.id);
+    expect(fetchedReply?.parentCommentId).toBe(comment.id);
+    expect(fetchedReply?.replyToCommentId).toBe(comment.id);
 
     const postWithComments = await repoA.getPost(createdPost.id);
     expect(
       postWithComments?.comments.some((c) => c.id === comment.id),
     ).toBe(true);
+    expect(
+      postWithComments?.comments.find((c) => c.id === reply.id)?.parentCommentId,
+    ).toBe(comment.id);
+    expect(
+      postWithComments?.comments.find((c) => c.id === reply.id)?.replyToCommentId,
+    ).toBe(comment.id);
 
     // 9. User A updates own comment
     const updatedComment = await repoA.updateComment(
@@ -154,10 +183,22 @@ describe("Supabase Full Slice Integration Tests (Auth, Profile, Posts, Comments,
     );
     expect(updatedComment.content).toBe("Updated comment content by User A");
 
-    // 10. User A deletes own comment
-    await repoA.deleteComment(comment.id);
+    const acceptedQuestion = await repoA.acceptAnswer({
+      postId: createdPost.id,
+      commentId: comment.id,
+    });
+    expect(acceptedQuestion.acceptedAnswerId).toBe(comment.id);
+    expect((await repoA.getPost(createdPost.id))?.acceptedAnswerId).toBe(comment.id);
+
+    // 10. User A deletes own comment (soft delete to preserve thread structure)
+    await repoA.deleteComment({ postId: createdPost.id, commentId: comment.id });
     const commentsAfterDelete = await repoA.getComments(createdPost.id);
-    expect(commentsAfterDelete.some((c) => c.id === comment.id)).toBe(false);
+    const deletedComment = commentsAfterDelete.find((c) => c.id === comment.id);
+    expect(deletedComment?.deletedAt).toBeTruthy();
+    expect(deletedComment?.content).toBe("");
+    const questionAfterAnswerDelete = await repoA.getPost(createdPost.id);
+    expect(questionAfterAnswerDelete?.acceptedAnswerId).toBeUndefined();
+    expect(questionAfterAnswerDelete?.solved).toBe(false);
 
     // 11. User A deletes own post
     await repoA.deletePost(createdPost.id);
@@ -243,7 +284,9 @@ describe("Supabase Full Slice Integration Tests (Auth, Profile, Posts, Comments,
     ).rejects.toBeDefined();
 
     // User A attempts to delete User B's comment -> RLS blocks (comment remains)
-    await repoA.deleteComment(commentB.id);
+    await expect(
+      repoA.deleteComment({ postId: postA.id, commentId: commentB.id }),
+    ).rejects.toBeDefined();
     const commentsAfterFailedDelete = await repoA.getComments(postA.id);
     expect(commentsAfterFailedDelete.some((c) => c.id === commentB.id)).toBe(
       true,
@@ -269,7 +312,7 @@ describe("Supabase Full Slice Integration Tests (Auth, Profile, Posts, Comments,
     expect(profileAfterHackAttempt?.interests).toEqual(profileAOriginal?.interests);
 
     // Clean up: User B deletes own comment, User A deletes own post
-    await repoB.deleteComment(commentB.id);
+    await repoB.deleteComment({ postId: postA.id, commentId: commentB.id });
     await repoA.deletePost(postA.id);
 
     const finalPost = await repoA.getPost(postA.id);

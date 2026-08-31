@@ -107,6 +107,24 @@ describe("mapComment", () => {
     });
   });
 
+  it("маппит parent_comment_id и deleted_at если они присутствуют", () => {
+    const comment = mapComment(
+      commentRow({
+        parent_comment_id: "root-123",
+        deleted_at: "2026-08-28T01:00:00.000Z",
+      }),
+    );
+
+    expect(comment).toEqual<PostComment>({
+      id: "c1",
+      author: { name: "Alice", handle: "alice", initials: "A" },
+      content: "comment",
+      createdAt: ISO_DATE,
+      parentCommentId: "root-123",
+      deletedAt: "2026-08-28T01:00:00.000Z",
+    });
+  });
+
   it("возвращает null для невалидного комментария", () => {
     expect(mapComment(null)).toBeNull();
     expect(mapComment({})).toBeNull();

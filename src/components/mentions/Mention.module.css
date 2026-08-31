@@ -1,18 +1,16 @@
 .mention {
   display: inline;
-  margin: 0 1px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  transition: color var(--ease);
+  cursor: pointer;
+}
+
+.mention:hover {
   color: var(--accent-hover);
-  font: inherit;
-}
-
-.mention:hover:not(:disabled) {
-  color: var(--text);
-}
-
-.mention:disabled {
-  cursor: default;
-  opacity: 0.9;
+  text-decoration: underline;
 }

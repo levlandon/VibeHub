@@ -14,6 +14,7 @@ export function routeFromPath(pathname: string): Route {
   if (pathname.startsWith("/collections")) return "saved";
   if (pathname.startsWith("/profile")) return "profile";
   if (pathname.startsWith("/feed")) return "feed";
+  if (pathname.startsWith("/posts")) return "feed";
   if (pathname.startsWith("/people")) return "people";
   return "models";
 }

@@ -212,7 +212,11 @@ export function sortModels(models: Model[], sort: ModelSort): Model[] {
     case "context-asc":
       return copy.sort((a, b) => a.contextLength - b.contextLength);
     case "price-asc":
-      return copy.sort((a, b) => a.pricing.prompt - b.pricing.prompt);
+      return copy.sort(
+        (a, b) =>
+          (a.pricing.prompt ?? Number.POSITIVE_INFINITY) -
+          (b.pricing.prompt ?? Number.POSITIVE_INFINITY),
+      );
     case "name":
       return copy.sort((a, b) => a.name.localeCompare(b.name));
     default:

@@ -203,6 +203,50 @@ describe("SupabasePostsRepository", () => {
       const comments = await repo.getComments("p1");
       expect(comments).toHaveLength(1);
       expect(comments[0].id).toBe("c1");
+
+      const createdRoot = await repo.createComment("p1", "New Root");
+      expect(createdRoot.content).toBe("New Root");
+      expect(createdRoot.parentCommentId).toBeNull();
+
+      const createdReply = await repo.createComment("p1", "New Reply", "c1");
+      expect(createdReply.content).toBe("New Reply");
+      expect(createdReply.parentCommentId).toBe("c1");
+    });
+
+    it("deleteComment не принимает перепутанный postId и изменяет только выбранный comment", async () => {
+      const fallback = [
+        {
+          ...postRow("p1"),
+          author: profileRow(),
+          comments: [commentRow("c1"), commentRow("c2")],
+        },
+        {
+          ...postRow("p2"),
+          author: profileRow(),
+          comments: [commentRow("c3")],
+        },
+      ] as never;
+      const repo = new SupabasePostsRepository(null, fallback);
+
+      await expect(
+        repo.deleteComment({ postId: "c1", commentId: "p1" }),
+      ).rejects.toThrow("Комментарий не найден");
+      const deleted = await repo.deleteComment({ postId: "p1", commentId: "c2" });
+      expect(deleted.id).toBe("c2");
+      expect(deleted.content).toBe("");
+      expect(deleted.deletedAt).toBeTruthy();
+    });
+
+    it("acceptAnswer persist-style контракт поддерживает установку и снятие решения", async () => {
+      const fallback = [
+        { ...postRow("q1"), type: "question", author: profileRow(), comments: [] },
+      ] as never;
+      const repo = new SupabasePostsRepository(null, fallback);
+      const accepted = await repo.acceptAnswer({ postId: "q1", commentId: "c1" });
+      expect(accepted).toMatchObject({ solved: true, acceptedAnswerId: "c1" });
+      const cleared = await repo.acceptAnswer({ postId: "q1", commentId: null });
+      expect(cleared.solved).toBe(false);
+      expect(cleared.acceptedAnswerId).toBeUndefined();
     });
   });
 

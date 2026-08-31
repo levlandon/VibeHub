@@ -94,11 +94,17 @@ function resolveJoinedRow(value: unknown): Record<string, unknown> | null {
 export function mapAuthor(profile: unknown, fallbackId?: string): ChatAuthor {
   const p = resolveJoinedRow(profile);
   const id = isString(p?.id) ? p.id : fallbackId;
+  const avatarUrl = isString(p?.avatar_url)
+    ? p.avatar_url
+    : isString(p?.avatar)
+    ? p.avatar
+    : undefined;
   return {
     ...(id ? { id } : {}),
     name: asString(p?.name, "Unknown"),
     handle: asString(p?.handle, "unknown"),
     initials: asString(p?.initials, "?"),
+    ...(avatarUrl ? { avatarUrl } : {}),
   };
 }
 
@@ -114,11 +120,32 @@ export function mapComment(row: unknown): PostComment | null {
     return null;
   }
 
+  const parentCommentId = isString(r.parent_comment_id)
+    ? r.parent_comment_id
+    : isString(r.parentCommentId)
+    ? r.parentCommentId
+    : null;
+
+  const replyToCommentId = isString(r.reply_to_comment_id)
+    ? r.reply_to_comment_id
+    : isString(r.replyToCommentId)
+    ? r.replyToCommentId
+    : null;
+
+  const deletedAt = isString(r.deleted_at)
+    ? r.deleted_at
+    : isString(r.deletedAt)
+    ? r.deletedAt
+    : null;
+
   return {
     id: r.id,
     author: mapAuthor(r.author, isString(r.author_id) ? r.author_id : undefined),
     content: r.content,
     createdAt: r.created_at,
+    ...(parentCommentId ? { parentCommentId } : {}),
+    ...(replyToCommentId ? { replyToCommentId } : {}),
+    ...(deletedAt ? { deletedAt } : {}),
   };
 }
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Button } from "../../components/Button/Button";
 import { CategoryStrip } from "../../components/CategoryStrip/CategoryStrip";
 import { ConfirmDialog } from "../../components/ConfirmDialog/ConfirmDialog";
@@ -23,6 +24,8 @@ const FEED_CATEGORIES = [
 ];
 
 export function FeedPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { setAddOpen } = useHub();
   const {
     posts,
@@ -31,14 +34,28 @@ export function FeedPage() {
     error,
     hasMore,
     fetchMorePosts,
+    refreshPosts,
     updatePost,
     deletePost,
   } = usePosts();
   const [category, setCategory] = useState("all");
 
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const pathPostMatch = location.pathname.match(/^\/posts\/([^/?#]+)/);
+  const routePostId = pathPostMatch ? decodeURIComponent(pathPostMatch[1]) : null;
+  const search = location.search as { comment?: string } | undefined;
+  const targetCommentId = search?.comment || null;
+
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(routePostId);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
+  const [mutationMessage, setMutationMessage] = useState<string | null>(null);
+  const [mutationPending, setMutationPending] = useState(false);
+
+  useEffect(() => {
+    if (routePostId) {
+      setSelectedPostId(routePostId);
+    }
+  }, [routePostId]);
 
   const visiblePosts = filterPostsByCategory(posts, category);
   const activeDetailPost = posts.find((p) => p.id === selectedPostId) || null;
@@ -55,6 +72,13 @@ export function FeedPage() {
 
       {loading && posts.length === 0 ? (
         <FeedSkeletonList count={3} />
+      ) : error && posts.length === 0 ? (
+        <EmptyState>
+          <p>Не удалось загрузить публикации.</p>
+          <Button variant="ghost" onClick={() => void refreshPosts()}>
+            Повторить
+          </Button>
+        </EmptyState>
       ) : posts.length === 0 ? (
         <EmptyState>
           <p>В ленте пока нет публикаций.</p>
@@ -64,9 +88,9 @@ export function FeedPage() {
               className={styles.shareLinkBtn}
               onClick={() => setAddOpen(true)}
             >
-              Нажмите здесь, чтобы поделиться
+              Нажмите здесь, чтобы создать
             </button>{" "}
-            обсуждением, гайдом или проектом!
+            обсуждение, вопрос или проект!
           </p>
         </EmptyState>
       ) : visiblePosts.length === 0 ? (
@@ -107,11 +131,23 @@ export function FeedPage() {
         </>
       )}
 
+      {mutationMessage ? (
+        <p className={styles.errorMessage} role="alert">{mutationMessage}</p>
+      ) : null}
+
       {/* Full Post Detail Modal */}
       {activeDetailPost ? (
         <PostDetailModal
           post={activeDetailPost}
-          onClose={() => setSelectedPostId(null)}
+          allPosts={posts}
+          targetCommentId={targetCommentId}
+          onClose={() => {
+            setSelectedPostId(null);
+            if (routePostId) {
+              navigate({ to: "/feed", replace: true });
+            }
+          }}
+          onSelectPost={setSelectedPostId}
         />
       ) : null}
 
@@ -121,9 +157,20 @@ export function FeedPage() {
           post={editingPost}
           isOpen={Boolean(editingPost)}
           onClose={() => setEditingPost(null)}
-          onSave={(id, input) => {
-            updatePost(id, input);
-            setEditingPost(null);
+          onSave={async (id, input) => {
+            setMutationPending(true);
+            setMutationMessage(null);
+            try {
+              await updatePost(id, input);
+              setEditingPost(null);
+            } catch (err) {
+              setMutationMessage(
+                err instanceof Error ? err.message : "Не удалось сохранить публикацию",
+              );
+              throw err;
+            } finally {
+              setMutationPending(false);
+            }
           }}
         />
       ) : null}
@@ -136,12 +183,23 @@ export function FeedPage() {
           cancelLabel="Отмена"
           confirmLabel="Удалить"
           onCancel={() => setDeleteConfirmPost(null)}
-          onConfirm={() => {
-            deletePost(deleteConfirmPost.id);
-            if (selectedPostId === deleteConfirmPost.id) {
-              setSelectedPostId(null);
+          onConfirm={async () => {
+            if (mutationPending) return;
+            setMutationPending(true);
+            setMutationMessage(null);
+            try {
+              await deletePost(deleteConfirmPost.id);
+              if (selectedPostId === deleteConfirmPost.id) {
+                setSelectedPostId(null);
+              }
+              setDeleteConfirmPost(null);
+            } catch (err) {
+              setMutationMessage(
+                err instanceof Error ? err.message : "Не удалось удалить публикацию",
+              );
+            } finally {
+              setMutationPending(false);
             }
-            setDeleteConfirmPost(null);
           }}
         />
       ) : null}

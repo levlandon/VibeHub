@@ -8,17 +8,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  acceptAnswer as acceptAnswerOn,
-  mergePostsDeduplicated,
-} from "./postsOperations";
+import { mergePostsDeduplicated } from "./postsOperations";
 import {
   postsRepository as defaultPostsRepository,
   type PostsCursor,
   type PostsRepository,
+  type AcceptAnswerInput,
+  type DeleteCommentInput,
 } from "../../services/posts/index";
 import type { EntityRef } from "../../types/entities";
 import type { CreatePostInput, Post, PostComment } from "../../types/posts";
+import { resolveEntitiesFromContent } from "../share/composerUtils";
 
 export interface PostsState {
   posts: Post[];
@@ -39,14 +39,19 @@ export interface PostsState {
     entities?: EntityRef[],
   ) => Promise<Post>;
   deletePost: (postId: string) => Promise<void>;
-  addComment: (postId: string, content: string) => Promise<PostComment>;
+  addComment: (
+    postId: string,
+    content: string,
+    parentCommentId?: string | null,
+    replyToCommentId?: string | null,
+  ) => Promise<PostComment>;
   updateComment: (
     commentId: string,
     content: string,
     postId?: string,
   ) => Promise<PostComment>;
-  deleteComment: (commentId: string, postId?: string) => Promise<void>;
-  acceptAnswer: (postId: string, commentId: string) => void;
+  deleteComment: (input: DeleteCommentInput) => Promise<void>;
+  acceptAnswer: (input: AcceptAnswerInput) => Promise<Post>;
   getPost: (id: string) => Promise<Post | null>;
   getComments: (postId: string) => Promise<PostComment[]>;
 }
@@ -134,11 +139,15 @@ export function PostsProvider({
   }, [autoFetch, fetchPosts]);
 
   const publishPost = useCallback(
-    async (input: CreatePostInput, entities = mentionEntities): Promise<Post> => {
+    async (input: CreatePostInput, entities?: EntityRef[]): Promise<Post> => {
       setIsMutating(true);
       setMutationError(null);
       try {
-        const created = await repository.createPost(input, entities);
+        const resolvedEntities =
+          entities !== undefined
+            ? entities
+            : resolveEntitiesFromContent(input.content, mentionEntities);
+        const created = await repository.createPost(input, resolvedEntities);
         setPosts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
         return created;
       } catch (err) {
@@ -157,12 +166,18 @@ export function PostsProvider({
     async (
       postId: string,
       input: Partial<CreatePostInput>,
-      entities = mentionEntities,
+      entities?: EntityRef[],
     ): Promise<Post> => {
       setIsMutating(true);
       setMutationError(null);
       try {
-        const updated = await repository.updatePost(postId, input, entities);
+        const resolvedEntities =
+          entities !== undefined
+            ? entities
+            : input.content !== undefined
+            ? resolveEntitiesFromContent(input.content, mentionEntities)
+            : undefined;
+        const updated = await repository.updatePost(postId, input, resolvedEntities);
         setPosts((prev) =>
           prev.map((p) => (p.id === postId ? { ...p, ...updated } : p)),
         );
@@ -199,11 +214,21 @@ export function PostsProvider({
   );
 
   const addComment = useCallback(
-    async (postId: string, content: string): Promise<PostComment> => {
+    async (
+      postId: string,
+      content: string,
+      parentCommentId?: string | null,
+      replyToCommentId?: string | null,
+    ): Promise<PostComment> => {
       setIsMutating(true);
       setMutationError(null);
       try {
-        const comment = await repository.createComment(postId, content);
+        const comment = await repository.createComment(
+          postId,
+          content,
+          parentCommentId,
+          replyToCommentId,
+        );
         setPosts((prev) =>
           prev.map((p) => {
             if (p.id !== postId) return p;
@@ -264,18 +289,20 @@ export function PostsProvider({
   );
 
   const deleteComment = useCallback(
-    async (commentId: string, postId?: string): Promise<void> => {
+    async ({ commentId, postId }: DeleteCommentInput): Promise<void> => {
       setIsMutating(true);
       setMutationError(null);
       try {
-        await repository.deleteComment(commentId);
+        const deleted = await repository.deleteComment({ commentId, postId });
         setPosts((prev) =>
           prev.map((p) => {
-            if (postId && p.id !== postId) return p;
+            if (p.id !== postId) return p;
             if (!p.comments?.some((c) => c.id === commentId)) return p;
             return {
               ...p,
-              comments: p.comments.filter((c) => c.id !== commentId),
+              comments: p.comments.map((c) =>
+                c.id === commentId ? deleted : c,
+              ),
             };
           }),
         );
@@ -291,9 +318,25 @@ export function PostsProvider({
     [repository],
   );
 
-  const acceptAnswer = useCallback((postId: string, commentId: string) => {
-    setPosts((prev) => acceptAnswerOn(prev, postId, commentId));
-  }, []);
+  const acceptAnswer = useCallback(
+    async (input: AcceptAnswerInput): Promise<Post> => {
+      setIsMutating(true);
+      setMutationError(null);
+      try {
+        const updated = await repository.acceptAnswer(input);
+        setPosts((prev) =>
+          prev.map((post) => (post.id === input.postId ? { ...post, ...updated } : post)),
+        );
+        return updated;
+      } catch (err) {
+        setMutationError(err instanceof Error ? err.message : "Не удалось отметить ответ");
+        throw err;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [repository],
+  );
 
   const getPost = useCallback(
     async (id: string): Promise<Post | null> => {

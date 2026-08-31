@@ -18,6 +18,7 @@ import { isSaved, toggleSaved } from "../services/saved";
 import type { AuthStatus, CurrentUser } from "../types/auth";
 import type { CatalogKind, EntityKind, EntityRef } from "../types/entities";
 import type { ChatChannelId, ChatMessage, Model, Route, Tool } from "../types/hub";
+import type { PostTopicCategory, PostType } from "../types/posts";
 import type { SavedItem } from "../types/saved";
 import type { UserProfile } from "../types/profile";
 import { authService } from "../services/auth";
@@ -34,6 +35,14 @@ import {
 const COLLAPSE_KEY = "vibehub-sidebar-collapsed";
 const CHAT_KEY = "vibehub-chat-open";
 
+export interface OpenComposerOptions {
+  entity?: EntityRef;
+  type?: PostType;
+  category?: PostTopicCategory;
+  link?: string;
+  initialText?: string;
+}
+
 interface HubState {
   route: Route;
   authStatus: AuthStatus;
@@ -49,6 +58,7 @@ interface HubState {
   savedItems: SavedItem[];
   mentionEntities: EntityRef[];
   addOpen: boolean;
+  composerOptions: OpenComposerOptions | null;
   searchOpen: boolean;
   sidebarCollapsed: boolean;
   chatOpen: boolean;
@@ -63,6 +73,7 @@ interface HubState {
   settingsTab: SettingsTab;
   setRoute: (route: Route) => void;
   setAddOpen: (open: boolean) => void;
+  openComposer: (options?: OpenComposerOptions) => void;
   setSearchOpen: (open: boolean) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setChatOpen: (open: boolean) => void;
@@ -89,7 +100,21 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const route = useMemo(() => routeFromPath(pathname), [pathname]);
   const entityView = useMemo(() => entityFromPath(pathname), [pathname]);
 
-  const [addOpen, setAddOpen] = useState(false);
+  const [addOpen, setAddOpenState] = useState(false);
+  const [composerOptions, setComposerOptions] = useState<OpenComposerOptions | null>(null);
+
+  const setAddOpen = useCallback((open: boolean) => {
+    setAddOpenState(open);
+    if (!open) {
+      setComposerOptions(null);
+    }
+  }, []);
+
+  const openComposer = useCallback((options?: OpenComposerOptions) => {
+    setComposerOptions(options ?? null);
+    setAddOpenState(true);
+  }, []);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setCollapsedState] = useState(() => {
     try {
@@ -475,6 +500,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       savedItems,
       mentionEntities,
       addOpen,
+      composerOptions,
       searchOpen,
       sidebarCollapsed,
       chatOpen,
@@ -489,6 +515,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       settingsTab,
       setRoute,
       setAddOpen,
+      openComposer,
       setSearchOpen,
       setSidebarCollapsed,
       setChatOpen,
@@ -519,6 +546,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       savedItems,
       mentionEntities,
       addOpen,
+      composerOptions,
       searchOpen,
       sidebarCollapsed,
       chatOpen,
@@ -532,6 +560,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
       settingsOpen,
       settingsTab,
       setRoute,
+      setAddOpen,
+      openComposer,
       setEntityView,
       setSidebarCollapsed,
       setChatOpen,

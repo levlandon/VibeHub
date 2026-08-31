@@ -1,5 +1,6 @@
 import type { Model, ModelPricing } from "../../../types/models";
 import type { ModelProvider, ModelProviderOptions } from "../types";
+import { fetchWithTimeout } from "../../http/fetchWithTimeout";
 
 interface OpenRouterRawModel {
   id: string;
@@ -124,17 +125,24 @@ function formatPriceUnit(val: number): string {
 }
 
 export function parseModelPricing(pricing?: OpenRouterRawModel["pricing"]): ModelPricing {
-  const prompt = parseFloat(pricing?.prompt ?? "0") || 0;
-  const completion = parseFloat(pricing?.completion ?? "0") || 0;
-  const promptPerMillion = prompt * 1_000_000;
-  const completionPerMillion = completion * 1_000_000;
+  const parsePrice = (value: string | undefined): number | null => {
+    if (value === undefined || value.trim() === "") return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : null;
+  };
+  const prompt = parsePrice(pricing?.prompt);
+  const completion = parsePrice(pricing?.completion);
+  const promptPerMillion = prompt === null ? null : prompt * 1_000_000;
+  const completionPerMillion = completion === null ? null : completion * 1_000_000;
   const isFree = prompt === 0 && completion === 0;
 
   let formattedSummary: string;
   if (isFree) {
     formattedSummary = "Бесплатно";
-  } else {
+  } else if (promptPerMillion !== null && completionPerMillion !== null) {
     formattedSummary = `$${formatPriceUnit(promptPerMillion)} / $${formatPriceUnit(completionPerMillion)} / 1M`;
+  } else {
+    formattedSummary = "Цена недоступна";
   }
 
   return {
@@ -276,7 +284,7 @@ export class OpenRouterProvider implements ModelProvider {
       Accept: "application/json",
     };
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "GET",
       headers,
       signal: options?.signal,

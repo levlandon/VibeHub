@@ -88,6 +88,7 @@ export function CommandPalette() {
             ref={inputRef}
             value={q}
             placeholder="Модели, инструменты, публикации..."
+            aria-label="Поиск"
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") goFirst();

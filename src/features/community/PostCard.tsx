@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { IconBookmark, IconMore } from "../../components/icons";
+import { ProfileHoverCard } from "../../components/ProfileHoverCard";
 import { RichText } from "../../components/mentions/RichText";
 import { formatDateTime } from "../../lib/datetime";
 import { describePost, isSaved } from "../../services/saved";
@@ -142,17 +143,23 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
       {/* Footer: Author · Date & Bookmark */}
       <footer className={styles.footer}>
         <div className={styles.metaLeft}>
-          <button
-            type="button"
-            className={styles.authorBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              openProfile(post.author.handle || post.author.id);
-            }}
-            title="Открыть профиль автора"
+          <ProfileHoverCard
+            identifier={post.author.handle || post.author.id}
+            initialAuthor={post.author}
+            onOpenProfile={() => openProfile(post.author.handle || post.author.id)}
           >
-            {post.author.name}
-          </button>
+            <button
+              type="button"
+              className={styles.authorBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                openProfile(post.author.handle || post.author.id);
+              }}
+              title="Открыть профиль автора"
+            >
+              {post.author.name}
+            </button>
+          </ProfileHoverCard>
           <span className={styles.dot}>·</span>
           <span className={styles.date}>{formatDateTime(post.createdAt)}</span>
         </div>

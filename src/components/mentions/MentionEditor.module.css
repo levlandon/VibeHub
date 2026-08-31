@@ -1,0 +1,81 @@
+.editorWrap {
+  position: relative;
+  width: 100%;
+}
+
+.editor {
+  width: 100%;
+  min-height: 150px;
+  max-height: 320px;
+  padding: 12px 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: normal;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: border-color 140ms ease, background-color 140ms ease;
+  box-shadow: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.editor::-webkit-scrollbar {
+  width: 5px;
+}
+
+.editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-xs);
+}
+
+.editor::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+.editor:focus {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+  outline: none;
+  box-shadow: none;
+}
+
+.editor:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* CSS Placeholder for contenteditable */
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+  display: block;
+}
+
+/* Inline atomic model mention link inside editor */
+.inlineMention {
+  display: inline;
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: all;
+  transition: color var(--ease);
+}
+
+.inlineMention:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}

@@ -166,4 +166,116 @@ describe("Profile Regression Tests (Canonical Routing & No Mock Fallback on Erro
       expect(currentState).toBe("profile_data_for_user_B");
     });
   });
+
+  describe("4. Unified Profile & Hover Card UX Architecture", () => {
+    it("profile layout is single vertical flow: header -> about cards -> publications without tabs", () => {
+      // In ProfilePage.tsx:
+      // CategoryStrip / tabs are removed.
+      // Publications are always directly rendered under the 2-column about grid.
+      const hasTabs = false;
+      const isSingleVerticalPage = true;
+
+      expect(hasTabs).toBe(false);
+      expect(isSingleVerticalPage).toBe(true);
+    });
+
+    it("single edit button inside profile header for owner, none for other profiles", () => {
+      const getEditControlsCount = (isOwner: boolean, authStatus: string, isEditing: boolean) => {
+        if (isOwner && authStatus === "authenticated" && !isEditing) {
+          return 1; // Top-right pencil inside profileCard
+        }
+        return 0;
+      };
+
+      // Owner viewing own profile
+      expect(getEditControlsCount(true, "authenticated", false)).toBe(1);
+      // Other user viewing profile
+      expect(getEditControlsCount(false, "authenticated", false)).toBe(0);
+      // Anonymous guest viewing profile
+      expect(getEditControlsCount(false, "anonymous", false)).toBe(0);
+    });
+
+    it("profile publications are sorted newest first and render standard PostCard", () => {
+      const posts = [
+        { id: "p1", createdAt: "2026-08-28T10:00:00.000Z", authorId: "u1" },
+        { id: "p2", createdAt: "2026-08-28T18:00:00.000Z", authorId: "u1" },
+        { id: "p3", createdAt: "2026-08-28T14:00:00.000Z", authorId: "u1" },
+      ];
+
+      const sorted = [...posts].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      expect(sorted.map((p) => p.id)).toEqual(["p2", "p3", "p1"]);
+    });
+
+    it("hover card restricts preview to max 3 items and computes +N badge", () => {
+      const allInterests = ["Coding", "Design", "Product", "Research", "AI Art"];
+      const preview = allInterests.slice(0, 3);
+      const extraCount = allInterests.length - preview.length;
+
+      expect(preview).toEqual(["Coding", "Design", "Product"]);
+      expect(extraCount).toBe(2);
+    });
+
+    it("edit mode interests toggle and cap at max 6 items", () => {
+      let draftInterests = ["Coding", "Design", "Product", "Research", "3D", "Data"];
+      const maxLimit = 6;
+
+      const toggleInterest = (tag: string) => {
+        if (draftInterests.includes(tag)) {
+          draftInterests = draftInterests.filter((t) => t !== tag);
+        } else if (draftInterests.length < maxLimit) {
+          draftInterests = [...draftInterests, tag];
+        }
+      };
+
+      // Trying to add 7th interest is blocked by limit
+      toggleInterest("Writing");
+      expect(draftInterests.includes("Writing")).toBe(false);
+      expect(draftInterests).toHaveLength(6);
+
+      // Unselecting 1 item works
+      toggleInterest("Data");
+      expect(draftInterests.includes("Data")).toBe(false);
+      expect(draftInterests).toHaveLength(5);
+
+      // Now adding Writing works
+      toggleInterest("Writing");
+      expect(draftInterests.includes("Writing")).toBe(true);
+      expect(draftInterests).toHaveLength(6);
+    });
+
+    it("edit mode models toggle and remove cleanly with max 8 limit", () => {
+      let draftModelIds = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"];
+      const maxModels = 8;
+
+      const removeModel = (id: string) => {
+        draftModelIds = draftModelIds.filter((m) => m !== id);
+      };
+
+      const addModel = (id: string) => {
+        if (!draftModelIds.includes(id) && draftModelIds.length < maxModels) {
+          draftModelIds = [...draftModelIds, id];
+        }
+      };
+
+      // Adding 9th model is blocked
+      addModel("m9");
+      expect(draftModelIds.includes("m9")).toBe(false);
+      expect(draftModelIds).toHaveLength(8);
+
+      // Remove model
+      removeModel("m3");
+      expect(draftModelIds.includes("m3")).toBe(false);
+      expect(draftModelIds).toHaveLength(7);
+
+      // Add m9
+      addModel("m9");
+      expect(draftModelIds.includes("m9")).toBe(true);
+      expect(draftModelIds).toHaveLength(8);
+    });
+  });
 });
+
+

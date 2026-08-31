@@ -80,6 +80,11 @@
   color: var(--text-secondary);
 }
 
+.optional {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
 .input {
   width: 100%;
   padding: 9px 12px;
@@ -94,6 +99,25 @@
 
 .input:focus {
   border-color: var(--accent);
+}
+
+.inputError {
+  border-color: var(--danger, #e06c75);
+}
+
+.linkPreview {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger, #e06c75);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .textarea {

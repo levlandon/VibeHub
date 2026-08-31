@@ -1,0 +1,160 @@
+/* Read-only Profile & HoverCard Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  width: fit-content;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  transition: all var(--ease);
+}
+
+.chipCompact {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  gap: 5px;
+}
+
+.chipClickable {
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+}
+
+.chipClickable:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+.icon {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.modelMark {
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+
+.label {
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moreCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* Edit Mode Selection Controls */
+.editableModelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  width: fit-content;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  transition: all var(--ease);
+}
+
+.removeBtn {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-left: 2px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: all var(--ease);
+}
+
+.removeBtn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.editableInterestChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--ease);
+  user-select: none;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.editableInterestChip:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.editableInterestChipSelected {
+  background: rgba(91, 158, 148, 0.16);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.editableInterestChipSelected:hover:not(:disabled) {
+  background: rgba(91, 158, 148, 0.22);
+  border-color: var(--accent);
+}
+
+.editableInterestChip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkMark {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

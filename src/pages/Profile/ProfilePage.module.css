@@ -1,7 +1,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   padding-bottom: 48px;
 }
 
@@ -53,10 +53,11 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  position: relative;
 }
 
 .heroRow {
@@ -79,14 +80,14 @@
 }
 
 .avatar {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: var(--surface);
   border: 2px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
   overflow: hidden;
@@ -98,119 +99,117 @@
   object-fit: cover;
 }
 
-.avatarEditBtn {
+.avatarEditOverlay {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 24px;
-  height: 24px;
+  inset: 0;
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  transition: all var(--ease);
+  opacity: 0.9;
+  transition: opacity var(--ease);
 }
 
-.avatarEditBtn:hover,
-.avatarEditBtnActive {
-  background: var(--surface-hover);
-  border-color: var(--border-hover);
-  color: var(--text);
+.avatarEditOverlay:hover {
+  opacity: 1;
 }
 
-.avatarDropdown {
+.avatarMenu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   left: 0;
-  z-index: 60;
+  margin-top: 8px;
+  z-index: 40;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 5px;
-  min-width: 210px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  animation: popoverFadeInDown 120ms ease-out;
+  min-width: 220px;
+  animation: cardFadeIn 120ms ease-out;
 }
 
 .avatarMenuItem {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
+  padding: 8px 12px;
   font-size: 13px;
-  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: left;
-  transition: all var(--ease);
+  transition: background var(--ease);
 }
 
 .avatarMenuItem:hover {
-  background: var(--surface);
-  color: var(--text);
-}
-
-.avatarMenuItem svg {
-  color: var(--text-dim);
-  flex-shrink: 0;
-  transition: color var(--ease);
-}
-
-.avatarMenuItem:hover svg {
-  color: var(--text);
+  background: var(--surface-hover);
 }
 
 .avatarMenuDanger {
-  color: var(--text-muted);
+  color: var(--danger, #e06c75);
 }
 
 .avatarMenuDanger:hover {
-  background: rgba(224, 82, 82, 0.12);
-  color: var(--danger);
-}
-
-.avatarMenuDanger:hover svg {
-  color: var(--danger);
+  background: rgba(224, 108, 117, 0.12);
 }
 
 .names {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
   flex: 1;
 }
 
 .displayName {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.02em;
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 .username {
-  font-size: 15px;
+  font-size: 13.5px;
   color: var(--text-dim);
-  font-weight: 500;
+}
+
+.bio {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.bioEditWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .editNameBlock {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
   max-width: 380px;
 }
 
@@ -220,75 +219,44 @@
   align-items: center;
 }
 
-/* Calm, unified input styles (override global focus-visible ring) */
 .inlineInput {
   width: 100%;
   padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 14px;
-  outline: none !important;
-  box-shadow: none !important;
-  transition: border-color 140ms ease;
+  outline: none;
+  transition: border-color var(--ease);
 }
 
 .inlineInput:focus {
-  border-color: rgba(255, 255, 255, 0.28) !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.inlineInput:focus-visible {
-  border-color: rgba(255, 255, 255, 0.38) !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border-color: var(--border-hover);
 }
 
 .inlineInput.hasError {
-  border-color: var(--danger) !important;
+  border-color: var(--danger);
 }
 
 .nameInput {
-  font-size: 15px;
   font-weight: 600;
 }
 
 .usernameRow {
   display: flex;
   align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding-left: 10px;
-  transition: border-color 140ms ease;
-}
-
-.usernameRow:focus-within {
-  border-color: rgba(255, 255, 255, 0.28);
+  gap: 4px;
 }
 
 .atSign {
-  color: var(--text-dim);
   font-size: 14px;
   font-weight: 600;
-  user-select: none;
+  color: var(--text-dim);
 }
 
 .usernameInput {
-  border: none !important;
-  background: transparent !important;
-  padding-left: 4px;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.usernameInput:focus,
-.usernameInput:focus-visible {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  font-size: 13px;
 }
 
 .counter {
@@ -300,30 +268,8 @@
 }
 
 .fieldError {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--danger);
-  margin-top: 2px;
-}
-
-.fieldLabel {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.bio {
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  max-width: 600px;
-  margin: 0;
-}
-
-.bioEditWrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 580px;
 }
 
 .textareaContainer {
@@ -337,32 +283,23 @@
   padding: 10px 12px 24px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.5;
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
   resize: none;
-  height: 84px;
+  height: 80px;
   box-sizing: border-box;
-  transition: border-color 140ms ease;
+  transition: border-color var(--ease);
 }
 
 .inlineTextarea:focus {
-  border-color: rgba(255, 255, 255, 0.28) !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.inlineTextarea:focus-visible {
-  border-color: rgba(255, 255, 255, 0.38) !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border-color: var(--border-hover);
 }
 
 .inlineTextarea.hasError {
-  border-color: var(--danger) !important;
+  border-color: var(--danger);
 }
 
 .bioCounter {
@@ -372,20 +309,17 @@
   font-size: 11px;
   color: var(--text-dim);
   pointer-events: none;
-  user-select: none;
-  transition: color 140ms ease;
 }
 
 .bioCounterWarning {
-  color: var(--text);
-  font-weight: 500;
+  color: var(--danger);
 }
 
-/* 2-Column Grid on Desktop */
+/* 2-Column Compact About Grid */
 .sectionsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -393,11 +327,10 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px 28px;
+  padding: 18px 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  height: 100%;
+  gap: 12px;
   box-sizing: border-box;
 }
 
@@ -409,7 +342,7 @@
 
 .sectionTitle {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text);
   display: flex;
@@ -425,7 +358,7 @@
 
 .emptyNote {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-dim);
 }
 
@@ -437,121 +370,9 @@
   gap: 8px;
 }
 
-.modelChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  width: fit-content;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  transition: all var(--ease);
-}
-
-.modelChipClickable {
-  cursor: pointer;
-  text-align: left;
-  outline: none;
-  font-family: inherit;
-}
-
-.modelChipClickable:hover {
-  background: var(--surface-hover);
-  border-color: var(--border-hover);
-  transform: translateY(-1px);
-}
-
-.modelMark {
-  flex-shrink: 0;
-  border-radius: 3px;
-}
-
-.modelName {
-  font-weight: 500;
-  color: var(--text);
-}
-
-.interestChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  width: fit-content;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-}
-
-.interestIcon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.checklistIcon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-  margin-right: 7px;
-}
-
-.chipRemoveBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 50%;
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: 0;
-  margin-left: 2px;
-  transition: all var(--ease);
-}
-
-.chipRemoveBtn:hover {
-  background: rgba(224, 82, 82, 0.2);
-  color: var(--danger);
-}
-
-/* Floating Popover for Models */
 .pickerAnchor {
   position: relative;
-  display: inline-flex;
-  margin-top: auto;
-}
-
-@keyframes popoverFadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes popoverFadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  margin-top: 4px;
 }
 
 .modelPickerPopover {
@@ -559,36 +380,36 @@
   left: 0;
   z-index: 50;
   width: 320px;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100vw - 40px);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 8px;
+  animation: cardFadeIn 120ms ease-out;
 }
 
-.modelPickerPopover.placeBottom {
-  top: calc(100% + 6px);
-  animation: popoverFadeInDown 120ms ease-out;
+.placeTop {
+  bottom: 100%;
+  margin-bottom: 8px;
 }
 
-.modelPickerPopover.placeTop {
-  bottom: calc(100% + 6px);
-  animation: popoverFadeInUp 120ms ease-out;
+.placeBottom {
+  top: 100%;
+  margin-top: 8px;
 }
 
 .pickerSearchSticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .searchIcon {
@@ -599,102 +420,73 @@
 .pickerSearchInput {
   flex: 1;
   background: transparent;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border: none;
   color: var(--text);
   font-size: 13px;
-}
-
-.pickerSearchInput:focus,
-.pickerSearchInput:focus-visible {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
 }
 
 .modelPickerScrollList {
+  max-height: 240px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 4px;
-  max-height: 220px;
-  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 
-.modelPickerScrollList::-webkit-scrollbar {
-  width: 5px;
-}
-
-.modelPickerScrollList::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.modelPickerScrollList::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-.interestChecklistInline {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
+.noResults {
+  padding: 16px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
 }
 
 .popoverItem {
   display: flex;
   align-items: center;
-  width: 100%;
-  padding: 7px 9px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-xs);
   background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
   cursor: pointer;
   text-align: left;
-  transition: all var(--ease);
+  transition: background var(--ease);
+  width: 100%;
 }
 
 .popoverItem:hover:not(:disabled) {
   background: var(--surface-hover);
 }
 
-.popoverItem.popoverItemSelected {
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .popoverItem:disabled {
-  opacity: 0.38;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
+.popoverItemSelected {
+  background: rgba(91, 158, 148, 0.12);
+}
+
 .checkbox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: var(--radius-xs);
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--bg);
-  color: transparent;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: #0b0b0c;
   flex-shrink: 0;
-  margin-right: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  transition: all var(--ease);
 }
 
 .checkboxChecked {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--bg);
-}
-
-.popoverItem:hover:not(:disabled) .checkbox:not(.checkboxChecked) {
-  border-color: var(--border-hover);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .pickerModelMeta {
@@ -702,68 +494,109 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  flex: 1;
 }
 
 .pickerModelName {
-  font-size: 13px;
   font-weight: 500;
-  color: var(--text);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .pickerModelProvider {
   font-size: 11px;
   color: var(--text-dim);
-  text-transform: uppercase;
+}
+
+.interestChecklistInline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px;
+}
+
+.checklistIcon {
+  color: var(--text-dim);
+  flex-shrink: 0;
 }
 
 .popoverItemLabel {
-  font-size: 13px;
   font-weight: 500;
-  color: var(--text);
 }
 
-.noResults {
-  padding: 14px;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--text-dim);
-}
-
-/* Bottom Actions */
-.bottomActions {
+/* Publications Section */
+.publicationsSection {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding-top: 16px;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
 }
 
-.editActions {
+.publicationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.publicationsHeading {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-@media (max-width: 860px) {
+.publicationsCount {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.postsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.postsGridItem {
+  width: 100%;
+}
+
+/* Edit Mode Bottom Actions */
+.bottomActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.editActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
   .sectionsGrid {
     grid-template-columns: 1fr;
-    gap: 16px;
+  }
+
+  .profileCard {
+    padding: 20px;
   }
 }
-
-@media (max-width: 640px) {
-  .heroRow {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .userInfo {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }
-}
-

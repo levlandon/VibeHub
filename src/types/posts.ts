@@ -16,6 +16,9 @@ export interface PostComment {
   author: ChatAuthor;
   content: string;
   createdAt: string;
+  parentCommentId?: string | null;
+  replyToCommentId?: string | null;
+  deletedAt?: string | null;
 }
 
 export interface PostBase {

@@ -35,6 +35,22 @@ describe("parseModelPricing", () => {
     expect(p.completionPerMillion).toBeCloseTo(4);
     expect(p.isFree).toBe(false);
   });
+
+  it.each(["-1", "NaN", "Infinity", "broken"])(
+    "не отображает некорректную цену %s как реальную",
+    (value) => {
+      const p = parseModelPricing({ prompt: value, completion: "0.000004" });
+      expect(p.prompt).toBeNull();
+      expect(p.promptPerMillion).toBeNull();
+      expect(p.isFree).toBe(false);
+      expect(p.formattedSummary).toBe("Цена недоступна");
+    },
+  );
+
+  it("различает отсутствующую цену и валидный ноль", () => {
+    expect(parseModelPricing(undefined).prompt).toBeNull();
+    expect(parseModelPricing({ prompt: "0", completion: "0" }).prompt).toBe(0);
+  });
 });
 
 describe("extractProviderInfo", () => {

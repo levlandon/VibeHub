@@ -141,6 +141,32 @@ const feedRoute = createRoute({
   component: FeedPage,
 });
 
+interface PostDetailSearch {
+  comment?: string;
+}
+
+const postsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/posts",
+  beforeLoad: () => {
+    throw redirect({ to: "/feed" });
+  },
+});
+
+const postDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/posts/$",
+  validateSearch: (search: Record<string, unknown>): PostDetailSearch => {
+    return {
+      comment: typeof search.comment === "string" ? search.comment : undefined,
+    };
+  },
+  component: FeedPage,
+  params: {
+    parse: (raw) => (raw._splat ? raw : false),
+  },
+});
+
 const peopleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/people",
@@ -163,6 +189,8 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   profileDetailRoute,
   feedRoute,
+  postsRoute,
+  postDetailRoute,
   peopleRoute,
 ]);
 

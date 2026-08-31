@@ -9,7 +9,8 @@ export interface ModelMetaProps {
   model: Model;
 }
 
-function formatPriceNumber(val: number): string {
+function formatPriceNumber(val: number | null): string {
+  if (val === null) return "н/д";
   if (val === 0) return "0";
   if (val < 0.01) return val.toFixed(4).replace(/0+$/, "");
   if (val < 1) return val.toFixed(2);

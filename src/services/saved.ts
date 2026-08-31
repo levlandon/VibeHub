@@ -1,6 +1,6 @@
 import type { EntityKind } from "../types/entities";
 import type { Tool } from "../types/hub";
-import type { Post } from "../types/posts";
+import type { Post, PostComment } from "../types/posts";
 import type { BookmarkType, SavedItem } from "../types/saved";
 import { postTypeConfig } from "../config/postTypes";
 
@@ -108,6 +108,33 @@ export function describePost(post: Post): Omit<SavedItem, "id" | "savedAt"> {
     title: post.title,
     subtitle: postTypeConfig(post.type).label,
     url: post.extras.url || post.extras.repositoryUrl,
+    authorName: post.author.name,
+    authorHandle: post.author.handle,
+    authorAvatar: post.author.avatarUrl,
+    description: post.content.slice(0, 160),
+  };
+}
+
+export function describeComment(
+  comment: PostComment,
+  post: Post,
+): Omit<SavedItem, "id" | "savedAt"> {
+  const excerpt = comment.content.length > 140
+    ? `${comment.content.slice(0, 140)}...`
+    : comment.content;
+
+  return {
+    kind: "comment",
+    targetId: comment.id,
+    title: excerpt,
+    subtitle: post.title,
+    url: `/posts/${post.id}?comment=${comment.id}`,
+    postId: post.id,
+    commentId: comment.id,
+    authorName: comment.author.name,
+    authorHandle: comment.author.handle,
+    authorAvatar: comment.author.avatarUrl,
+    description: comment.content,
   };
 }
 

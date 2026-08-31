@@ -7,7 +7,6 @@ import { UserMenu } from "../UserMenu/UserMenu";
 import {
   IconBenchmarks,
   IconBookmarks,
-  IconChat,
   IconFeed,
   IconLogIn,
   IconModels,
@@ -32,8 +31,6 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
     setSearchOpen,
     sidebarCollapsed,
     setSidebarCollapsed,
-    chatOpen,
-    setChatOpen,
     setSettingsOpen,
     logout,
     userProfile,
@@ -117,21 +114,12 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
           />
           <button
             type="button"
-            className={`${styles.link} ${chatOpen ? styles.active : ""}`}
-            title={tip("Чат")}
-            onClick={() => setChatOpen(!chatOpen)}
-          >
-            <IconChat width={20} height={20} />
-            <span>Чат</span>
-          </button>
-          <button
-            type="button"
             className={styles.link}
-            title={tip("Поделиться")}
+            title={tip("Создать")}
             onClick={() => setAddOpen(true)}
           >
             <IconPlus width={20} height={20} />
-            <span>Поделиться</span>
+            <span>Создать</span>
           </button>
         </div>
 

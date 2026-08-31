@@ -3,6 +3,12 @@ import { Button } from "../../components/Button/Button";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { IconClose } from "../../components/icons";
 import { Select } from "../../components/ui/Select";
+import {
+  formatUrlPreview,
+  getPostLink,
+  isValidUrl,
+  updatePostLinkExtras,
+} from "../share/composerUtils";
 import type { CreatePostInput, Post, PostTopicCategory } from "../../types/posts";
 import styles from "./EditPostModal.module.css";
 
@@ -10,7 +16,7 @@ interface EditPostModalProps {
   post: Post | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (postId: string, input: Partial<CreatePostInput>) => void;
+  onSave: (postId: string, input: Partial<CreatePostInput>) => void | Promise<void>;
 }
 
 const CATEGORY_OPTIONS = [
@@ -30,12 +36,16 @@ export function EditPostModal({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<string>("");
+  const [link, setLink] = useState("");
+  const [linkError, setLinkError] = useState(false);
 
   useEffect(() => {
     if (isOpen && post) {
       setTitle(post.title);
       setContent(post.content);
       setCategory(post.category || "");
+      setLink(getPostLink(post.extras) ?? "");
+      setLinkError(false);
     }
   }, [isOpen, post]);
 
@@ -53,10 +63,17 @@ export function EditPostModal({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
+
+    if (link.trim() && !isValidUrl(link)) {
+      setLinkError(true);
+      return;
+    }
+
     onSave(post.id, {
       title,
       content,
       category: (category as PostTopicCategory) || undefined,
+      extras: updatePostLinkExtras(post.extras, post.type, link),
     });
     onClose();
   };
@@ -115,6 +132,34 @@ export function EditPostModal({
               rows={6}
               required
             />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="edit-link">
+              Ссылка <span className={styles.optional}>(опционально)</span>
+            </label>
+            <input
+              id="edit-link"
+              type="text"
+              inputMode="url"
+              className={`${styles.input} ${linkError ? styles.inputError : ""}`}
+              value={link}
+              onChange={(e) => {
+                setLink(e.target.value);
+                if (linkError) setLinkError(false);
+              }}
+              placeholder="https://example.com"
+              aria-invalid={linkError}
+              aria-describedby={linkError ? "edit-link-error" : undefined}
+            />
+            {link ? (
+              <span className={styles.linkPreview}>{formatUrlPreview(link)}</span>
+            ) : null}
+            {linkError ? (
+              <p id="edit-link-error" className={styles.error} role="alert">
+                Введите корректную ссылку, например https://example.com
+              </p>
+            ) : null}
           </div>
 
           <footer className={styles.footer}>

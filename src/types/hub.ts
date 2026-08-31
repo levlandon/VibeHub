@@ -79,6 +79,7 @@ export interface ChatAuthor {
   name: string;
   handle: string;
   initials: string;
+  avatarUrl?: string;
 }
 
 export interface ChatMessage {
