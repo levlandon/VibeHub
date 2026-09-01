@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { useI18n } from "../../i18n";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -21,29 +22,33 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render() {
     if (this.state.error) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            minHeight: "100vh",
-            padding: 24,
-            textAlign: "center",
-          }}
-        >
-          <h1 style={{ margin: 0 }}>Что-то пошло не так</h1>
-          <p style={{ margin: 0, opacity: 0.7 }}>
-            Попробуйте перезагрузить страницу. Если ошибка повторяется — заведите issue на GitHub.
-          </p>
-          <button type="button" onClick={() => window.location.reload()}>
-            Перезагрузить
-          </button>
-        </div>
-      );
+      return <ErrorFallback />;
     }
     return this.props.children;
   }
+}
+
+function ErrorFallback() {
+  const { t } = useI18n();
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        minHeight: "100vh",
+        padding: 24,
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ margin: 0 }}>{t("error.title")}</h1>
+      <p style={{ margin: 0, opacity: 0.7 }}>{t("error.description")}</p>
+      <button type="button" onClick={() => window.location.reload()}>
+        {t("error.reload")}
+      </button>
+    </div>
+  );
 }

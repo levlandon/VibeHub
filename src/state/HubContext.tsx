@@ -22,6 +22,7 @@ import type { PostTopicCategory, PostType } from "../types/posts";
 import type { SavedItem } from "../types/saved";
 import type { UserProfile } from "../types/profile";
 import { authService } from "../services/auth";
+import { useI18n } from "../i18n";
 import { profileService } from "../services/profile";
 import type { SettingsTab } from "../components/SettingsModal/SettingsModal";
 import {
@@ -94,6 +95,7 @@ interface HubState {
 const HubContext = createContext<HubState | null>(null);
 
 export function HubProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const pathname = useLocation({ select: (location) => location.pathname });
   const navigate = useNavigate();
 
@@ -145,11 +147,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
       const data = await modelsService.getModels({ forceRefresh });
       setModels(data);
     } catch (err) {
-      setModelsError(err instanceof Error ? err.message : "Не удалось загрузить каталог моделей");
+      console.error("[HubContext] Failed to load models:", err);
+      setModelsError(t("models.loadError"));
     } finally {
       setModelsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchModels();
@@ -265,20 +268,18 @@ export function HubProvider({ children }: { children: ReactNode }) {
       if (profile) {
         setUserProfileState(profile);
       } else {
-        setProfileError("Профиль пользователя не найден");
+        setProfileError(t("profile.notFound"));
       }
     } catch (err) {
       console.error("[HubContext] Failed to load user profile:", err);
       setProfileError(
-        err instanceof Error
-          ? err.message
-          : "Не удалось загрузить профиль пользователя. Проверьте соединение с сервером.",
+        t("profile.loadError"),
       );
       setUserProfileState(null);
     } finally {
       setProfileLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     let active = true;
@@ -296,7 +297,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
             setUserProfileState(profile);
             setProfileLoading(false);
           } else {
-            setProfileError("Профиль пользователя не найден");
+            setProfileError(t("profile.notFound"));
             setProfileLoading(false);
           }
         })
@@ -304,9 +305,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
           if (!active) return;
           console.error("[HubContext] Failed to load user profile:", err);
           setProfileError(
-            err instanceof Error
-              ? err.message
-              : "Не удалось загрузить профиль пользователя. Проверьте соединение с сервером.",
+            t("profile.loadError"),
           );
           setUserProfileState(null);
           setProfileLoading(false);
@@ -324,7 +323,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [authStatus, currentUser?.id]);
+  }, [authStatus, currentUser?.id, t]);
 
   const retryLoadProfile = useCallback(() => {
     if (currentUser?.id) {
@@ -385,7 +384,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
           id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           channelId: chatChannel,
           author: {
-            name: userProfile?.displayName || "Пользователь",
+            name: userProfile?.displayName || t("common.user"),
             handle: userProfile?.username || "user",
             initials: profileService.getInitials(userProfile?.displayName, userProfile?.username),
           },
@@ -395,7 +394,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [chatChannel, mentionEntities, userProfile],
+    [chatChannel, mentionEntities, userProfile, t],
   );
 
   const openProfile = useCallback(

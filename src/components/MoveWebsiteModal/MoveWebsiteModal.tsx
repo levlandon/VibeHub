@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useI18n } from "../../i18n";
 import { Button } from "../Button/Button";
 import { Select } from "../ui/Select";
 import styles from "./MoveWebsiteModal.module.css";
@@ -20,6 +21,7 @@ export function MoveWebsiteModal({
   collections,
   onMove,
 }: MoveWebsiteModalProps) {
+  const { t } = useI18n();
   const targetOptions = collections.filter((c) => c.id !== currentCollectionId);
   const [selectedId, setSelectedId] = useState(targetOptions[0]?.id || "");
 
@@ -45,34 +47,34 @@ export function MoveWebsiteModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="move-site-title" className={styles.title}>
-          Переместить «{itemTitle}»
+          {t("collections.moveTitle", { title: itemTitle })}
         </h2>
         {targetOptions.length === 0 ? (
           <div>
-            <p>Нет других коллекций для перемещения.</p>
+            <p>{t("collections.noOther")}</p>
             <div className={styles.actions}>
               <Button variant="text" onClick={onClose}>
-                Закрыть
+                {t("common.close")}
               </Button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className={styles.field}>
-              <span className={styles.fieldLabel}>Выберите новую коллекцию</span>
+              <span className={styles.fieldLabel}>{t("collections.chooseTarget")}</span>
               <Select
                 value={selectedId}
                 options={selectOptions}
                 onChange={setSelectedId}
-                placeholder="Выберите коллекцию..."
+                placeholder={t("collections.choosePlaceholder")}
               />
             </div>
             <div className={styles.actions}>
               <Button variant="text" onClick={onClose} type="button">
-                Отмена
+                {t("common.cancel")}
               </Button>
               <Button variant="primary" disabled={!selectedId} type="submit">
-                Переместить
+                {t("collections.move")}
               </Button>
             </div>
           </form>

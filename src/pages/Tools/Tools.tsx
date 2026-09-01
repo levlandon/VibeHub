@@ -8,29 +8,34 @@ import { isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
 import type { ToolCategory, ToolType } from "../../types/hub";
 import styles from "./Tools.module.css";
+import { useI18n } from "../../i18n";
 
-const CATEGORIES: { id: "all" | ToolCategory; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "coding", label: "Coding" },
-  { id: "agents", label: "Agents" },
-  { id: "research", label: "Research" },
-  { id: "design", label: "Design" },
-  { id: "local-ai", label: "Local AI" },
+const CATEGORIES: { id: "all" | ToolCategory; key: string }[] = [
+  { id: "all", key: "feed.all" },
+  { id: "coding", key: "tools.category.coding" },
+  { id: "agents", key: "tools.category.agents" },
+  { id: "research", key: "tools.category.research" },
+  { id: "design", key: "tools.category.design" },
+  { id: "local-ai", key: "tools.category.localAi" },
 ];
 
-const TYPES: { id: "all" | ToolType; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "skill", label: "Skill" },
-  { id: "mcp", label: "MCP" },
-  { id: "plugin", label: "Plugin" },
-  { id: "cli", label: "CLI" },
-  { id: "ide", label: "IDE extension" },
+const TYPES: { id: "all" | ToolType; key: string }[] = [
+  { id: "all", key: "feed.all" },
+  { id: "skill", key: "tools.type.skill" },
+  { id: "mcp", key: "tools.type.mcp" },
+  { id: "plugin", key: "tools.type.plugin" },
+  { id: "cli", key: "tools.type.cli" },
+  { id: "ide", key: "tools.type.ide" },
 ];
 
 export function ToolsPage() {
+  const { t } = useI18n();
   const { tools, savedItems, toggleToolBookmark, openEntity, setAddOpen } = useHub();
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["id"]>("all");
   const [type, setType] = useState<(typeof TYPES)[number]["id"]>("all");
+
+  const categories = CATEGORIES.map((item) => ({ ...item, label: t(item.key) }));
+  const types = TYPES.map((item) => ({ ...item, label: t(item.key) }));
 
   const visible = tools.filter((tool) => {
     const byCat = category === "all" || tool.category === category;
@@ -40,20 +45,20 @@ export function ToolsPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Инструменты">
+      <PageHeader title={t("feed.tools")}>
         <CategoryStrip
-          items={CATEGORIES}
+          items={categories}
           value={category}
           onChange={(id) => setCategory(id as typeof category)}
         />
         <div className={styles.secondary}>
           <label className={styles.type}>
-            Тип
+            {t("tools.type")}
             <select
               value={type}
               onChange={(e) => setType(e.target.value as typeof type)}
             >
-              {TYPES.map((item) => (
+              {types.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>
@@ -66,15 +71,15 @@ export function ToolsPage() {
       {tools.length === 0 ? (
         <EmptyState>
           <div className={styles.emptyContent}>
-            <h3>Инструментов пока нет</h3>
-            <p>Каталог будет наполняться сообществом.</p>
+            <h3>{t("tools.emptyTitle")}</h3>
+            <p>{t("tools.emptyDescription")}</p>
             <Button variant="primary" onClick={() => setAddOpen(true)}>
-              + Предложить инструмент
+              + {t("tools.suggest")}
             </Button>
           </div>
         </EmptyState>
       ) : visible.length === 0 ? (
-        <EmptyState>Инструменты не найдены по выбранным фильтрам.</EmptyState>
+        <EmptyState>{t("tools.filteredEmpty")}</EmptyState>
       ) : (
         <ul className={styles.list}>
           {visible.map((tool) => (

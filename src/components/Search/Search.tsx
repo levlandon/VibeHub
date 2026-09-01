@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../../i18n";
 import { IconSearch } from "../icons";
 import styles from "./Search.module.css";
 
@@ -11,8 +12,10 @@ interface SearchProps {
 export function Search({
   value,
   onChange,
-  placeholder = "Поиск...",
+  placeholder,
 }: SearchProps) {
+  const { t } = useI18n();
+  const resolvedPlaceholder = placeholder ?? t("common.searchPlaceholder");
   const [open, setOpen] = useState(Boolean(value));
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +30,7 @@ export function Search({
 
   return (
     <label className={`${styles.field} ${open ? styles.open : ""}`}>
-      <button type="button" className={styles.icon} aria-label="Поиск" onClick={expand}>
+      <button type="button" className={styles.icon} aria-label={t("common.search")} onClick={expand}>
         <IconSearch width={18} height={18} />
       </button>
       <input
@@ -35,7 +38,7 @@ export function Search({
         ref={inputRef}
         type="search"
         value={value}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={() => {

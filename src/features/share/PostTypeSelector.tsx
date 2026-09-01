@@ -1,11 +1,13 @@
 import { POST_TYPES } from "../../config/postTypes";
 import type { PostType } from "../../types/posts";
 import styles from "./PostTypeSelector.module.css";
+import { useI18n } from "../../i18n";
 
 export function PostTypeSelector({ onPick }: { onPick: (type: PostType) => void }) {
+  const { t } = useI18n();
   return (
     <div>
-      <p className={styles.lead}>Что хотите опубликовать?</p>
+      <p className={styles.lead}>{t("composer.chooseType")}</p>
       <ul className={styles.list}>
         {POST_TYPES.map((item) => (
           <li key={item.id}>
@@ -14,8 +16,8 @@ export function PostTypeSelector({ onPick }: { onPick: (type: PostType) => void 
                 {item.mark}
               </span>
               <span>
-                <strong>{item.label}</strong>
-                <em>{item.hint}</em>
+                <strong>{t(`composer.${item.id}`)}</strong>
+                <em>{t(`composer.types.${item.id}.hint`)}</em>
               </span>
             </button>
           </li>

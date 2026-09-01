@@ -89,50 +89,61 @@ export class ProfileService {
 
   validateProfile(profile: Partial<UserProfile>): ProfileValidationResult {
     const errors: Partial<Record<keyof UserProfile, string>> = {};
+    const errorKeys: Partial<Record<keyof UserProfile, string>> = {};
+
+    const setError = (
+      field: keyof UserProfile,
+      message: string,
+      key: string,
+    ) => {
+      errors[field] = message;
+      errorKeys[field] = key;
+    };
 
     const displayName = profile.displayName?.trim() ?? "";
     if (!displayName) {
-      errors.displayName = "Имя обязательно для заполнения";
+      setError("displayName", "Имя обязательно для заполнения", "profile.validation.displayNameRequired");
     } else if (displayName.length > 50) {
-      errors.displayName = "Имя не должно превышать 50 символов";
+      setError("displayName", "Имя не должно превышать 50 символов", "profile.validation.displayNameMax");
     }
 
     const username = profile.username?.trim() ?? "";
     if (!username) {
-      errors.username = "Username обязателен";
+      setError("username", "Username обязателен", "profile.validation.usernameRequired");
     } else if (username.length < 2) {
-      errors.username = "Username должен содержать минимум 2 символа";
+      setError("username", "Username должен содержать минимум 2 символа", "profile.validation.usernameMin");
     } else if (username.length > 30) {
-      errors.username = "Username не должен превышать 30 символов";
+      setError("username", "Username не должен превышать 30 символов", "profile.validation.usernameMax");
     } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      errors.username = "Username может содержать только латиницу, цифры, дефис и подчеркивание";
+      setError("username", "Username может содержать только латиницу, цифры, дефис и подчеркивание", "profile.validation.usernameChars");
     }
 
     const bio = profile.bio ?? "";
     if (bio.length > 160) {
-      errors.bio = "Bio не должно превышать 160 символов";
+      setError("bio", "Bio не должно превышать 160 символов", "profile.validation.bioMax");
     }
 
     const avatar = profile.avatarUrl !== undefined ? profile.avatarUrl : profile.avatar;
     if (avatar) {
       const avatarTrim = avatar.trim();
       if (avatarTrim && !/^https?:\/\/.+/.test(avatarTrim) && !avatarTrim.startsWith("data:image/")) {
-        errors.avatar = "Ссылка на аватар должна начинаться с http:// или https://";
+        setError("avatar", "Ссылка на аватар должна начинаться с http:// или https://", "profile.validation.avatarUrl");
       }
     }
 
     const models = profile.modelIds || profile.models;
     if (models && models.length > 8) {
-      errors.models = "Можно выбрать максимум 8 моделей";
+      setError("models", "Можно выбрать максимум 8 моделей", "profile.validation.modelsMax");
     }
 
     if (profile.interests && profile.interests.length > 6) {
-      errors.interests = "Можно выбрать максимум 6 направлений";
+      setError("interests", "Можно выбрать максимум 6 направлений", "profile.validation.interestsMax");
     }
 
     return {
       valid: Object.keys(errors).length === 0,
       errors,
+      errorKeys,
     };
   }
 
@@ -147,4 +158,3 @@ export class ProfileService {
 }
 
 export const profileService = new ProfileService();
-

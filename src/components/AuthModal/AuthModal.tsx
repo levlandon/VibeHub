@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../IconButton/IconButton";
-import { IconClose, IconGithub } from "../icons";
-import { authService, DEV_SEED_USERS } from "../../services/auth/authService";
+import { IconCheck, IconClose, IconGlobe, IconGithub } from "../icons";
+import { authService, DEV_SEED_USERS, mapAuthError, type AuthErrorKey } from "../../services/auth";
+import { useI18n, type Language } from "../../i18n";
 import styles from "./AuthModal.module.css";
 
 interface AuthModalProps {
@@ -11,25 +12,54 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
+  const { language, setLanguage, t } = useI18n();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<AuthErrorKey | null>(null);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const languageRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    setError(null);
+    setErrorKey(null);
     setEmail("");
     setPassword("");
     setName("");
+    setLanguageOpen(false);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      if (languageOpen) {
+        setLanguageOpen(false);
+        languageButtonRef.current?.focus();
+        return;
+      }
+      onClose();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, languageOpen, onClose]);
+
+  useEffect(() => {
+    if (!languageOpen) return;
+    const handleOutside = (event: MouseEvent) => {
+      if (languageRef.current && !languageRef.current.contains(event.target as Node)) {
+        setLanguageOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
+  }, [languageOpen]);
 
   if (!isOpen) return null;
 
@@ -37,15 +67,11 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
     if (loading) return;
     try {
       setLoading(true);
-      setError(null);
+      setErrorKey(null);
       await authService.signInWithOAuth("github");
     } catch (err) {
       console.error("[AuthModal] GitHub OAuth error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Не удалось запустить авторизацию через GitHub. Проверьте конфигурацию провайдера.",
-      );
+      setErrorKey("oauthFailure");
     } finally {
       setLoading(false);
     }
@@ -55,9 +81,14 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
     e.preventDefault();
     if (loading || !email.trim() || !password.trim()) return;
 
+    if (isSignUp && password.length < 6) {
+      setErrorKey("passwordTooShort");
+      return;
+    }
+
     try {
       setLoading(true);
-      setError(null);
+      setErrorKey(null);
       if (isSignUp) {
         await authService.signUp({ email, password, name });
       } else {
@@ -65,7 +96,7 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка авторизации");
+      setErrorKey(mapAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -84,16 +115,48 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
       >
         <header className={styles.header}>
           <h2 id="auth-modal-title" className={styles.title}>
-            {isDev && isSignUp ? "Регистрация в VibeHub" : "Войти в VibeHub"}
+            {t(isSignUp ? "auth.register.title" : "auth.login.title")}
           </h2>
-          <IconButton label="Закрыть" onClick={onClose}>
-            <IconClose width={16} height={16} />
-          </IconButton>
+          <div className={styles.headerActions} ref={languageRef}>
+            <IconButton
+              ref={languageButtonRef}
+              label={t("language.select")}
+              aria-haspopup="menu"
+              aria-expanded={languageOpen}
+              onClick={() => setLanguageOpen((open) => !open)}
+            >
+              <IconGlobe width={16} height={16} />
+            </IconButton>
+            {languageOpen ? (
+              <div className={styles.languageMenu} role="menu" aria-label={t("language.choose")}>
+                {(["ru", "en"] as Language[]).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={language === option}
+                    className={styles.languageOption}
+                    onClick={() => {
+                      setLanguage(option);
+                      setLanguageOpen(false);
+                      languageButtonRef.current?.focus();
+                    }}
+                  >
+                    <span>{option === "ru" ? "Русский" : "English"}</span>
+                    {language === option ? <IconCheck width={14} height={14} /> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <IconButton label={t("common.close")} onClick={onClose}>
+              <IconClose width={16} height={16} />
+            </IconButton>
+          </div>
         </header>
 
         <div className={styles.content}>
           <p className={styles.desc}>
-            Войдите через GitHub, чтобы сохранять модели, создавать коллекции и участвовать в сообществе.
+            {t("auth.description")}
           </p>
 
           <div className={styles.actions}>
@@ -105,13 +168,13 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
             >
               <IconGithub width={18} height={18} />
               <span>
-                {loading ? "Подключение к GitHub…" : "Продолжить с GitHub"}
+                {loading ? t("auth.oauth.loading") : t("auth.oauth.github")}
               </span>
             </button>
 
-            {error ? (
+            {errorKey ? (
               <div className={styles.errorBox}>
-                <span>{error}</span>
+                <span>{t(`auth.errors.${errorKey}`)}</span>
                 <button
                   type="button"
                   style={{
@@ -126,7 +189,7 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
                   }}
                   onClick={handleGithubClick}
                 >
-                  Повторить
+                  {t("auth.retry")}
                 </button>
               </div>
             ) : null}
@@ -136,11 +199,12 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
                 <form className={styles.form} onSubmit={handleFormSubmit}>
                   {isSignUp ? (
                     <div className={styles.inputGroup}>
-                      <label className={styles.inputLabel}>Имя</label>
+                      <label className={styles.inputLabel} htmlFor="auth-name">{t("auth.name")}</label>
                       <input
+                        id="auth-name"
                         type="text"
                         className={styles.input}
-                        placeholder="Алексей"
+                        placeholder={t("auth.name.placeholder")}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                       />
@@ -148,24 +212,26 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
                   ) : null}
 
                   <div className={styles.inputGroup}>
-                    <label className={styles.inputLabel}>Email</label>
+                    <label className={styles.inputLabel} htmlFor="auth-email">{t("auth.email")}</label>
                     <input
+                      id="auth-email"
                       type="email"
                       required
                       className={styles.input}
-                      placeholder="alex@vibehub.dev"
+                      placeholder={t("auth.email.placeholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
 
                   <div className={styles.inputGroup}>
-                    <label className={styles.inputLabel}>Пароль</label>
+                    <label className={styles.inputLabel} htmlFor="auth-password">{t("auth.password")}</label>
                     <input
+                      id="auth-password"
                       type="password"
                       required
                       className={styles.input}
-                      placeholder="••••••••"
+                      placeholder={t("auth.password.placeholder")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -177,10 +243,10 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
                     disabled={loading || !email.trim() || !password.trim()}
                   >
                     {loading
-                      ? "Подождите..."
+                      ? t("auth.submit.loading")
                       : isSignUp
-                        ? "Зарегистрироваться"
-                        : "Войти с паролем"}
+                        ? t("auth.submit.register")
+                        : t("auth.submit.login")}
                   </button>
 
                   <button
@@ -188,19 +254,19 @@ export function AuthModal({ isOpen, onClose, onDevLogin }: AuthModalProps) {
                     className={styles.toggleModeBtn}
                     onClick={() => {
                       setIsSignUp(!isSignUp);
-                      setError(null);
+                      setErrorKey(null);
                     }}
                   >
                     {isSignUp
-                      ? "Уже есть аккаунт? Войти"
-                      : "Нет аккаунта? Зарегистрироваться"}
+                      ? t("auth.toggle.toLogin")
+                      : t("auth.toggle.toRegister")}
                   </button>
                 </form>
 
                 <div className={styles.devSection}>
                   <div className={styles.devTitle}>
-                    <span className={styles.devBadge}>Dev Only</span>
-                    <span>Быстрый вход для тестов:</span>
+                    <span className={styles.devBadge}>{t("auth.dev.only")}</span>
+                    <span>{t("auth.dev.quickLogin")}</span>
                   </div>
                   <div className={styles.devUsersList}>
                     {DEV_SEED_USERS.map((u) => (

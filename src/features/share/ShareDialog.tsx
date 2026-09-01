@@ -5,6 +5,7 @@ import { IconClose } from "../../components/icons";
 import { useScrollLock } from "../../hooks/useScrollLock";
 import { useUnsavedChanges } from "../../hooks/useUnsavedChanges";
 import { useHub } from "../../state/HubContext";
+import { useI18n } from "../../i18n";
 import { usePosts } from "../posts";
 import {
   buildCreatePostInput,
@@ -16,6 +17,7 @@ import { emptyComposerState, type ComposerState } from "./types";
 import styles from "./ShareDialog.module.css";
 
 export function ShareDialog() {
+  const { t } = useI18n();
   const {
     addOpen,
     setAddOpen,
@@ -115,10 +117,8 @@ export function ShareDialog() {
 
       await publishPost(input, currentEntities);
       closeNow();
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Не удалось опубликовать запись",
-      );
+    } catch {
+      setSubmitError(t("feed.publishError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -154,9 +154,9 @@ export function ShareDialog() {
       >
         <header className={styles.header}>
           <h2 id="composer-title" className={styles.headerTitle}>
-            Новая публикация
+            {t("composer.newPost")}
           </h2>
-          <IconButton label="Закрыть" onClick={requestClose}>
+          <IconButton label={t("common.close")} onClick={requestClose}>
             <IconClose width={18} height={18} />
           </IconButton>
         </header>
@@ -177,10 +177,10 @@ export function ShareDialog() {
 
         {leave.intent ? (
           <ConfirmDialog
-            title="Удалить черновик?"
-            body="Внесённые изменения будут потеряны."
-            cancelLabel="Продолжить редактирование"
-            confirmLabel="Удалить"
+            title={t("composer.discardTitle")}
+            body={t("composer.discardBody")}
+            cancelLabel={t("composer.continueEditing")}
+            confirmLabel={t("common.delete")}
             confirmVariant="danger"
             onCancel={leave.dismiss}
             onConfirm={applyLeave}

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { UserProfile } from "../../types/profile";
 import { profileService } from "../../services/profile";
 import { IconLogout, IconSettings, IconUser } from "../icons";
+import { useI18n } from "../../i18n";
 import styles from "./UserMenu.module.css";
 
 interface UserMenuProps {
@@ -21,6 +22,7 @@ export function UserMenu({
   onOpenSettings,
   onLogout,
 }: UserMenuProps) {
+  const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function UserMenu({
       ref={menuRef}
       className={styles.menu}
       role="menu"
-      aria-label="Меню пользователя"
+      aria-label={t("common.profile")}
     >
       <div className={styles.header}>
         <div className={styles.avatar}>
@@ -89,7 +91,7 @@ export function UserMenu({
         }}
       >
         <IconUser width={18} height={18} />
-        <span>Профиль</span>
+        <span>{t("common.profile")}</span>
       </button>
 
       <button
@@ -102,7 +104,7 @@ export function UserMenu({
         }}
       >
         <IconSettings width={18} height={18} />
-        <span>Настройки</span>
+        <span>{t("common.settings")}</span>
       </button>
 
       <div className={styles.divider} />
@@ -119,7 +121,7 @@ export function UserMenu({
         }}
       >
         <IconLogout width={18} height={18} />
-        <span>Выйти</span>
+        <span>{t("common.logout")}</span>
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useI18n } from "../../i18n";
 import { parseSiteUrl } from "../../lib/siteUrl";
 import { quickAccessRepository } from "../../services/collections";
 import type { QuickAccessSite } from "../../types/hub";
@@ -18,6 +19,7 @@ export function QuickAccess({
   onCloseExternalAdd,
   onSiteAdded,
 }: QuickAccessProps) {
+  const { t } = useI18n();
   const [sites, setSites] = useState<QuickAccessSite[]>([]);
   const [modal, setModal] = useState<"add" | QuickAccessSite | null>(null);
 
@@ -59,7 +61,7 @@ export function QuickAccess({
 
   return (
     <section className={styles.section} aria-labelledby="quick-access-title">
-      <h2 id="quick-access-title">Быстрый доступ</h2>
+      <h2 id="quick-access-title">{t("quickAccess.title")}</h2>
       <ul className={styles.grid}>
         {sites.map((site) => (
           <li key={site.id}>
@@ -91,6 +93,7 @@ function SiteTile({
   onEdit: () => void;
   onRemove: () => void;
 }) {
+  const { t } = useI18n();
   const [menu, setMenu] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 
@@ -127,8 +130,8 @@ function SiteTile({
       <button
         type="button"
         className={styles.more}
-        title="Ещё"
-        aria-label="Ещё"
+        title={t("quickAccess.more")}
+        aria-label={t("quickAccess.more")}
         onClick={(e) => {
           e.preventDefault();
           setMenu((v) => !v);
@@ -145,7 +148,7 @@ function SiteTile({
               onEdit();
             }}
           >
-            Изменить
+            {t("quickAccess.edit")}
           </button>
           <button
             type="button"
@@ -154,7 +157,7 @@ function SiteTile({
               onRemove();
             }}
           >
-            Удалить
+            {t("quickAccess.delete")}
           </button>
         </div>
       ) : null}
@@ -171,6 +174,7 @@ export function SiteModal({
   onClose: () => void;
   onSave: (site: QuickAccessSite) => void;
 }) {
+  const { t } = useI18n();
   const [url, setUrl] = useState(site?.url ?? "");
   const [title, setTitle] = useState(site?.title ?? "");
   const [autoTitle, setAutoTitle] = useState(!site);
@@ -208,7 +212,7 @@ export function SiteModal({
           }}
         >
           <label className={styles.field}>
-            Ссылка
+            {t("quickAccess.link")}
             <input
               autoFocus
               value={url}
@@ -220,10 +224,10 @@ export function SiteModal({
             />
           </label>
           <label className={styles.field}>
-            Название
+            {t("quickAccess.name")}
             <input
               value={title}
-              placeholder={parsed?.title ?? "Название"}
+              placeholder={parsed?.title ?? t("quickAccess.namePlaceholder")}
               onChange={(e) => {
                 setAutoTitle(false);
                 setTitle(e.target.value);
@@ -233,17 +237,17 @@ export function SiteModal({
           {parsed ? (
             <p className={styles.hint}>
               {parsed.domain}
-              {parsed.favicon ? " · favicon подставится автоматически" : ""}
+              {parsed.favicon ? t("quickAccess.faviconHint") : ""}
             </p>
           ) : url.trim() ? (
-            <p className={styles.hint}>Проверьте ссылку</p>
+            <p className={styles.hint}>{t("quickAccess.checkLink")}</p>
           ) : null}
           <div className={styles.actions}>
             <Button variant="text" onClick={onClose}>
-              Отмена
+              {t("quickAccess.cancel")}
             </Button>
             <Button variant="primary" disabled={!parsed} type="submit">
-              {site ? "Сохранить" : "Добавить"}
+              {site ? t("quickAccess.save") : t("quickAccess.add")}
             </Button>
           </div>
         </form>

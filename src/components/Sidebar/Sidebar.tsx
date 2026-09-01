@@ -4,6 +4,7 @@ import { profileService } from "../../services/profile";
 import { Skeleton } from "../Skeleton";
 import type { Route } from "../../types/hub";
 import { UserMenu } from "../UserMenu/UserMenu";
+import { useI18n } from "../../i18n";
 import {
   IconBenchmarks,
   IconBookmarks,
@@ -22,6 +23,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
+  const { t } = useI18n();
   const {
     route,
     authStatus,
@@ -68,8 +70,8 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
         <button
           type="button"
           className={styles.collapse}
-          title={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
-          aria-label={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+          title={sidebarCollapsed ? t("common.expandMenu") : t("common.collapseMenu")}
+          aria-label={sidebarCollapsed ? t("common.expandMenu") : t("common.collapseMenu")}
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         >
           <IconPanel width={18} height={18} />
@@ -79,57 +81,57 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
       <div className={styles.navWrap}>
         {/* Группа 1: Исследовать */}
         <div className={styles.group}>
-          <div className={styles.groupTitle}>Исследовать</div>
+          <div className={styles.groupTitle}>{t("nav.explore")}</div>
           <button
             type="button"
             className={styles.link}
-            title={tip("Поиск")}
+            title={tip(t("common.search"))}
             onClick={() => setSearchOpen(true)}
           >
             <IconSearch width={20} height={20} />
-            <span>Поиск</span>
+            <span>{t("common.search")}</span>
           </button>
           <NavButton
-            item={{ id: "models", label: "Модели", icon: IconModels }}
+            item={{ id: "models", label: t("nav.models"), icon: IconModels }}
             active={route === "models"}
-            tooltip={tip("Модели")}
+            tooltip={tip(t("nav.models"))}
             onClick={() => navigateTo("models")}
           />
           <NavButton
-            item={{ id: "benchmarks", label: "Бенчмарки", icon: IconBenchmarks }}
+            item={{ id: "benchmarks", label: t("nav.benchmarks"), icon: IconBenchmarks }}
             active={route === "benchmarks"}
-            tooltip={tip("Бенчмарки")}
+            tooltip={tip(t("nav.benchmarks"))}
             onClick={() => navigateTo("benchmarks")}
           />
         </div>
 
         {/* Группа 2: Сообщество */}
         <div className={styles.group}>
-          <div className={styles.groupTitle}>Сообщество</div>
+          <div className={styles.groupTitle}>{t("nav.community")}</div>
           <NavButton
-            item={{ id: "feed", label: "Лента", icon: IconFeed }}
+            item={{ id: "feed", label: t("nav.feed"), icon: IconFeed }}
             active={route === "feed"}
-            tooltip={tip("Лента")}
+            tooltip={tip(t("nav.feed"))}
             onClick={() => navigateTo("feed")}
           />
           <button
             type="button"
             className={styles.link}
-            title={tip("Создать")}
+            title={tip(t("nav.create"))}
             onClick={() => setAddOpen(true)}
           >
             <IconPlus width={20} height={20} />
-            <span>Создать</span>
+            <span>{t("nav.create")}</span>
           </button>
         </div>
 
         {/* Группа 3: Моё */}
         <div className={styles.group}>
-          <div className={styles.groupTitle}>Моё</div>
+          <div className={styles.groupTitle}>{t("nav.mine")}</div>
           <NavButton
-            item={{ id: "saved", label: "Сохранённое", icon: IconBookmarks }}
+            item={{ id: "saved", label: t("nav.saved"), icon: IconBookmarks }}
             active={route === "saved" || route === "bookmarks" || route === "collections"}
-            tooltip={tip("Сохранённое")}
+            tooltip={tip(t("nav.saved"))}
             onClick={() => navigateTo("saved")}
           />
         </div>
@@ -142,8 +144,8 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
             <button
               type="button"
               className={styles.collapsedLoginBtn}
-              title="Войти"
-              aria-label="Войти"
+              title={t("auth.submit.login")}
+              aria-label={t("auth.submit.login")}
               onClick={() => setAuthModalOpen(true)}
             >
               <IconLogIn width={20} height={20} />
@@ -154,7 +156,7 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
               className={styles.loginBtn}
               onClick={() => setAuthModalOpen(true)}
             >
-              Войти
+              {t("auth.submit.login")}
             </button>
           )
         ) : !userProfile ? (

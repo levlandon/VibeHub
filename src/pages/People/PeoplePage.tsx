@@ -1,11 +1,14 @@
 import { IconUsers } from "../../components/icons";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
+import { useI18n } from "../../i18n";
 import styles from "./PeoplePage.module.css";
 
 export function PeoplePage() {
+  const { t } = useI18n();
+
   return (
     <div className={styles.page}>
-      <PageHeader title="Люди">
+      <PageHeader title={t("people.title")}>
         <div />
       </PageHeader>
 
@@ -13,9 +16,9 @@ export function PeoplePage() {
         <div className={styles.icon}>
           <IconUsers width={24} height={24} />
         </div>
-        <h3 className={styles.title}>Каталог пользователей и разработчиков</h3>
+        <h3 className={styles.title}>{t("people.descriptionTitle")}</h3>
         <p className={styles.description}>
-          Здесь скоро появится каталог участников сообщества, их AI-стеки, проекты и совместные активности.
+          {t("people.description")}
         </p>
       </div>
     </div>

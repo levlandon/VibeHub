@@ -8,6 +8,7 @@ import { ExpandableDescription } from "./ExpandableDescription";
 import { ModelInfoPopover } from "./ModelInfoPopover";
 import { ModelMeta } from "./ModelMeta";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface ModelHeaderProps {
   model: Model;
@@ -20,6 +21,7 @@ export const ModelHeader = memo(function ModelHeader({
   saved,
   onSave,
 }: ModelHeaderProps) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleCopyId = useCallback(async () => {
@@ -59,7 +61,7 @@ export const ModelHeader = memo(function ModelHeader({
                 to="/models"
                 search={{ provider: model.provider }}
                 className={styles.providerLink}
-                title={`Показать все модели от ${model.provider}`}
+                title={t("models.showProvider", { provider: model.provider })}
               >
                 <span>{model.provider}</span>
                 <IconOpen width={12} height={12} className={styles.providerArrow} />
@@ -67,15 +69,15 @@ export const ModelHeader = memo(function ModelHeader({
             </div>
 
             <div className={styles.idRow}>
-              <span className={styles.idText} title="API Model ID">
+                <span className={styles.idText} title={t("model.apiId")}>
                 {model.id}
               </span>
               <button
                 type="button"
                 className={styles.copyBtn}
                 onClick={handleCopyId}
-                title={copied ? "Скопировано!" : "Скопировать Model ID"}
-                aria-label={copied ? "ID модели скопирован" : "Скопировать Model ID"}
+                title={copied ? t("model.copied") : t("model.copyId")}
+                aria-label={copied ? t("model.idCopied") : t("model.copyId")}
               >
                 {copied ? (
                   <IconCheck width={13} height={13} className={styles.copiedIcon} />
@@ -91,7 +93,7 @@ export const ModelHeader = memo(function ModelHeader({
 
         <div className={styles.headerActions}>
           <IconButton
-            label={saved ? "Убрать из закладок" : "Сохранить"}
+            label={saved ? t("saved.removeBookmark") : t("common.save")}
             active={saved}
             onClick={onSave}
           >

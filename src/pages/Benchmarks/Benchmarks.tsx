@@ -39,6 +39,7 @@ import {
   type SpeedSortColumn,
 } from "../../services/benchmarks";
 import { useHub } from "../../state/HubContext";
+import { useI18n } from "../../i18n";
 import styles from "./Benchmarks.module.css";
 
 /**
@@ -48,48 +49,56 @@ const CANONICAL_CATEGORIES = [
   {
     id: "knowledge",
     label: "Knowledge",
+    labelKey: "benchmarks.category.knowledge",
     rawKeys: ["knowledge"],
     icon: (cls?: string) => <IconBrain width={16} height={16} className={cls} />,
   },
   {
     id: "coding",
     label: "Coding",
+    labelKey: "benchmarks.category.coding",
     rawKeys: ["coding", "code"],
     icon: (cls?: string) => <IconCode width={16} height={16} className={cls} />,
   },
   {
     id: "reasoning",
     label: "Reasoning",
+    labelKey: "benchmarks.category.reasoning",
     rawKeys: ["reasoning"],
     icon: (cls?: string) => <IconSparkles width={16} height={16} className={cls} />,
   },
   {
     id: "instructionFollowing",
     label: "Instruction Following",
+    labelKey: "benchmarks.category.instructionFollowing",
     rawKeys: ["instructionfollowing", "instruction_following", "instruction"],
     icon: (cls?: string) => <IconListChecks width={16} height={16} className={cls} />,
   },
   {
     id: "agentic",
     label: "Agentic",
+    labelKey: "benchmarks.category.agentic",
     rawKeys: ["agentic", "agents"],
     icon: (cls?: string) => <IconBot width={16} height={16} className={cls} />,
   },
   {
     id: "multimodalGrounded",
     label: "Multimodal & Grounded",
+    labelKey: "benchmarks.category.multimodalGrounded",
     rawKeys: ["multimodalgrounded", "multimodal_grounded", "multimodal", "vision"],
     icon: (cls?: string) => <IconVision width={16} height={16} className={cls} />,
   },
   {
     id: "math",
     label: "Mathematics",
+    labelKey: "benchmarks.category.math",
     rawKeys: ["math", "mathematics"],
     icon: (cls?: string) => <IconMath width={16} height={16} className={cls} />,
   },
   {
     id: "multilingual",
     label: "Multilingual",
+    labelKey: "benchmarks.category.multilingual",
     rawKeys: ["multilingual"],
     icon: (cls?: string) => <IconGlobe width={16} height={16} className={cls} />,
   },
@@ -105,6 +114,7 @@ function SortIndicator({ active, direction }: { active: boolean; direction: Sort
 }
 
 export function BenchmarksPage() {
+  const { t } = useI18n();
   const { models } = useHub();
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
@@ -177,15 +187,12 @@ export function BenchmarksPage() {
       setOverviewModels(overview);
       setSpeedItems(speed);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Не удалось загрузить данные бенчмарков. Попробуйте обновить страницу.",
-      );
+      console.error("Failed to load benchmarks:", err);
+      setError(t("benchmarks.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [models]);
+  }, [models, t]);
 
   useEffect(() => {
     loadData();
@@ -438,14 +445,14 @@ export function BenchmarksPage() {
   return (
     <div className={styles.page} data-page="wide">
       <div className={styles.headerRowWrap}>
-        <PageHeader title="Бенчмарки" />
+        <PageHeader title={t("benchmarks.title")} />
         <a
           href="https://github.com/benchlmirror/benchlmirror.github.io"
           target="_blank"
           rel="noopener noreferrer"
           className={styles.headerCreditLink}
-          aria-label="Данные бенчмарков: публичное зеркало BenchLMirror на GitHub"
-          title="Открыть репозиторий BenchLMirror (GitHub)"
+          aria-label={t("benchmarks.sourceLabel")}
+          title={t("benchmarks.sourceTitle")}
         >
           <IconGithub width={14} height={14} className={styles.headerCreditIcon} />
           <span>BenchLMirror</span>
@@ -462,7 +469,8 @@ export function BenchmarksPage() {
             <input
               type="search"
               className={styles.searchInput}
-              placeholder="Найти модель..."
+              placeholder={t("benchmarks.searchModel")}
+              aria-label={t("benchmarks.searchModel")}
               value={modelSearchQuery}
               onChange={(e) => setModelSearchQuery(e.target.value)}
             />
@@ -487,7 +495,7 @@ export function BenchmarksPage() {
 
         {/* 4. Result Count */}
         <div className={styles.toolbarCount}>
-          {resultCount} {pluralizeModels(resultCount)}
+          {t("benchmarks.resultCount", { count: resultCount })}
         </div>
       </div>
 
@@ -495,13 +503,13 @@ export function BenchmarksPage() {
       {loading && allBenchmarks.length === 0 ? (
         <div className={styles.loadingContainer}>
           <div className={styles.spinner} />
-          <p>Загрузка данных бенчмарков...</p>
+          <p>{t("benchmarks.loading")}</p>
         </div>
       ) : error && allBenchmarks.length === 0 ? (
         <div className={styles.errorBox}>
           <p>{error}</p>
           <button type="button" className={styles.retryBtn} onClick={() => loadData(true)}>
-            Повторить попытку
+            {t("benchmarks.retry")}
           </button>
         </div>
       ) : (
@@ -525,9 +533,9 @@ export function BenchmarksPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.metaLink}
-                        aria-label={`Открыть исследовательскую статью по тесту ${currentBenchmark.name}`}
+                        aria-label={t("benchmarks.openPaper", { name: currentBenchmark.name })}
                       >
-                        <span>Paper</span>
+                        <span>{t("benchmarks.paper")}</span>
                         <IconOpen width={11} height={11} />
                       </a>
                     )}
@@ -537,7 +545,7 @@ export function BenchmarksPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.metaLink}
-                        aria-label={`Открыть страницу теста ${currentBenchmark.name} на BenchLM`}
+                        aria-label={t("benchmarks.openPage", { name: currentBenchmark.name })}
                       >
                         <span>BenchLM</span>
                         <IconOpen width={11} height={11} />
@@ -555,8 +563,8 @@ export function BenchmarksPage() {
                         .descriptionOriginal}
                     <span
                       className={styles.sourceLangLabel}
-                      title="Описание из первоисточника на английском языке"
-                      aria-label="Описание из первоисточника (EN)"
+                      title={t("benchmarks.originalDescription")}
+                      aria-label={t("benchmarks.originalDescriptionAria")}
                     >
                       EN
                     </span>
@@ -565,7 +573,7 @@ export function BenchmarksPage() {
 
                 {currentBenchmark.tasks && (
                   <p className={styles.benchmarkTasks}>
-                    <strong>Задачи:</strong> {currentBenchmark.tasks}
+                    <strong>{t("benchmarks.tasks")}:</strong> {currentBenchmark.tasks}
                   </p>
                 )}
               </header>
@@ -573,14 +581,14 @@ export function BenchmarksPage() {
               {leaderboardLoading ? (
                 <div className={styles.loadingContainer}>
                   <div className={styles.spinner} />
-                  <p>Загрузка результатов...</p>
+                  <p>{t("benchmarks.loadingResults")}</p>
                 </div>
               ) : filteredLeaderboard.length === 0 ? (
                 <EmptyState>
                   <p>
                     {modelSearchQuery
-                      ? `Модели по запросу «${modelSearchQuery}» не найдены.`
-                      : "Для этого теста пока нет сохраненных результатов моделей."}
+                      ? t("benchmarks.noResults", { query: modelSearchQuery })
+                      : t("benchmarks.noSavedResults")}
                   </p>
                 </EmptyState>
               ) : (
@@ -588,11 +596,11 @@ export function BenchmarksPage() {
                   <table className={styles.table}>
                     <thead>
                       <tr className={`${styles.headerRow} ${styles.gridBenchmark}`}>
-                        <th className={styles.thLeft} title="Позиция модели в текущей выборке">
-                          Ранг
+                        <th className={styles.thLeft} title={t("benchmarks.rankPosition")}>
+                          {t("benchmarks.rank")}
                         </th>
-                        <th className={styles.thLeft}>Модель</th>
-                        <th className={styles.thLeft}>Провайдер</th>
+                        <th className={styles.thLeft}>{t("benchmarks.model")}</th>
+                        <th className={styles.thLeft}>{t("benchmarks.provider")}</th>
                         <th
                           className={`${styles.thCenter} ${styles.thSortable} ${styles.thSortActive}`}
                           onClick={handleToggleBenchmarkSort}
@@ -605,7 +613,7 @@ export function BenchmarksPage() {
                               handleToggleBenchmarkSort();
                             }
                           }}
-                          title={`Сортировка: ${benchmarkSort.direction === "desc" ? "по убыванию" : "по возрастанию"}`}
+                          title={t("benchmarks.sortDirection", { direction: benchmarkSort.direction === "desc" ? t("benchmarks.desc") : t("benchmarks.asc") })}
                         >
                           <span className={styles.sortHeaderContent}>
                             Score
@@ -671,7 +679,7 @@ export function BenchmarksPage() {
                                 <span
                                   className={styles.providerLink}
                                   onClick={(e) => handleOpenProvider(e, row.provider)}
-                                  title={`Показать все модели ${row.provider}`}
+                                  title={t("benchmarks.showProviderModels", { provider: row.provider })}
                                   role="button"
                                   tabIndex={0}
                                 >
@@ -698,18 +706,18 @@ export function BenchmarksPage() {
             /* ============================================================ */
             filteredSpeedItems.length === 0 ? (
               <EmptyState>
-                <p>Модели не найдены по запросу «{modelSearchQuery}».</p>
+                <p>{t("benchmarks.noResults", { query: modelSearchQuery })}</p>
               </EmptyState>
             ) : (
               <div className={styles.tableScroll}>
                 <table className={styles.table}>
                   <thead>
                     <tr className={`${styles.headerRow} ${styles.gridSpeed}`}>
-                      <th className={styles.thLeft} title="Позиция модели в текущей выборке">
-                        Ранг
+                      <th className={styles.thLeft} title={t("benchmarks.rankPosition")}>
+                        {t("benchmarks.rank")}
                       </th>
-                      <th className={styles.thLeft}>Модель</th>
-                      <th className={styles.thLeft}>Провайдер</th>
+                      <th className={styles.thLeft}>{t("benchmarks.model")}</th>
+                      <th className={styles.thLeft}>{t("benchmarks.provider")}</th>
                       <th
                         className={`${styles.thRight} ${styles.thSortable} ${
                           speedSort.column === "speed" ? styles.thSortActive : ""
@@ -730,10 +738,10 @@ export function BenchmarksPage() {
                             handleToggleSpeedSort("speed");
                           }
                         }}
-                        title="Сортировать по скорости генерации"
+                        title={t("benchmarks.sortSpeed")}
                       >
                         <span className={styles.sortHeaderContent}>
-                          Токенов / сек
+                          {t("benchmarks.tokensPerSecond")}
                           <SortIndicator
                             active={speedSort.column === "speed"}
                             direction={speedSort.direction}
@@ -760,17 +768,17 @@ export function BenchmarksPage() {
                             handleToggleSpeedSort("latency");
                           }
                         }}
-                        title="Сортировать по задержке первого токена (TTFT)"
+                        title={t("benchmarks.sortLatency")}
                       >
                         <span className={styles.sortHeaderContent}>
-                          TTFT (латентность)
+                          {t("benchmarks.latency")}
                           <SortIndicator
                             active={speedSort.column === "latency"}
                             direction={speedSort.direction}
                           />
                         </span>
                       </th>
-                      <th className={styles.thLeft}>Источник</th>
+                      <th className={styles.thLeft}>{t("benchmarks.source")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -830,7 +838,7 @@ export function BenchmarksPage() {
                               <span
                                 className={styles.providerLink}
                                 onClick={(e) => handleOpenProvider(e, item.provider)}
-                                title={`Показать все модели ${item.provider}`}
+                                title={t("benchmarks.showProviderModels", { provider: item.provider })}
                                 role="button"
                                 tabIndex={0}
                               >
@@ -880,22 +888,22 @@ export function BenchmarksPage() {
             categoryLoading && !categorySummary ? (
               <div className={styles.loadingContainer}>
                 <div className={styles.spinner} />
-                <p>Загрузка категории...</p>
+                <p>{t("benchmarks.loadingCategory")}</p>
               </div>
             ) : categorySummary && filteredCategoryModels.length === 0 ? (
               <EmptyState>
-                <p>Модели в категории «{categorySummary.categoryLabel}» не найдены.</p>
+                <p>{t("benchmarks.noCategoryResults", { category: categorySummary.categoryLabel })}</p>
               </EmptyState>
             ) : categorySummary ? (
               <div className={styles.tableScroll}>
                 <table className={styles.table}>
                   <thead>
                     <tr className={`${styles.headerRow} ${styles.gridCategory}`}>
-                      <th className={styles.thCenter} title="Позиция модели в текущей выборке">
+                      <th className={styles.thCenter} title={t("benchmarks.rankPosition")}>
                         #
                       </th>
-                      <th className={styles.thLeft}>Модель</th>
-                      <th className={styles.thLeft}>Провайдер</th>
+                      <th className={styles.thLeft}>{t("benchmarks.model")}</th>
+                      <th className={styles.thLeft}>{t("benchmarks.provider")}</th>
                       <th
                         className={`${styles.thCenter} ${styles.thSortable} ${
                           categorySort.column === "coverage" ? styles.thSortActive : ""
@@ -916,10 +924,10 @@ export function BenchmarksPage() {
                             handleToggleCategorySort("coverage");
                           }
                         }}
-                        title="Сортировать по количеству пройденных тестов"
+                        title={t("benchmarks.sortCoverage")}
                       >
                         <span className={styles.sortHeaderContent}>
-                          Покрытие
+                          {t("benchmarks.coverage")}
                           <SortIndicator
                             active={categorySort.column === "coverage"}
                             direction={categorySort.direction}
@@ -946,12 +954,12 @@ export function BenchmarksPage() {
                             handleToggleCategorySort("score");
                           }
                         }}
-                        title="Официальный балл категории BenchLM. Кликните для сортировки."
+                        title={t("benchmarks.categoryScoreSort")}
                       >
                         <span className={styles.sortHeaderContent}>
                           <span
                             className={styles.thWithInfo}
-                            title="Официальный балл категории BenchLM."
+                            title={t("benchmarks.categoryScore")}
                           >
                             Score
                             <IconInfo width={12} height={12} className={styles.infoIcon} />
@@ -962,7 +970,7 @@ export function BenchmarksPage() {
                           />
                         </span>
                       </th>
-                      <th className={styles.thCenter}>Уровень</th>
+                      <th className={styles.thCenter}>{t("benchmarks.level")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1025,7 +1033,7 @@ export function BenchmarksPage() {
                               <span
                                 className={styles.providerLink}
                                 onClick={(e) => handleOpenProvider(e, m.provider)}
-                                title={`Показать все модели ${m.provider}`}
+                                title={t("benchmarks.showProviderModels", { provider: m.provider })}
                                 role="button"
                                 tabIndex={0}
                               >
@@ -1039,7 +1047,7 @@ export function BenchmarksPage() {
                           </td>
                           <td
                             className={styles.coverageCell}
-                            title={`Результаты доступны в ${m.categoryCoverageCount} из ${m.totalCategoryBenchmarks} тестов категории ${categorySummary.categoryLabel}.`}
+                            title={t("benchmarks.categoryCoverage", { shown: m.categoryCoverageCount, total: m.totalCategoryBenchmarks, category: categorySummary.categoryLabel })}
                           >
                             <span className={styles.coverageNumerator}>
                               {m.categoryCoverageCount}
@@ -1059,12 +1067,12 @@ export function BenchmarksPage() {
                                 m.categoryScore !== null &&
                                 !isNaN(m.categoryScore);
                               const catLabel =
-                                catDef?.label ||
+                                (catDef ? t(catDef.labelKey) : undefined) ||
                                 categorySummary.categoryLabel ||
-                                formatCategoryName(selectedCategory);
+                                formatCategoryName(selectedCategory, t);
                               const tooltipText = hasData
                                 ? `${catLabel} · ${m.categoryScore!.toFixed(1)}`
-                                : `${catLabel} · нет данных`;
+                                : `${catLabel} · ${t("benchmarks.noData")}`;
                               const colorClass = getScoreColorClass(m.categoryScore);
 
                               return (
@@ -1101,18 +1109,18 @@ export function BenchmarksPage() {
             /* ============================================================ */
             filteredOverviewModels.length === 0 ? (
               <EmptyState>
-                <p>Модели не найдены по запросу «{modelSearchQuery}».</p>
+                <p>{t("benchmarks.noResults", { query: modelSearchQuery })}</p>
               </EmptyState>
             ) : (
               <div className={styles.tableScroll}>
                 <table className={styles.table}>
                   <thead>
                     <tr className={`${styles.headerRow} ${styles.gridOverview}`}>
-                      <th className={styles.thLeft} title="Позиция модели в текущей выборке">
-                        Ранг
+                      <th className={styles.thLeft} title={t("benchmarks.rankPosition")}>
+                        {t("benchmarks.rank")}
                       </th>
-                      <th className={styles.thLeft}>Модель</th>
-                      <th className={styles.thLeft}>Провайдер</th>
+                      <th className={styles.thLeft}>{t("benchmarks.model")}</th>
+                      <th className={styles.thLeft}>{t("benchmarks.provider")}</th>
                       <th
                         className={`${styles.thCenter} ${styles.thSortable} ${
                           overviewSort.column === "coverage" ? styles.thSortActive : ""
@@ -1133,10 +1141,10 @@ export function BenchmarksPage() {
                             handleToggleOverviewSort("coverage");
                           }
                         }}
-                        title="Сортировать по общему числу доступных результатов тестов"
+                        title={t("benchmarks.sortTotalCoverage")}
                       >
                         <span className={styles.sortHeaderContent}>
-                          Покрытие
+                          {t("benchmarks.coverage")}
                           <SortIndicator
                             active={overviewSort.column === "coverage"}
                             direction={overviewSort.direction}
@@ -1163,14 +1171,14 @@ export function BenchmarksPage() {
                             handleToggleOverviewSort("score");
                           }
                         }}
-                        title="Официальный агрегированный балл BenchLM (методология bench-align-v5). Кликните для сортировки."
+                        title={t("benchmarks.aggregateScoreSort")}
                       >
                         <span className={styles.sortHeaderContent}>
                           <span
                             className={styles.thWithInfo}
-                            title="Официальный агрегированный балл BenchLM (методология bench-align-v5), рассчитанный на основе верифицированных тестов."
+                            title={t("benchmarks.aggregateScore")}
                           >
-                            BenchLM Score
+                            {t("benchmarks.score")}
                             <IconInfo width={12} height={12} className={styles.infoIcon} />
                           </span>
                           <SortIndicator
@@ -1182,9 +1190,9 @@ export function BenchmarksPage() {
                       <th className={styles.thLeft}>
                         <span
                           className={styles.thWithInfo}
-                          title={OVERVIEW_STRENGTHS_LEGEND}
+                          title={t("benchmarks.legend")}
                         >
-                          Сильные стороны
+                          {t("benchmarks.strengths")}
                           <IconInfo width={12} height={12} className={styles.infoIcon} />
                         </span>
                       </th>
@@ -1247,7 +1255,7 @@ export function BenchmarksPage() {
                               <span
                                 className={styles.providerLink}
                                 onClick={(e) => handleOpenProvider(e, m.provider)}
-                                title={`Показать все модели ${m.provider}`}
+                                title={t("benchmarks.showProviderModels", { provider: m.provider })}
                                 role="button"
                                 tabIndex={0}
                               >
@@ -1261,7 +1269,7 @@ export function BenchmarksPage() {
                           </td>
                           <td
                             className={styles.coverageCell}
-                            title={`Результаты доступны в ${m.coverageCount} из ${m.totalBenchmarksCount} тестов каталога.`}
+                            title={t("benchmarks.totalCoverage", { shown: m.coverageCount, total: m.totalBenchmarksCount })}
                           >
                             <span className={styles.coverageNumerator}>
                               {m.coverageCount}
@@ -1288,8 +1296,7 @@ export function BenchmarksPage() {
 
           <footer className={styles.provenanceFooter}>
             <p>
-              Данные и ранжирование предоставлены публичным зеркалом <strong>BenchLM</strong>.
-              Оценки основаны на верифицированных испытаниях.
+              {t("benchmarks.provenancePrefix")} <strong>BenchLM</strong>. {t("benchmarks.provenanceSuffix")}
             </p>
           </footer>
         </section>
@@ -1310,6 +1317,7 @@ function CategoryFilterDropdown({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [openUpwards, setOpenUpwards] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1328,10 +1336,10 @@ function CategoryFilterDropdown({
 
   const triggerLabel =
     selectedId === "all"
-      ? "Все категории"
+      ? t("benchmarks.allCategories")
       : selectedId === "speed"
-        ? "Скорость"
-        : activeCanonical?.label || formatCategoryName(selectedId);
+        ? t("benchmarks.speed")
+        : (activeCanonical ? t(activeCanonical.labelKey) : undefined) || formatCategoryName(selectedId, t);
 
   const toggleDropdown = () => {
     if (!isOpen && containerRef.current) {
@@ -1397,7 +1405,7 @@ function CategoryFilterDropdown({
             >
               <div className={styles.optionItemContent}>
                 <IconSparkles width={14} height={14} className={styles.catOptionIcon} />
-                <span>Все категории</span>
+                <span>{t("benchmarks.allCategories")}</span>
               </div>
               {selectedId === "all" && (
                 <IconCheck width={13} height={13} className={styles.checkIcon} />
@@ -1419,7 +1427,7 @@ function CategoryFilterDropdown({
                 >
                   <div className={styles.optionItemContent}>
                     {cat.icon(styles.catOptionIcon)}
-                    <span>{cat.label}</span>
+                    <span>{t(cat.labelKey)}</span>
                   </div>
                   {isSelected && (
                     <IconCheck width={13} height={13} className={styles.checkIcon} />
@@ -1440,7 +1448,7 @@ function CategoryFilterDropdown({
             >
               <div className={styles.optionItemContent}>
                 <IconGauge width={14} height={14} className={styles.catOptionIcon} />
-                <span>Скорость</span>
+                <span>{t("benchmarks.speed")}</span>
               </div>
               {selectedId === "speed" && (
                 <IconCheck width={13} height={13} className={styles.checkIcon} />
@@ -1465,6 +1473,7 @@ function BenchmarkFilterDropdown({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [openUpwards, setOpenUpwards] = useState(false);
   const [query, setQuery] = useState("");
@@ -1474,7 +1483,7 @@ function BenchmarkFilterDropdown({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const selectedBenchmark = benchmarks.find((b) => b.id === selectedId);
-  const triggerLabel = selectedBenchmark ? selectedBenchmark.name : "Все тесты";
+  const triggerLabel = selectedBenchmark ? selectedBenchmark.name : t("benchmarks.allTests");
 
   // Hide benchmarks with 0 results always; separate comparative (>= 3) and rare (1-2)
   const { comparativeList, rareList } = useMemo(() => {
@@ -1563,7 +1572,8 @@ function BenchmarkFilterDropdown({
               ref={searchInputRef}
               type="search"
               className={styles.dropdownSearchInput}
-              placeholder="Найти тест..."
+              placeholder={t("benchmarks.findTest")}
+              aria-label={t("benchmarks.findTest")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onClick={(e) => e.stopPropagation()}
@@ -1583,7 +1593,7 @@ function BenchmarkFilterDropdown({
                   setQuery("");
                 }}
               >
-                <span className={styles.optionName}>Все тесты</span>
+                <span className={styles.optionName}>{t("benchmarks.allTests")}</span>
                 {!selectedId && (
                   <IconCheck width={13} height={13} className={styles.checkIcon} />
                 )}
@@ -1591,7 +1601,7 @@ function BenchmarkFilterDropdown({
             )}
 
             {comparativeList.length === 0 && (!showRareTests || rareList.length === 0) ? (
-              <li className={styles.dropdownEmpty}>Ничего не найдено</li>
+              <li className={styles.dropdownEmpty}>{t("benchmarks.noTests")}</li>
             ) : (
               <>
                 {/* Comparative benchmarks (>= 3 models) */}
@@ -1613,7 +1623,7 @@ function BenchmarkFilterDropdown({
                       <span className={styles.optionName}>{b.name}</span>
                       <span
                         className={styles.optionCount}
-                        title={`${b.resultCount} ${pluralizeModels(b.resultCount)} с результатами`}
+                        title={t("benchmarks.resultsCount", { count: b.resultCount })}
                       >
                         {b.resultCount}
                       </span>
@@ -1625,7 +1635,7 @@ function BenchmarkFilterDropdown({
                 {showRareTests && rareList.length > 0 && (
                   <>
                     <li className={styles.dropdownDividerRow}>
-                      <span>Мало данных (1–2 модели)</span>
+                      <span>{t("benchmarks.rare")}</span>
                     </li>
                     {rareList.map((b) => {
                       const isSelected = b.id === selectedId;
@@ -1647,7 +1657,7 @@ function BenchmarkFilterDropdown({
                           <span className={styles.optionName}>{b.name}</span>
                           <span
                             className={styles.optionCount}
-                            title={`${b.resultCount} ${pluralizeModels(b.resultCount)} с результатами`}
+                            title={t("benchmarks.resultsCount", { count: b.resultCount })}
                           >
                             {b.resultCount}
                           </span>
@@ -1671,7 +1681,7 @@ function BenchmarkFilterDropdown({
                   setShowRareTests((prev) => !prev);
                 }}
               >
-                <span>{showRareTests ? "Скрыть редкие тесты" : "Показать редкие тесты (1–2 модели)"}</span>
+                <span>{showRareTests ? t("benchmarks.hideRare") : t("benchmarks.showRare")}</span>
               </button>
             </div>
           )}
@@ -1681,23 +1691,6 @@ function BenchmarkFilterDropdown({
   );
 }
 
-const OVERVIEW_STRENGTHS_LEGEND = `Порядок категорий (слева направо):
-1. Knowledge (Знания)
-2. Coding (Программирование)
-3. Reasoning (Рассуждения)
-4. Instruction Following (Следование инструкциям)
-5. Agentic (Агентность)
-6. Multimodal & Grounded (Мультимодальность)
-7. Mathematics (Математика)
-8. Multilingual (Мультиязычность)
-
-Шкала оценок:
-• Акцентный teal (≥85) — высокий результат
-• Нейтральный (70–84.9) — хороший / средний
-• Приглушённый оранжевый (50–69.9) — ниже среднего
-• Приглушённый красный (<50) — низкий
-• Серый — нет данных`;
-
 /**
  * Fixed Order Category Slots with score color coding and missing data indicator
  */
@@ -1706,6 +1699,7 @@ function FixedOrderStrongSides({
 }: {
   scores?: Record<string, number>;
 }) {
+  const { t } = useI18n();
   const normScores = useMemo(() => {
     const map = new Map<string, number>();
     for (const [key, val] of Object.entries(scores || {})) {
@@ -1731,8 +1725,8 @@ function FixedOrderStrongSides({
         const hasData = score !== undefined && !isNaN(score);
         const colorClass = getScoreColorClass(score);
         const tooltipText = hasData
-          ? `${canonical.label} · ${score!.toFixed(1)}`
-          : `${canonical.label} · нет данных`;
+          ? `${t(canonical.labelKey)} · ${score!.toFixed(1)}`
+          : `${t(canonical.labelKey)} · ${t("benchmarks.noData")}`;
 
         return (
           <span
@@ -1765,22 +1759,13 @@ function formatScore(value: number | null | undefined): string {
   return value.toFixed(value < 2 ? 2 : 1);
 }
 
-function formatCategoryName(key: string): string {
+function formatCategoryName(key: string, t: (key: string) => string): string {
   const norm = key.toLowerCase();
   for (const canonical of CANONICAL_CATEGORIES) {
     if (canonical.rawKeys.some((k) => k.toLowerCase() === norm)) {
-      return canonical.label;
+      return t(canonical.labelKey);
     }
   }
-  if (norm === "speed") return "Скорость";
+  if (norm === "speed") return t("benchmarks.speed");
   return key.charAt(0).toUpperCase() + key.slice(1);
-}
-
-function pluralizeModels(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 19) return "моделей";
-  if (mod10 === 1) return "модель";
-  if (mod10 >= 2 && mod10 <= 4) return "модели";
-  return "моделей";
 }

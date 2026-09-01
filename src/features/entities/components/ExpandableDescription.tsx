@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef, useState } from "react";
 import { IconChevronDown } from "../../../components/icons";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface ExpandableDescriptionProps {
   description?: string;
@@ -10,6 +11,7 @@ export interface ExpandableDescriptionProps {
 export const ExpandableDescription = memo(function ExpandableDescription({
   description,
 }: ExpandableDescriptionProps) {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -43,7 +45,7 @@ export const ExpandableDescription = memo(function ExpandableDescription({
     return (
       <div className={styles.descriptionWrap}>
         <p className={styles.descriptionEmpty}>
-          Описание модели отсутствует в спецификации провайдера.
+          {t("model.descriptionMissing")}
         </p>
       </div>
     );
@@ -65,7 +67,7 @@ export const ExpandableDescription = memo(function ExpandableDescription({
           onClick={() => setIsExpanded((prev) => !prev)}
           aria-expanded={isExpanded}
         >
-          <span>{isExpanded ? "Свернуть" : "Показать полностью"}</span>
+          <span>{isExpanded ? t("common.collapse") : t("model.showFullDescription")}</span>
           <IconChevronDown
             width={13}
             height={13}

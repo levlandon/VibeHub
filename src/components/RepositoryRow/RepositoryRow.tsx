@@ -3,6 +3,7 @@ import { IconButton } from "../IconButton/IconButton";
 import { IconBookmark, IconGithub } from "../icons";
 import type { SavedItem } from "../../types/saved";
 import styles from "./RepositoryRow.module.css";
+import { useI18n } from "../../i18n";
 
 export interface RepositoryRowProps {
   item: SavedItem;
@@ -15,6 +16,7 @@ export const RepositoryRow = memo(function RepositoryRow({
   bookmarked,
   onBookmark,
 }: RepositoryRowProps) {
+  const { t } = useI18n();
   const url =
     item.url ||
     (item.owner && item.name
@@ -49,7 +51,7 @@ export const RepositoryRow = memo(function RepositoryRow({
       tabIndex={0}
       onClick={handleOpen}
       onKeyDown={handleKeyDown}
-      aria-label={`Открыть репозиторий ${owner ? `${owner}/${name}` : name}`}
+      aria-label={t("repository.open", { name: owner ? `${owner}/${name}` : name })}
     >
       <div className={styles.mark} aria-hidden>
         {item.avatar ? (
@@ -85,7 +87,7 @@ export const RepositoryRow = memo(function RepositoryRow({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <IconButton
-          label={bookmarked ? "Убрать из закладок" : "Сохранить"}
+          label={bookmarked ? t("saved.removeBookmark") : t("common.save")}
           active={bookmarked}
           onClick={(e) => {
             e.stopPropagation();

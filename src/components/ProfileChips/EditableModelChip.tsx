@@ -1,5 +1,6 @@
 import { IconClose } from "../icons";
 import { ProviderMark } from "../ProviderMark/ProviderMark";
+import { useI18n } from "../../i18n";
 import styles from "./ProfileChips.module.css";
 
 export interface EditableModelChipProps {
@@ -15,6 +16,7 @@ export function EditableModelChip({
   model,
   onRemove,
 }: EditableModelChipProps) {
+  const { t } = useI18n();
   const markModel = model || (provider ? { providerId: provider, provider, name } : { name });
 
   return (
@@ -28,8 +30,8 @@ export function EditableModelChip({
       <button
         type="button"
         className={styles.removeBtn}
-        title={`Удалить ${name}`}
-        aria-label={`Удалить ${name}`}
+        title={t("profile.removeModel", { name })}
+        aria-label={t("profile.removeModel", { name })}
         onClick={(e) => {
           e.stopPropagation();
           onRemove();

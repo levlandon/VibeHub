@@ -10,14 +10,17 @@ import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { FeedPage } from "./pages/Feed/FeedPage";
 import { HubProvider } from "./state/HubContext";
 import { PostsProvider } from "./features/posts";
+import { LanguageProvider } from "./i18n";
 
 const rootRoute = createRootRoute({
   component: () => (
-    <HubProvider>
-      <PostsProvider>
-        <Shell />
-      </PostsProvider>
-    </HubProvider>
+    <LanguageProvider>
+      <HubProvider>
+        <PostsProvider>
+          <Shell />
+        </PostsProvider>
+      </HubProvider>
+    </LanguageProvider>
   ),
   notFoundComponent: NotFound,
 });

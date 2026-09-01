@@ -4,13 +4,14 @@ import type { Model } from "../../../types/models";
 import { ModelCapabilities } from "./ModelCapabilities";
 import { ModelModalities } from "./ModelModalities";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface ModelMetaProps {
   model: Model;
 }
 
-function formatPriceNumber(val: number | null): string {
-  if (val === null) return "н/д";
+function formatPriceNumber(val: number | null, unavailable: string): string {
+  if (val === null) return unavailable;
   if (val === 0) return "0";
   if (val < 0.01) return val.toFixed(4).replace(/0+$/, "");
   if (val < 1) return val.toFixed(2);
@@ -19,21 +20,22 @@ function formatPriceNumber(val: number | null): string {
 }
 
 export const ModelMeta = memo(function ModelMeta({ model }: ModelMetaProps) {
+  const { language, t } = useI18n();
   const isFree = model.pricing.isFree;
-  const promptPrice = formatPriceNumber(model.pricing.promptPerMillion);
-  const completionPrice = formatPriceNumber(model.pricing.completionPerMillion);
+  const promptPrice = formatPriceNumber(model.pricing.promptPerMillion, t("model.notAvailable"));
+  const completionPrice = formatPriceNumber(model.pricing.completionPerMillion, t("model.notAvailable"));
 
   const priceTooltip = isFree
-    ? "Бесплатная модель (Free tier)"
-    : `Цена: Вход (Prompt) $${promptPrice} / 1M · Выход (Completion) $${completionPrice} / 1M токенов`;
+    ? t("models.freeModel")
+    : t("model.priceTooltip", { prompt: promptPrice, completion: completionPrice });
 
   return (
-    <div className={styles.metaBar} aria-label="Характеристики модели">
+    <div className={styles.metaBar} aria-label={t("model.characteristics")}>
       {/* Context window */}
       <div
         className={styles.metaChip}
-        title={`Контекстное окно: ${model.contextLength.toLocaleString("ru-RU")} токенов`}
-        aria-label={`Контекстное окно ${model.contextWindow} (${model.contextLength.toLocaleString("ru-RU")} токенов)`}
+        title={t("models.contextWindow", { count: model.contextLength.toLocaleString(language === "ru" ? "ru-RU" : "en-US") })}
+        aria-label={t("model.contextWindowAria", { window: model.contextWindow, count: model.contextLength.toLocaleString(language === "ru" ? "ru-RU" : "en-US") })}
       >
         <IconLayers width={14} height={14} className={styles.metaIcon} aria-hidden />
         <span className={styles.metaChipText}>{model.contextWindow}</span>
@@ -46,14 +48,14 @@ export const ModelMeta = memo(function ModelMeta({ model }: ModelMetaProps) {
         aria-label={priceTooltip}
       >
         {isFree ? (
-          <span className={styles.freeText}>Бесплатно</span>
+          <span className={styles.freeText}>{t("model.free")}</span>
         ) : (
           <div className={styles.priceRow}>
-            <span className={styles.priceItem} title={`Вход: $${promptPrice} за 1M токенов`}>
+            <span className={styles.priceItem} title={t("model.inputPrice", { price: promptPrice })}>
               <IconArrowDown width={12} height={12} className={styles.priceArrowDown} />
               <span>${promptPrice}</span>
             </span>
-            <span className={styles.priceItem} title={`Выход: $${completionPrice} за 1M токенов`}>
+            <span className={styles.priceItem} title={t("model.outputPrice", { price: completionPrice })}>
               <IconArrowUp width={12} height={12} className={styles.priceArrowUp} />
               <span>${completionPrice}</span>
             </span>

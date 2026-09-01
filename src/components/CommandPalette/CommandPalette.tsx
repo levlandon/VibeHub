@@ -3,6 +3,7 @@ import { usePosts } from "../../features/posts";
 import { groupHits, searchHub } from "../../services/search";
 import { useHub } from "../../state/HubContext";
 import { IconSearch } from "../icons";
+import { useI18n } from "../../i18n";
 import styles from "./CommandPalette.module.css";
 
 const RECENT_KEY = "vibehub-recent-searches";
@@ -22,6 +23,7 @@ function writeRecent(term: string) {
 }
 
 export function CommandPalette() {
+  const { t } = useI18n();
   const { searchOpen, setSearchOpen, models, tools, openEntity, setAddOpen } =
     useHub();
   const { posts } = usePosts();
@@ -79,7 +81,7 @@ export function CommandPalette() {
       <div
         className={styles.panel}
         role="dialog"
-        aria-label="Поиск"
+        aria-label={t("common.search")}
         onClick={(e) => e.stopPropagation()}
       >
         <label className={styles.field}>
@@ -87,8 +89,8 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             value={q}
-            placeholder="Модели, инструменты, публикации..."
-            aria-label="Поиск"
+            placeholder={t("search.placeholder")}
+            aria-label={t("common.search")}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") goFirst();
@@ -98,7 +100,7 @@ export function CommandPalette() {
         </label>
         {!q.trim() && recent.length > 0 ? (
           <div className={styles.block}>
-            <p>Недавние</p>
+            <p>{t("search.recent")}</p>
             {recent.map((term) => (
               <button key={term} type="button" onClick={() => setQ(term)}>
                 {term}
@@ -109,12 +111,12 @@ export function CommandPalette() {
         {q.trim() ? (
           grouped.length === 0 ? (
             <div className={styles.block}>
-              <span className={styles.empty}>Ничего не найдено</span>
+              <span className={styles.empty}>{t("search.empty")}</span>
             </div>
           ) : (
             grouped.map((group) => (
               <div key={group.group} className={styles.block}>
-                <p>{group.group}</p>
+                <p>{localizeGroup(group.group, t)}</p>
                 {group.items.map((item) => (
                   <button
                     key={`${item.kind}-${item.id}`}
@@ -132,4 +134,17 @@ export function CommandPalette() {
       </div>
     </div>
   );
+}
+
+function localizeGroup(group: string, t: (key: string) => string): string {
+  if (group === "Модели") return t("nav.models");
+  if (group === "Инструменты") return t("feed.tools");
+  const typeKeys: Record<string, string> = {
+    Обсуждение: "composer.discussion",
+    Вопрос: "composer.question",
+    Проект: "composer.project",
+    Гайд: "composer.guide",
+    Ресурс: "composer.resource",
+  };
+  return typeKeys[group] ? t(typeKeys[group]) : group;
 }

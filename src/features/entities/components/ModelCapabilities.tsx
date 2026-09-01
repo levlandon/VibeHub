@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { IconAudio, IconBrain, IconTools, IconVision } from "../../../components/icons";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface ModelCapabilitiesProps {
   capabilities: string[];
@@ -9,6 +10,7 @@ export interface ModelCapabilitiesProps {
 export const ModelCapabilities = memo(function ModelCapabilities({
   capabilities,
 }: ModelCapabilitiesProps) {
+  const { t } = useI18n();
   const hasReasoning = capabilities.includes("Reasoning");
   const hasVision = capabilities.includes("Vision");
   const hasTools = capabilities.includes("Tools");
@@ -19,12 +21,12 @@ export const ModelCapabilities = memo(function ModelCapabilities({
   }
 
   return (
-    <div className={styles.capabilities} aria-label="Возможности модели">
+    <div className={styles.capabilities} aria-label={t("models.capabilities")}>
       {hasReasoning ? (
         <span
           className={styles.capBadge}
-          title="Рассуждения (Reasoning)"
-          aria-label="Рассуждения (Reasoning)"
+          title={t("models.reasoningTitle")}
+          aria-label={t("models.reasoningTitle")}
         >
           <IconBrain width={14} height={14} />
         </span>
@@ -32,8 +34,8 @@ export const ModelCapabilities = memo(function ModelCapabilities({
       {hasVision ? (
         <span
           className={styles.capBadge}
-          title="Компьютерное зрение (Vision)"
-          aria-label="Компьютерное зрение (Vision)"
+          title={t("models.visionTitle")}
+          aria-label={t("models.visionTitle")}
         >
           <IconVision width={14} height={14} />
         </span>
@@ -41,8 +43,8 @@ export const ModelCapabilities = memo(function ModelCapabilities({
       {hasTools ? (
         <span
           className={styles.capBadge}
-          title="Вызов инструментов (Tools)"
-          aria-label="Вызов инструментов (Tools)"
+          title={t("models.toolsTitle")}
+          aria-label={t("models.toolsTitle")}
         >
           <IconTools width={14} height={14} />
         </span>
@@ -50,8 +52,8 @@ export const ModelCapabilities = memo(function ModelCapabilities({
       {hasAudio ? (
         <span
           className={styles.capBadge}
-          title="Аудио (Audio)"
-          aria-label="Аудио (Audio)"
+          title={t("models.audioTitle")}
+          aria-label={t("models.audioTitle")}
         >
           <IconAudio width={14} height={14} />
         </span>

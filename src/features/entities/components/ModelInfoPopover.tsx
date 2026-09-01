@@ -16,6 +16,7 @@ import {
 import type { Model } from "../../../types/models";
 import { formatFullDate } from "../../../utils/dateFormat";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface ModelInfoPopoverProps {
   model: Model;
@@ -28,6 +29,7 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
   copied: externalCopied,
   onCopyId: externalCopyId,
 }: ModelInfoPopoverProps) {
+  const { language, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [internalCopied, setInternalCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,12 +104,12 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
     }
   };
 
-  const formattedDate = model.releaseDate ? formatFullDate(model.releaseDate) : null;
+  const formattedDate = model.releaseDate ? formatFullDate(model.releaseDate, language === "ru" ? "ru-RU" : "en-US") : null;
   const tokenizer = model.architecture?.tokenizer;
   const instructType = model.architecture?.instructType;
   const maxCompletionTokens =
     model.maxCompletionTokens && model.maxCompletionTokens > 0
-      ? model.maxCompletionTokens.toLocaleString("ru-RU")
+      ? model.maxCompletionTokens.toLocaleString(language === "ru" ? "ru-RU" : "en-US")
       : null;
 
   return (
@@ -117,8 +119,8 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
         type="button"
         className={`${styles.infoTriggerBtn} ${isOpen ? styles.infoTriggerActive : ""}`}
         onClick={toggleOpen}
-        title="Техническая информация о модели"
-        aria-label="Техническая информация о модели"
+        title={t("model.technicalInfo")}
+        aria-label={t("model.technicalInfo")}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
       >
@@ -130,17 +132,17 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
           className={styles.popoverMenu}
           role="dialog"
           aria-modal="true"
-          aria-label="Техническая информация о модели"
+          aria-label={t("model.technicalInfo")}
           onKeyDown={handleKeyDownPopover}
         >
           <div className={styles.popoverHead}>
-            <span className={styles.popoverTitle}>Информация</span>
+            <span className={styles.popoverTitle}>{t("model.info")}</span>
             <button
               type="button"
               className={styles.popoverCloseBtn}
               onClick={close}
-              title="Закрыть"
-              aria-label="Закрыть"
+              title={t("common.close")}
+              aria-label={t("common.close")}
             >
               <IconClose width={14} height={14} />
             </button>
@@ -155,8 +157,8 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
                   type="button"
                   className={styles.popoverCopyBtn}
                   onClick={handleCopy}
-                  title={copied ? "Скопировано!" : "Скопировать Model ID"}
-                  aria-label={copied ? "ID модели скопирован" : "Скопировать Model ID"}
+                  title={copied ? t("model.copied") : t("model.copyId")}
+                  aria-label={copied ? t("model.idCopied") : t("model.copyId")}
                 >
                   {copied ? (
                     <IconCheck width={12} height={12} className={styles.copiedIcon} />
@@ -169,7 +171,7 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
 
             {model.sourceUrl ? (
               <div className={styles.popoverRow}>
-                <span className={styles.popoverLabel}>Первоисточник</span>
+                <span className={styles.popoverLabel}>{t("model.source")}</span>
                 <a
                   href={model.sourceUrl}
                   target="_blank"
@@ -199,29 +201,29 @@ export const ModelInfoPopover = memo(function ModelInfoPopover({
 
             {formattedDate ? (
               <div className={styles.popoverRow}>
-                <span className={styles.popoverLabel}>Добавлено</span>
+                <span className={styles.popoverLabel}>{t("model.added")}</span>
                 <span className={styles.popoverValue}>{formattedDate}</span>
               </div>
             ) : null}
 
             {tokenizer ? (
               <div className={styles.popoverRow}>
-                <span className={styles.popoverLabel}>Токенизатор</span>
+                <span className={styles.popoverLabel}>{t("model.tokenizer")}</span>
                 <span className={styles.popoverValue}>{tokenizer}</span>
               </div>
             ) : null}
 
             {instructType ? (
               <div className={styles.popoverRow}>
-                <span className={styles.popoverLabel}>Инструкции</span>
+                <span className={styles.popoverLabel}>{t("model.instructions")}</span>
                 <span className={styles.popoverValue}>{instructType}</span>
               </div>
             ) : null}
 
             {maxCompletionTokens ? (
               <div className={styles.popoverRow}>
-                <span className={styles.popoverLabel}>Макс. ответ</span>
-                <span className={styles.popoverValue}>{maxCompletionTokens} токенов</span>
+                <span className={styles.popoverLabel}>{t("model.maxCompletion")}</span>
+                <span className={styles.popoverValue}>{t("model.tokens", { count: maxCompletionTokens })}</span>
               </div>
             ) : null}
           </div>

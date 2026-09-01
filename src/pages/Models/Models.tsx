@@ -10,25 +10,27 @@ import { useHub } from "../../state/HubContext";
 import type { ModelSort } from "../../types/models";
 import { ModelSkeletonList } from "./ModelSkeleton";
 import styles from "./Models.module.css";
+import { useI18n } from "../../i18n";
 
 const CAPABILITY_OPTIONS = [
-  { value: "vision", label: "Vision" },
-  { value: "reasoning", label: "Reasoning" },
-  { value: "tools", label: "Tools" },
-  { value: "audio", label: "Audio" },
-  { value: "free", label: "Бесплатные" },
+  { value: "vision", key: "models.vision" },
+  { value: "reasoning", key: "models.reasoning" },
+  { value: "tools", key: "models.tools" },
+  { value: "audio", key: "models.audio" },
+  { value: "free", key: "models.free" },
 ];
 
-const SORT_OPTIONS: { value: ModelSort; label: string }[] = [
-  { value: "catalog", label: "Каталог" },
-  { value: "new", label: "Новые" },
-  { value: "context-desc", label: "Контекст: больше" },
-  { value: "context-asc", label: "Контекст: меньше" },
-  { value: "price-asc", label: "Цена: дешевле" },
-  { value: "name", label: "Название (A–Z)" },
+const SORT_OPTIONS: { value: ModelSort; key: string }[] = [
+  { value: "catalog", key: "models.sort.catalog" },
+  { value: "new", key: "models.sort.new" },
+  { value: "context-desc", key: "models.sort.contextDesc" },
+  { value: "context-asc", key: "models.sort.contextAsc" },
+  { value: "price-asc", key: "models.sort.priceAsc" },
+  { value: "name", key: "models.sort.name" },
 ];
 
 export function ModelsPage() {
+  const { t } = useI18n();
   const {
     models,
     modelsLoading,
@@ -68,9 +70,9 @@ export function ModelsPage() {
   );
 
   const providerOptions = useMemo(() => {
-    const allOpt = { value: "all", label: `Все (${providers.length})` };
+    const allOpt = { value: "all", label: t("models.allProviders", { count: providers.length }) };
     return [allOpt, ...providers.map((p) => ({ value: p, label: p }))];
-  }, [providers]);
+  }, [providers, t]);
 
   const visible = useMemo(
     () =>
@@ -86,28 +88,28 @@ export function ModelsPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Модели">
+      <PageHeader title={t("models.title")}>
         <div className={styles.toolbar}>
           <Select
-            label="Provider"
+            label={t("models.provider")}
             value={provider}
             options={providerOptions}
             onChange={handleProviderChange}
             searchable
-            searchPlaceholder="Поиск провайдера..."
+            searchPlaceholder={t("models.searchProvider")}
           />
           <Select
-            label="Возможности"
+            label={t("models.capabilities")}
             multiple
             value={capabilities}
-            options={CAPABILITY_OPTIONS}
+            options={CAPABILITY_OPTIONS.map((option) => ({ value: option.value, label: option.key ? t(option.key) : option.value }))}
             onChange={setCapabilities}
-            placeholder="Все"
+            placeholder={t("feed.all")}
           />
           <Select
-            label="Сортировка"
+            label={t("models.sort")}
             value={sort}
-            options={SORT_OPTIONS}
+            options={SORT_OPTIONS.map((option) => ({ value: option.value, label: t(option.key) }))}
             onChange={(val) => setSort(val as ModelSort)}
           />
         </div>
@@ -119,12 +121,12 @@ export function ModelsPage() {
         <div className={styles.errorBox}>
           <p>{modelsError}</p>
           <button type="button" className={styles.retryBtn} onClick={() => refreshModels()}>
-            Повторить попытку
+            {t("models.retry")}
           </button>
         </div>
       ) : visible.length === 0 ? (
         <EmptyState>
-          <p>Модели не найдены по выбранным фильтрам.</p>
+          <p>{t("models.empty")}</p>
           {hasActiveFilters ? (
             <button
               type="button"
@@ -134,7 +136,7 @@ export function ModelsPage() {
                 handleProviderChange("all");
               }}
             >
-              Сбросить фильтры
+              {t("saved.resetFilters")}
             </button>
           ) : null}
         </EmptyState>
@@ -142,8 +144,7 @@ export function ModelsPage() {
         <>
           <div className={styles.listHeader}>
             <div className={styles.countInfo}>
-              Показано моделей: {visible.length}
-              {visible.length !== models.length ? ` из ${models.length}` : ""}
+              {t("models.shown", { shown: visible.length, total: models.length })}
             </div>
           </div>
           <ul className={styles.list}>

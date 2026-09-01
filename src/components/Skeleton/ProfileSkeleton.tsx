@@ -2,10 +2,16 @@ import { PageHeader } from "../PageHeader/PageHeader";
 import { Skeleton } from "./Skeleton";
 import styles from "../../pages/Profile/ProfilePage.module.css";
 
-export function ProfileSkeleton() {
+export function ProfileSkeleton({
+  title = "Профиль",
+  loadingLabel = "Загрузка профиля",
+}: {
+  title?: string;
+  loadingLabel?: string;
+} = {}) {
   return (
-    <div className={styles.page} aria-busy="true" aria-label="Загрузка профиля">
-      <PageHeader title="Профиль" />
+    <div className={styles.page} aria-busy="true" aria-label={loadingLabel}>
+      <PageHeader title={title} />
 
       {/* Main Profile Card Skeleton */}
       <div className={styles.profileCard}>

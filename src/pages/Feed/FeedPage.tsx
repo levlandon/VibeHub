@@ -13,17 +13,19 @@ import { usePosts } from "../../features/posts";
 import { filterPostsByCategory } from "../../services/posts";
 import { useHub } from "../../state/HubContext";
 import type { Post } from "../../types/posts";
+import { useI18n } from "../../i18n";
 import styles from "./FeedPage.module.css";
 
 const FEED_CATEGORIES = [
-  { id: "all", label: "Все" },
-  { id: "models", label: "Модели" },
-  { id: "tools", label: "Инструменты" },
-  { id: "agents", label: "Агенты" },
-  { id: "mcp", label: "MCP" },
-];
+  { id: "all", key: "feed.all" },
+  { id: "models", key: "nav.models" },
+  { id: "tools", key: "feed.tools" },
+  { id: "agents", key: "feed.agents" },
+  { id: "mcp", key: "feed.mcp" },
+] as const;
 
 export function FeedPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const { setAddOpen } = useHub();
@@ -59,45 +61,47 @@ export function FeedPage() {
 
   const visiblePosts = filterPostsByCategory(posts, category);
   const activeDetailPost = posts.find((p) => p.id === selectedPostId) || null;
+  const feedCategories = FEED_CATEGORIES.map((item) => ({ id: item.id, label: t(item.key) }));
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Лента сообщества">
+      <PageHeader title={t("feed.title")}>
         <CategoryStrip
-          items={FEED_CATEGORIES}
+          items={feedCategories}
           value={category}
           onChange={setCategory}
         />
       </PageHeader>
 
       {loading && posts.length === 0 ? (
-        <FeedSkeletonList count={3} />
+        <FeedSkeletonList count={3} label={t("common.loadingPosts")} />
       ) : error && posts.length === 0 ? (
         <EmptyState>
-          <p>Не удалось загрузить публикации.</p>
+          <p>{t("feed.loadError")}</p>
           <Button variant="ghost" onClick={() => void refreshPosts()}>
-            Повторить
+            {t("common.retry")}
           </Button>
         </EmptyState>
       ) : posts.length === 0 ? (
         <EmptyState>
-          <p>В ленте пока нет публикаций.</p>
+          <p>{t("feed.empty")}</p>
           <p style={{ marginTop: 8 }}>
             <button
               type="button"
               className={styles.shareLinkBtn}
               onClick={() => setAddOpen(true)}
             >
-              Нажмите здесь, чтобы создать
+              {t("feed.createPrompt")}
             </button>{" "}
-            обсуждение, вопрос или проект!
+            {t("feed.createSuffix")}
           </p>
         </EmptyState>
       ) : visiblePosts.length === 0 ? (
         <EmptyState>
           <p>
-            Нет публикаций в категории &laquo;
-            {FEED_CATEGORIES.find((c) => c.id === category)?.label}&raquo;.
+            {t("feed.categoryEmpty", {
+              category: feedCategories.find((c) => c.id === category)?.label ?? category,
+            })}
           </p>
         </EmptyState>
       ) : (
@@ -123,7 +127,7 @@ export function FeedPage() {
                 disabled={loadingMore}
                 onClick={fetchMorePosts}
               >
-                {loadingMore ? "Загрузка..." : "Показать ещё"}
+                {loadingMore ? t("feed.loading") : t("feed.loadMore")}
               </Button>
               {error ? <p className={styles.errorMessage}>{error}</p> : null}
             </div>
@@ -164,9 +168,7 @@ export function FeedPage() {
               await updatePost(id, input);
               setEditingPost(null);
             } catch (err) {
-              setMutationMessage(
-                err instanceof Error ? err.message : "Не удалось сохранить публикацию",
-              );
+              setMutationMessage(t("feed.updateError"));
               throw err;
             } finally {
               setMutationPending(false);
@@ -178,10 +180,10 @@ export function FeedPage() {
       {/* Delete Confirmation */}
       {deleteConfirmPost ? (
         <ConfirmDialog
-          title={`Удалить публикацию «${deleteConfirmPost.title}»?`}
-          body="Это действие нельзя будет отменить."
-          cancelLabel="Отмена"
-          confirmLabel="Удалить"
+          title={t("feed.deleteTitle", { title: deleteConfirmPost.title })}
+          body={t("feed.deleteBody")}
+          cancelLabel={t("common.cancel")}
+          confirmLabel={t("common.delete")}
           onCancel={() => setDeleteConfirmPost(null)}
           onConfirm={async () => {
             if (mutationPending) return;
@@ -193,10 +195,8 @@ export function FeedPage() {
                 setSelectedPostId(null);
               }
               setDeleteConfirmPost(null);
-            } catch (err) {
-              setMutationMessage(
-                err instanceof Error ? err.message : "Не удалось удалить публикацию",
-              );
+            } catch {
+              setMutationMessage(t("feed.deleteError"));
             } finally {
               setMutationPending(false);
             }

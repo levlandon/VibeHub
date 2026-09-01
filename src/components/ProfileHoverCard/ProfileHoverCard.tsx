@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { ProfileInterestChip, ProfileModelChip } from "../ProfileChips";
 import { cleanModelName } from "../../services/entities";
 import { profileService } from "../../services/profile";
+import { useI18n } from "../../i18n";
 import { useHub } from "../../state/HubContext";
 import type { ChatAuthor } from "../../types/hub";
 import type { UserProfile } from "../../types/profile";
@@ -32,6 +33,7 @@ export function ProfileHoverCard({
   onOpenProfile,
 }: ProfileHoverCardProps) {
   const effectiveIdentifier = identifier || initialAuthor?.handle || initialAuthor?.id || "";
+  const { t } = useI18n();
   const { models } = useHub();
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<PositionCoords | null>(null);
@@ -241,7 +243,7 @@ export function ProfileHoverCard({
       {/* Interests Section */}
       {previewInterests.length > 0 ? (
         <div className={styles.sectionBlock}>
-          <span className={styles.sectionLabel}>Занимается</span>
+          <span className={styles.sectionLabel}>{t("profile.hoverInterests")}</span>
           <div className={styles.chipsRow}>
             {previewInterests.map((tag) => (
               <ProfileInterestChip
@@ -260,7 +262,7 @@ export function ProfileHoverCard({
       {/* Models Section */}
       {favoriteModels.length > 0 ? (
         <div className={styles.sectionBlock}>
-          <span className={styles.sectionLabel}>Использует модели</span>
+          <span className={styles.sectionLabel}>{t("profile.hoverModels")}</span>
           <div className={styles.chipsRow}>
             {favoriteModels.map((m) => (
               <ProfileModelChip

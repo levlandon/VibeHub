@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useI18n } from "../../i18n";
 import { parseSiteUrl } from "../../lib/siteUrl";
 import type { CreateCollectionItemInput } from "../../types/collections";
 import { Button } from "../Button/Button";
@@ -20,6 +21,7 @@ export function AddWebsiteModal({
   collections,
   defaultCollectionId,
 }: AddWebsiteModalProps) {
+  const { t } = useI18n();
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -61,7 +63,7 @@ export function AddWebsiteModal({
     });
   };
 
-  const displayTitle = title.trim() || parsed?.title || parsed?.domain || "Сайт";
+  const displayTitle = title.trim() || parsed?.title || parsed?.domain || t("collections.siteFallback");
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -72,11 +74,11 @@ export function AddWebsiteModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="add-site-title" className={styles.title}>
-          Добавить сайт в коллекцию
+          {t("collections.addSiteTitle")}
         </h2>
         <form onSubmit={handleSubmit}>
           <label className={styles.field}>
-            Коллекция *
+            {t("collections.collectionRequired")}
             <select
               value={targetCollectionId}
               onChange={(e) => setTargetCollectionId(e.target.value)}
@@ -91,7 +93,7 @@ export function AddWebsiteModal({
           </label>
 
           <label className={styles.field}>
-            URL сайта *
+            {t("collections.urlRequired")}
             <input
               autoFocus
               type="text"
@@ -103,10 +105,10 @@ export function AddWebsiteModal({
           </label>
 
           <label className={styles.field}>
-            Название (опционально)
+            {t("collections.nameOptional")}
             <input
               type="text"
-              placeholder={parsed?.title ?? "Название сервиса"}
+              placeholder={parsed?.title ?? t("collections.serviceNamePlaceholder")}
               value={title}
               onChange={(e) => {
                 setAutoTitle(false);
@@ -116,9 +118,9 @@ export function AddWebsiteModal({
           </label>
 
           <label className={styles.field}>
-            Описание / Заметка (опционально)
+            {t("collections.noteOptional")}
             <textarea
-              placeholder="Кратко о сервисе, назначении или промптах..."
+              placeholder={t("collections.notePlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -144,14 +146,14 @@ export function AddWebsiteModal({
 
           <div className={styles.actions}>
             <Button variant="text" onClick={onClose} type="button">
-              Отмена
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
               disabled={!parsed || !targetCollectionId}
               type="submit"
             >
-              Добавить сайт
+              {t("collections.addSite")}
             </Button>
           </div>
         </form>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { IconClose, IconSliders } from "../icons";
+import { useI18n } from "../../i18n";
 import styles from "./SettingsModal.module.css";
 
 export type SettingsTab = "general" | "theme" | "language" | "profile";
@@ -12,8 +13,8 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const { language, setLanguage, t } = useI18n();
   const [theme, setTheme] = useState<"dark" | "system">("dark");
-  const [lang, setLang] = useState<"ru" | "en">("ru");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -43,10 +44,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div className={styles.headerTitleRow}>
             <IconSliders width={18} height={18} />
             <h2 id="settings-modal-title" className={styles.title}>
-              Настройки
+              {t("settings.title")}
             </h2>
           </div>
-          <IconButton label="Закрыть" onClick={onClose}>
+          <IconButton label={t("common.close")} onClick={onClose}>
             <IconClose width={16} height={16} />
           </IconButton>
         </header>
@@ -54,28 +55,29 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className={styles.content}>
           <div className={styles.settingItem}>
             <div className={styles.settingMeta}>
-              <span className={styles.settingLabel}>Тема оформления</span>
-              <span className={styles.settingDesc}>Внешний вид интерфейса VibeHub</span>
+              <span className={styles.settingLabel}>{t("settings.theme")}</span>
+              <span className={styles.settingDesc}>{t("settings.theme.description")}</span>
             </div>
             <select
               className={styles.select}
               value={theme}
               onChange={(e) => setTheme(e.target.value as "dark" | "system")}
             >
-              <option value="dark">Тёмная (по умолчанию)</option>
-              <option value="system">Системная</option>
+              <option value="dark">{t("settings.theme.dark")}</option>
+              <option value="system">{t("settings.theme.system")}</option>
             </select>
           </div>
 
           <div className={styles.settingItem}>
             <div className={styles.settingMeta}>
-              <span className={styles.settingLabel}>Язык интерфейса</span>
-              <span className={styles.settingDesc}>Основной язык приложения</span>
+              <span className={styles.settingLabel}>{t("settings.language")}</span>
+              <span className={styles.settingDesc}>{t("settings.language.description")}</span>
             </div>
             <select
               className={styles.select}
-              value={lang}
-              onChange={(e) => setLang(e.target.value as "ru" | "en")}
+              value={language}
+              aria-label={t("settings.language")}
+              onChange={(e) => setLanguage(e.target.value as "ru" | "en")}
             >
               <option value="ru">Русский (RU)</option>
               <option value="en">English (EN)</option>
@@ -86,4 +88,3 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </div>
   );
 }
-

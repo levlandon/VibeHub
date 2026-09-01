@@ -32,6 +32,7 @@ import { profileIdentifierFromPath, profilePath } from "../../state/routing";
 import type { Model } from "../../types/models";
 import type { UserProfile } from "../../types/profile";
 import styles from "./ProfilePage.module.css";
+import { useI18n } from "../../i18n";
 
 interface ProfileDraft {
   displayName: string;
@@ -68,6 +69,7 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function ProfilePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const {
     userProfile,
@@ -127,7 +129,7 @@ export function ProfilePage() {
           if (!active) return;
           console.error("Failed to fetch public profile:", err);
           setPublicError(
-            err instanceof Error ? err.message : "Не удалось загрузить профиль пользователя",
+            t("profile.loadError"),
           );
         })
         .finally(() => {
@@ -142,7 +144,7 @@ export function ProfilePage() {
       setPublicError(null);
       setLoadingPublic(false);
     }
-  }, [isSelf, targetIdentifier, navigate]);
+  }, [isSelf, targetIdentifier, navigate, t]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -219,7 +221,7 @@ export function ProfilePage() {
 
   // Compute active displayed profile
   const activeProfile = isSelf ? userProfile : publicProfile;
-  const activeDisplayName = activeProfile?.displayName || (isSelf ? "Пользователь" : "Профиль");
+  const activeDisplayName = activeProfile?.displayName || (isSelf ? t("common.user") : t("profile.title"));
   const activeUsername = activeProfile?.username || "user";
   const activeAvatarUrl = activeProfile?.avatarUrl || activeProfile?.avatar || "";
   const activeBio = activeProfile?.bio || "";
@@ -312,11 +314,11 @@ export function ProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setErrors((err) => ({ ...err, avatar: "Файл должен быть изображением" }));
+      setErrors((err) => ({ ...err, avatar: t("profile.avatarImageError") }));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setErrors((err) => ({ ...err, avatar: "Размер изображения не должен превышать 2 МБ" }));
+      setErrors((err) => ({ ...err, avatar: t("profile.avatarSizeError") }));
       return;
     }
 
@@ -334,7 +336,13 @@ export function ProfilePage() {
     setSaveError(null);
     const validation = profileService.validateProfile(draft);
     if (!validation.valid) {
-      setErrors(validation.errors as Partial<Record<keyof ProfileDraft, string>>);
+      const localizedErrors = Object.fromEntries(
+        Object.entries(validation.errors).map(([field, message]) => {
+          const key = validation.errorKeys?.[field as keyof ProfileDraft];
+          return [field, key ? t(key) : message];
+        }),
+      );
+      setErrors(localizedErrors as Partial<Record<keyof ProfileDraft, string>>);
       return;
     }
 
@@ -346,10 +354,10 @@ export function ProfilePage() {
         setShowModelPicker(false);
         setShowAvatarMenu(false);
       } else {
-        setSaveError("Не удалось сохранить профиль");
+        setSaveError(t("profile.saveError"));
       }
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Ошибка при сохранении");
+    } catch {
+      setSaveError(t("profile.saveError"));
     } finally {
       setIsSaving(false);
     }
@@ -376,8 +384,8 @@ export function ProfilePage() {
   if (isSelf && profileLoading) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Профиль" />
-        <ProfileSkeleton />
+        <PageHeader title={t("profile.title")} />
+        <ProfileSkeleton title={t("profile.title")} loadingLabel={t("common.loadingProfile")} />
       </div>
     );
   }
@@ -385,8 +393,8 @@ export function ProfilePage() {
   if (!isSelf && loadingPublic) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Профиль" />
-        <ProfileSkeleton />
+        <PageHeader title={t("profile.title")} />
+        <ProfileSkeleton title={t("profile.title")} loadingLabel={t("common.loadingProfile")} />
       </div>
     );
   }
@@ -395,11 +403,11 @@ export function ProfilePage() {
   if (!isSelf && notFound) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Профиль не найден" />
+        <PageHeader title={t("profile.notFound")} />
         <EmptyState>
-          <p>Пользователь с идентификатором &laquo;{targetIdentifier}&raquo; не найден.</p>
+          <p>{t("profile.identifierNotFound", { identifier: targetIdentifier ?? "" })}</p>
           <Button variant="ghost" style={{ marginTop: 12 }} onClick={() => navigate({ to: "/models" })}>
-            Вернуться в каталог
+            {t("profile.backToCatalog")}
           </Button>
         </EmptyState>
       </div>
@@ -410,15 +418,15 @@ export function ProfilePage() {
   if (isSelf && authStatus === "anonymous" && !userProfile) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Профиль" />
+        <PageHeader title={t("profile.title")} />
         <div className={styles.anonymousCard}>
-          <h2 className={styles.anonymousTitle}>Войдите в аккаунт</h2>
+          <h2 className={styles.anonymousTitle}>{t("profile.loginTitle")}</h2>
           <p className={styles.anonymousDesc}>
-            Войдите через GitHub, чтобы настроить свой профиль, указать стек моделей и интересы.
+            {t("profile.loginDescription")}
           </p>
           <Button variant="primary" onClick={() => setAuthModalOpen(true)}>
             <IconGithub width={16} height={16} />
-            <span>Войти через GitHub</span>
+            <span>{t("auth.oauth.github")}</span>
           </Button>
         </div>
       </div>
@@ -427,14 +435,14 @@ export function ProfilePage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title={isSelf ? "Мой профиль" : activeDisplayName} />
+      <PageHeader title={isSelf ? t("profile.myTitle") : activeDisplayName} />
 
       {profileError || publicError || saveError ? (
         <div className={styles.errorBanner}>
           {profileError || publicError || saveError}
           {profileError ? (
             <Button variant="ghost" style={{ marginLeft: 12 }} onClick={retryLoadProfile}>
-              Повторить
+              {t("profile.retry")}
             </Button>
           ) : null}
         </div>
@@ -466,8 +474,8 @@ export function ProfilePage() {
                   <button
                     type="button"
                     className={styles.avatarEditOverlay}
-                    title="Изменить фото"
-                    aria-label="Изменить фото"
+                    title={t("profile.changePhoto")}
+                    aria-label={t("profile.changePhoto")}
                     onClick={() => setShowAvatarMenu((prev) => !prev)}
                   >
                     <IconUpload width={16} height={16} />
@@ -493,7 +501,7 @@ export function ProfilePage() {
                         }}
                       >
                         <IconUpload width={15} height={15} />
-                        <span>Загрузить фото</span>
+                        <span>{t("profile.uploadPhoto")}</span>
                       </button>
 
                       {githubAvatar ? (
@@ -507,7 +515,7 @@ export function ProfilePage() {
                           }}
                         >
                           <IconGithub width={15} height={15} />
-                          <span>Использовать аватар GitHub</span>
+                          <span>{t("profile.useGithubAvatar")}</span>
                         </button>
                       ) : null}
 
@@ -522,7 +530,7 @@ export function ProfilePage() {
                           }}
                         >
                           <IconTrash width={15} height={15} />
-                          <span>Удалить фото</span>
+                          <span>{t("profile.removePhoto")}</span>
                         </button>
                       ) : null}
                     </div>
@@ -541,7 +549,7 @@ export function ProfilePage() {
                       className={`${styles.inlineInput} ${styles.nameInput} ${errors.displayName ? styles.hasError : ""}`}
                       value={draft.displayName}
                       maxLength={50}
-                      placeholder="Имя пользователя"
+                      placeholder={t("profile.displayNamePlaceholder")}
                       onChange={(e) => {
                         const val = e.target.value;
                         setDraft((d) => ({ ...d, displayName: val }));
@@ -587,8 +595,8 @@ export function ProfilePage() {
           {/* Single Edit Affordance (Pencil Icon) in Top-Right of Profile Surface */}
           {isSelf && authStatus === "authenticated" && !isEditing ? (
             <IconButton
-              label="Редактировать профиль"
-              title="Редактировать"
+              label={t("profile.edit")}
+              title={t("common.edit")}
               onClick={handleStartEdit}
             >
               <IconEdit width={18} height={18} />
@@ -599,13 +607,13 @@ export function ProfilePage() {
         {/* Bio */}
         {isEditing ? (
           <div className={styles.bioEditWrap}>
-            <label className={styles.fieldLabel}>О себе:</label>
+            <label className={styles.fieldLabel}>{t("profile.about")}</label>
             <div className={styles.textareaContainer}>
               <textarea
                 className={`${styles.inlineTextarea} ${errors.bio ? styles.hasError : ""}`}
                 value={draft.bio}
                 maxLength={160}
-                placeholder="Расскажите немного о себе и своих проектах..."
+                placeholder={t("profile.aboutPlaceholder")}
                 onChange={(e) => {
                   const val = e.target.value;
                   setDraft((d) => ({ ...d, bio: val }));
@@ -632,7 +640,7 @@ export function ProfilePage() {
           <div className={styles.sectionHeaderRow}>
             <h3 className={styles.sectionTitle}>
               <IconModels width={17} height={17} />
-              <span>Использую модели</span>
+              <span>{t("profile.models")}</span>
               {isEditing ? (
                 <span className={styles.limitTag}>({draft.modelIds.length}/8)</span>
               ) : null}
@@ -641,7 +649,7 @@ export function ProfilePage() {
 
           {!isEditing ? (
             activeModelIds.length === 0 ? (
-              <p className={styles.emptyNote}>Модели не выбраны</p>
+              <p className={styles.emptyNote}>{t("profile.modelsNone")}</p>
             ) : (
               <div className={styles.chipGrid}>
                 {activeModelIds.map((id) => {
@@ -677,7 +685,7 @@ export function ProfilePage() {
                   })}
                 </div>
               ) : (
-                <p className={styles.emptyNote}>Модели не выбраны</p>
+                <p className={styles.emptyNote}>{t("profile.modelsNone")}</p>
               )}
 
               <div className={styles.pickerAnchor} ref={modelPickerRef}>
@@ -687,7 +695,7 @@ export function ProfilePage() {
                   onClick={handleToggleModelPicker}
                 >
                   <IconPlus width={14} height={14} />
-                  <span>{showModelPicker ? "Закрыть каталог" : "Добавить модель"}</span>
+                  <span>{showModelPicker ? t("profile.closeCatalog") : t("profile.addModel")}</span>
                 </Button>
 
                 {showModelPicker ? (
@@ -699,13 +707,13 @@ export function ProfilePage() {
                       <input
                         type="text"
                         className={styles.pickerSearchInput}
-                        placeholder="Поиск по каталогу моделей..."
+                        placeholder={t("profile.searchModels")}
                         value={modelSearch}
                         onChange={(e) => setModelSearch(e.target.value)}
                         autoFocus
                       />
                       {modelSearch ? (
-                        <IconButton label="Очистить" onClick={() => setModelSearch("")}>
+                        <IconButton label={t("common.clear")} onClick={() => setModelSearch("")}>
                           <IconClose width={13} height={13} />
                         </IconButton>
                       ) : null}
@@ -713,7 +721,7 @@ export function ProfilePage() {
 
                     <div className={styles.modelPickerScrollList}>
                       {filteredModels.length === 0 ? (
-                        <div className={styles.noResults}>Модели не найдены</div>
+                        <div className={styles.noResults}>{t("models.empty")}</div>
                       ) : (
                         filteredModels.map((m) => {
                           const selected = draft.modelIds.includes(m.id);
@@ -751,7 +759,7 @@ export function ProfilePage() {
           <div className={styles.sectionHeaderRow}>
             <h3 className={styles.sectionTitle}>
               <IconSparkles width={17} height={17} />
-              <span>Занимаюсь</span>
+              <span>{t("profile.interests")}</span>
               {isEditing ? (
                 <span className={styles.limitTag}>({draft.interests.length}/6)</span>
               ) : null}
@@ -761,7 +769,7 @@ export function ProfilePage() {
           {/* View Mode vs Edit Mode */}
           {!isEditing ? (
             activeInterests.length === 0 ? (
-              <p className={styles.emptyNote}>Интересы не указаны</p>
+              <p className={styles.emptyNote}>{t("profile.interestsNone")}</p>
             ) : (
               <div className={styles.chipGrid}>
                 {activeInterests.map((tag) => (
@@ -792,10 +800,10 @@ export function ProfilePage() {
 
       {/* Publications Section (Directly below about grid, single vertical page) */}
       {!isEditing ? (
-        <section className={styles.publicationsSection} aria-label="Публикации">
+        <section className={styles.publicationsSection} aria-label={t("profile.publications")}>
           <div className={styles.publicationsHeader}>
             <h3 className={styles.publicationsHeading}>
-              <span>Публикации</span>
+              <span>{t("profile.publications")}</span>
               <span className={styles.publicationsCount}>({userPosts.length})</span>
             </h3>
           </div>
@@ -804,8 +812,8 @@ export function ProfilePage() {
             <EmptyState>
               <p>
                 {isSelf
-                  ? "У вас пока нет публикаций."
-                  : "У пользователя пока нет публикаций."}
+                  ? t("profile.noPublicationsSelf")
+                  : t("profile.noPublicationsOther")}
               </p>
             </EmptyState>
           ) : (
@@ -828,10 +836,10 @@ export function ProfilePage() {
         <div className={styles.bottomActions}>
           <div className={styles.editActions}>
             <Button variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
-              Отмена
+              {t("profile.cancel")}
             </Button>
             <Button variant="primary" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Сохранение..." : "Сохранить"}
+              {isSaving ? t("profile.saving") : t("profile.save")}
             </Button>
           </div>
         </div>

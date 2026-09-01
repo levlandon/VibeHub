@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useI18n } from "../../i18n";
 import { Button } from "../Button/Button";
 import styles from "./CreateCollectionModal.module.css";
 
@@ -15,8 +16,9 @@ export function CreateCollectionModal({
   onClose,
   onSave,
   initialValues,
-  modalTitle = "Новая коллекция",
+  modalTitle,
 }: CreateCollectionModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState(initialValues?.name ?? "");
   const [description, setDescription] = useState(initialValues?.description ?? "");
 
@@ -28,6 +30,8 @@ export function CreateCollectionModal({
   }, [isOpen, initialValues]);
 
   if (!isOpen) return null;
+
+  const resolvedModalTitle = modalTitle ?? t("collections.newTitle");
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -47,24 +51,24 @@ export function CreateCollectionModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="create-col-title" className={styles.title}>
-          {modalTitle}
+          {resolvedModalTitle}
         </h2>
         <form onSubmit={handleSubmit}>
           <label className={styles.field}>
-            Название коллекции *
+            {t("collections.nameRequired")}
             <input
               autoFocus
               type="text"
-              placeholder="например, Инструменты для дизайна"
+              placeholder={t("collections.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </label>
           <label className={styles.field}>
-            Описание (опционально)
+            {t("collections.descriptionOptional")}
             <textarea
-              placeholder="Для чего эта коллекция и какие сервисы в ней хранятся..."
+              placeholder={t("collections.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -72,10 +76,10 @@ export function CreateCollectionModal({
           </label>
           <div className={styles.actions}>
             <Button variant="text" onClick={onClose} type="button">
-              Отмена
+              {t("common.cancel")}
             </Button>
             <Button variant="primary" disabled={!name.trim()} type="submit">
-              Сохранить
+              {t("common.save")}
             </Button>
           </div>
         </form>

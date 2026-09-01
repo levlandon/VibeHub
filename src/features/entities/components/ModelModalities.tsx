@@ -9,6 +9,8 @@ import {
 } from "../../../components/icons";
 import type { ModelArchitecture } from "../../../types/models";
 import styles from "./ModelComponents.module.css";
+import { useI18n } from "../../../i18n";
+import type { TranslationValues } from "../../../i18n";
 
 export interface ModelModalitiesProps {
   architecture?: ModelArchitecture;
@@ -19,27 +21,27 @@ const MODALITY_CONFIG: Record<
   { label: string; icon: (props: { width?: number; height?: number }) => ReactNode }
 > = {
   text: {
-    label: "Текст (Text)",
+    label: "model.modality.text",
     icon: (props) => <IconText {...props} />,
   },
   image: {
-    label: "Изображение (Image)",
+    label: "model.modality.image",
     icon: (props) => <IconImage {...props} />,
   },
   video: {
-    label: "Видео (Video)",
+    label: "model.modality.video",
     icon: (props) => <IconVideo {...props} />,
   },
   audio: {
-    label: "Аудио (Audio)",
+    label: "model.modality.audio",
     icon: (props) => <IconAudio {...props} />,
   },
   file: {
-    label: "Файл / Документ (File)",
+    label: "model.modality.file",
     icon: (props) => <IconFile {...props} />,
   },
   document: {
-    label: "Документ (Document)",
+    label: "model.modality.document",
     icon: (props) => <IconFile {...props} />,
   },
   pdf: {
@@ -83,17 +85,22 @@ export function parseModalities(architecture?: ModelArchitecture): {
   };
 }
 
-function renderModalityItem(mod: string, key: string) {
+function renderModalityItem(
+  mod: string,
+  key: string,
+  t: (key: string, values?: TranslationValues) => string,
+) {
   const norm = mod.toLowerCase().trim();
   const config = MODALITY_CONFIG[norm];
 
   if (config) {
+    const label = t(config.label);
     return (
       <span
         key={key}
         className={styles.modalityIcon}
-        title={config.label}
-        aria-label={config.label}
+        title={label}
+        aria-label={label}
       >
         {config.icon({ width: 13, height: 13 })}
       </span>
@@ -105,7 +112,7 @@ function renderModalityItem(mod: string, key: string) {
     <span
       key={key}
       className={styles.modalityFallback}
-      title={`Модальность: ${mod}`}
+      title={t("model.modalityUnknown", { modality: mod })}
       aria-label={mod}
     >
       {mod}
@@ -116,11 +123,12 @@ function renderModalityItem(mod: string, key: string) {
 export const ModelModalities = memo(function ModelModalities({
   architecture,
 }: ModelModalitiesProps) {
+  const { t } = useI18n();
   const { inputs, outputs } = useMemo(() => parseModalities(architecture), [architecture]);
 
   const readableSummary = useMemo(() => {
-    return `Модальность: [${inputs.join(", ")}] → [${outputs.join(", ")}]`;
-  }, [inputs, outputs]);
+    return t("model.modalitySummary", { inputs: inputs.join(", "), outputs: outputs.join(", ") });
+  }, [inputs, outputs, t]);
 
   return (
     <div
@@ -129,13 +137,13 @@ export const ModelModalities = memo(function ModelModalities({
       aria-label={readableSummary}
     >
       <div className={styles.modalityGroup}>
-        {inputs.map((mod, idx) => renderModalityItem(mod, `in-${mod}-${idx}`))}
+        {inputs.map((mod, idx) => renderModalityItem(mod, `in-${mod}-${idx}`, t))}
       </div>
       <span className={styles.modalityArrow} aria-hidden>
         <IconArrowRight width={11} height={11} />
       </span>
       <div className={styles.modalityGroup}>
-        {outputs.map((mod, idx) => renderModalityItem(mod, `out-${mod}-${idx}`))}
+        {outputs.map((mod, idx) => renderModalityItem(mod, `out-${mod}-${idx}`, t))}
       </div>
     </div>
   );

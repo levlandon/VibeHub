@@ -29,5 +29,6 @@ export interface AiStackItem {
 export interface ProfileValidationResult {
   valid: boolean;
   errors: Partial<Record<keyof UserProfile, string>>;
+  /** Stable i18n keys for UI consumers; errors remain for service compatibility. */
+  errorKeys?: Partial<Record<keyof UserProfile, string>>;
 }
-

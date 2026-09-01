@@ -11,6 +11,7 @@ import {
 } from "../share/composerUtils";
 import type { CreatePostInput, Post, PostTopicCategory } from "../../types/posts";
 import styles from "./EditPostModal.module.css";
+import { useI18n } from "../../i18n";
 
 interface EditPostModalProps {
   post: Post | null;
@@ -20,11 +21,11 @@ interface EditPostModalProps {
 }
 
 const CATEGORY_OPTIONS = [
-  { value: "", label: "Без категории" },
-  { value: "models", label: "Модели" },
-  { value: "tools", label: "Инструменты" },
-  { value: "agents", label: "Агенты" },
-  { value: "mcp", label: "MCP" },
+  { value: "", key: "edit.noCategory" },
+  { value: "models", key: "nav.models" },
+  { value: "tools", key: "feed.tools" },
+  { value: "agents", key: "feed.agents" },
+  { value: "mcp", key: "feed.mcp" },
 ];
 
 export function EditPostModal({
@@ -33,6 +34,7 @@ export function EditPostModal({
   onClose,
   onSave,
 }: EditPostModalProps) {
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<string>("");
@@ -89,9 +91,9 @@ export function EditPostModal({
       >
         <header className={styles.header}>
           <h2 id="edit-post-title" className={styles.title}>
-            Редактировать публикацию
+            {t("edit.title")}
           </h2>
-          <IconButton label="Закрыть" onClick={onClose}>
+          <IconButton label={t("common.close")} onClick={onClose}>
             <IconClose width={18} height={18} />
           </IconButton>
         </header>
@@ -99,7 +101,7 @@ export function EditPostModal({
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="edit-title">
-              Заголовок
+              {t("composer.title")}
             </label>
             <input
               id="edit-title"
@@ -111,18 +113,18 @@ export function EditPostModal({
           </div>
 
           <div className={styles.field}>
-            <span className={styles.label}>Тематическая категория</span>
+            <span className={styles.label}>{t("edit.category")}</span>
             <Select
               value={category}
-              options={CATEGORY_OPTIONS}
+              options={CATEGORY_OPTIONS.map((option) => ({ value: option.value, label: t(option.key) }))}
               onChange={setCategory}
-              placeholder="Выберите категорию..."
+              placeholder={t("edit.categoryPlaceholder")}
             />
           </div>
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="edit-content">
-              Текст публикации
+              {t("composer.contentLabel")}
             </label>
             <textarea
               id="edit-content"
@@ -136,7 +138,7 @@ export function EditPostModal({
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="edit-link">
-              Ссылка <span className={styles.optional}>(опционально)</span>
+              {t("composer.link")} <span className={styles.optional}>({t("edit.optional")})</span>
             </label>
             <input
               id="edit-link"
@@ -157,21 +159,21 @@ export function EditPostModal({
             ) : null}
             {linkError ? (
               <p id="edit-link-error" className={styles.error} role="alert">
-                Введите корректную ссылку, например https://example.com
+                {t("composer.link.invalid")}
               </p>
             ) : null}
           </div>
 
           <footer className={styles.footer}>
             <Button variant="ghost" type="button" onClick={onClose}>
-              Отмена
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
               type="submit"
               disabled={!title.trim() || !content.trim()}
             >
-              Сохранить
+              {t("common.save")}
             </Button>
           </footer>
         </form>

@@ -16,9 +16,10 @@ import {
   IconTag,
 } from "../../components/icons";
 import { MentionEditor } from "../../components/mentions/MentionEditor";
-import { POST_TYPES, postTypeConfig } from "../../config/postTypes";
+import { POST_TYPES } from "../../config/postTypes";
 import { profileService } from "../../services/profile";
 import { useHub } from "../../state/HubContext";
+import { useI18n } from "../../i18n";
 import type { EntityRef } from "../../types/entities";
 import type { PostTopicCategory, PostType } from "../../types/posts";
 import {
@@ -30,10 +31,10 @@ import type { ComposerState } from "./types";
 import styles from "./PostComposer.module.css";
 
 const TOPIC_CATEGORIES: { id: PostTopicCategory; label: string }[] = [
-  { id: "models", label: "Модели" },
-  { id: "tools", label: "Инструменты" },
-  { id: "agents", label: "Агенты" },
-  { id: "mcp", label: "MCP" },
+  { id: "models", label: "composer.models" },
+  { id: "tools", label: "composer.tools" },
+  { id: "agents", label: "composer.agents" },
+  { id: "mcp", label: "feed.mcp" },
 ];
 
 export function getPostTypeIcon(type: PostType, size = 15) {
@@ -68,6 +69,7 @@ export function PostComposer({
   disabled = false,
   autoFocus = true,
 }: PostComposerProps) {
+  const { t } = useI18n();
   const { userProfile, mentionEntities } = useHub();
 
   const [activePopover, setActivePopover] = useState<"category" | null>(null);
@@ -239,14 +241,17 @@ export function PostComposer({
     onSubmit(result.state);
   };
 
-  const currentTypeConfig = postTypeConfig(state.type);
+  const currentTypeLabel = t(`composer.${state.type}`);
   const initials = profileService.getInitials(
     userProfile?.displayName,
     userProfile?.username,
   );
 
   const activeCategoryLabel = state.category
-    ? TOPIC_CATEGORIES.find((c) => c.id === state.category)?.label
+    ? (() => {
+        const key = TOPIC_CATEGORIES.find((c) => c.id === state.category)?.label;
+        return key ? t(key) : null;
+      })()
     : null;
 
   return (
@@ -280,11 +285,11 @@ export function PostComposer({
         <MentionEditor
           value={state.content}
           onChange={handleSetContent}
-          placeholder="Что хотите обсудить? Напишите мысль или упомяните @модель..."
+          placeholder={t("composer.placeholder")}
           autoFocus={autoFocus}
           disabled={disabled}
           onSubmit={handleSubmit}
-          aria-label="Текст публикации"
+          aria-label={t("composer.contentLabel")}
         />
       </div>
 
@@ -307,8 +312,8 @@ export function PostComposer({
                 if (linkError) setLinkError(false);
               }}
               onKeyDown={handleLinkInputKeyDown}
-              placeholder="Вставьте ссылку (https://...)"
-              aria-label="URL ссылки"
+              placeholder={t("composer.link.placeholder")}
+              aria-label={t("composer.link.aria")}
               aria-invalid={linkError}
               aria-describedby={linkError ? "post-link-error" : undefined}
             />
@@ -316,15 +321,15 @@ export function PostComposer({
               type="button"
               className={styles.inlineLinkClose}
               onClick={handleCancelLinkInput}
-              aria-label="Отменить ввод ссылки"
-              title="Отменить"
+              aria-label={t("composer.link.cancel")}
+              title={t("common.cancel")}
             >
               <IconClose width={13} height={13} />
             </button>
           </div>
           {linkError ? (
             <p id="post-link-error" className={styles.inlineLinkError} role="alert">
-              Введите корректную ссылку, например https://example.com
+              {t("composer.link.invalid")}
             </p>
           ) : null}
         </div>
@@ -348,8 +353,8 @@ export function PostComposer({
                 type="button"
                 className={styles.chipClose}
                 onClick={handleRemoveLink}
-                aria-label="Удалить ссылку"
-                title="Удалить ссылку"
+                aria-label={t("composer.link.remove")}
+                title={t("composer.link.remove")}
               >
                 ×
               </button>
@@ -363,14 +368,14 @@ export function PostComposer({
                 {getPostTypeIcon(state.type, 13)}
               </span>
               <span className={styles.chipText}>
-                {currentTypeConfig.label}
+                {currentTypeLabel}
               </span>
               <button
                 type="button"
                 className={styles.chipClose}
                 onClick={() => handleSelectType("discussion")}
-                aria-label="Сбросить к обычному обсуждению"
-                title="Сбросить тип"
+                aria-label={t("composer.discussion")}
+                title={t("composer.discussion")}
               >
                 ×
               </button>
@@ -385,8 +390,8 @@ export function PostComposer({
                 type="button"
                 className={styles.chipClose}
                 onClick={() => handleSelectCategory(undefined)}
-                aria-label="Сбросить тему"
-                title="Сбросить тему"
+                aria-label={t("composer.topic")}
+                title={t("composer.topic")}
               >
                 ×
               </button>
@@ -405,11 +410,11 @@ export function PostComposer({
               state.link || isLinkInputOpen ? styles.actionBtnActive : ""
             }`}
             onClick={handleToggleLinkInput}
-            title={state.link ? "Ссылка прикреплена" : "Прикрепить ссылку"}
-            aria-label="Прикрепить ссылку"
+            title={state.link ? t("composer.link.attached") : t("composer.link.attach")}
+            aria-label={t("composer.link.attach")}
           >
             <IconLink width={16} height={16} />
-            <span>Ссылка</span>
+            <span>{t("composer.link")}</span>
           </button>
 
           {/* Category Action */}
@@ -427,8 +432,8 @@ export function PostComposer({
                 prev === "category" ? null : "category",
               )
             }
-            title="Выбрать категорию или тип"
-            aria-label="Категория публикации"
+            title={t("composer.category.select")}
+            aria-label={t("composer.category.aria")}
             aria-haspopup="dialog"
             aria-expanded={activePopover === "category"}
           >
@@ -439,10 +444,10 @@ export function PostComposer({
             )}
             <span>
               {state.type !== "discussion"
-                ? currentTypeConfig.label
+                ? currentTypeLabel
                 : activeCategoryLabel
                 ? activeCategoryLabel
-                : "Категория"}
+                : t("composer.category")}
             </span>
           </button>
 
@@ -451,26 +456,26 @@ export function PostComposer({
             <div
               className={styles.popover}
               role="dialog"
-              aria-label="Выбор типа и категории"
+              aria-label={t("composer.category.dialog")}
             >
-              <div className={styles.popoverSectionTitle}>Тип публикации</div>
+              <div className={styles.popoverSectionTitle}>{t("composer.type")}</div>
               <ul className={styles.popoverList}>
-                {POST_TYPES.map((t) => {
-                  const isSelected = state.type === t.id;
+                {POST_TYPES.map((item) => {
+                  const isSelected = state.type === item.id;
                   return (
-                    <li key={t.id}>
+                    <li key={item.id}>
                       <button
                         type="button"
                         className={`${styles.popoverItem} ${
                           isSelected ? styles.popoverItemSelected : ""
                         }`}
-                        onClick={() => handleSelectType(t.id)}
+                        onClick={() => handleSelectType(item.id)}
                       >
                         <span className={styles.popoverItemLabel}>
                           <span className={styles.popoverItemIcon}>
-                            {getPostTypeIcon(t.id, 15)}
+                            {getPostTypeIcon(item.id, 15)}
                           </span>
-                          <span>{t.label}</span>
+                          <span>{t(`composer.${item.id}`)}</span>
                         </span>
                         {isSelected ? (
                           <IconCheck width={13} height={13} />
@@ -483,7 +488,7 @@ export function PostComposer({
 
               <div className={styles.popoverDivider} />
 
-              <div className={styles.popoverSectionTitle}>Тема (опционально)</div>
+              <div className={styles.popoverSectionTitle}>{t("composer.topic")}</div>
               <ul className={styles.popoverList}>
                 <li>
                   <button
@@ -494,7 +499,7 @@ export function PostComposer({
                     onClick={() => handleSelectCategory(undefined)}
                   >
                     <span className={styles.popoverItemLabel}>
-                      <span>Все / Без темы</span>
+                      <span>{t("composer.noTopic")}</span>
                     </span>
                     {!state.category ? (
                       <IconCheck width={13} height={13} />
@@ -513,7 +518,7 @@ export function PostComposer({
                         onClick={() => handleSelectCategory(c.id)}
                       >
                         <span className={styles.popoverItemLabel}>
-                          <span>{c.label}</span>
+                          <span>{t(c.label)}</span>
                         </span>
                         {isSelected ? (
                           <IconCheck width={13} height={13} />
@@ -529,7 +534,7 @@ export function PostComposer({
 
         {/* Submit Group with Arrow Up Send Button */}
         <div className={styles.submitGroup}>
-          <span className={styles.shortcutHint} title="Горячая клавиша">
+          <span className={styles.shortcutHint} title={t("composer.shortcut")}>
             Ctrl+Enter
           </span>
           <button
@@ -537,8 +542,8 @@ export function PostComposer({
             className={styles.sendBtn}
             disabled={disabled || !canPublish}
             onClick={handleSubmit}
-            title="Опубликовать (Ctrl+Enter)"
-            aria-label="Опубликовать"
+            title={t("composer.publishWithShortcut")}
+            aria-label={t("composer.publish")}
           >
             <IconSend width={17} height={17} />
           </button>

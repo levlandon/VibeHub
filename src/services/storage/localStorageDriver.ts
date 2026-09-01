@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   USER_PROFILE: "vibehub.user.profile",
   AUTH_USER: "vibehub.auth.user",
   MODEL_REACTIONS: "vibehub.model.reactions",
+  LANGUAGE: "vibehub.language",
 } as const;
 
 export const CURRENT_STORAGE_VERSION = "1";

@@ -7,14 +7,15 @@ import { formatDateTime } from "../../lib/datetime";
 import { describePost, isSaved } from "../../services/saved";
 import { useHub } from "../../state/HubContext";
 import type { Post } from "../../types/posts";
-import { postTypeConfig, questionStatus } from "./postTypes";
+import { questionStatus } from "./postTypes";
 import styles from "./PostCard.module.css";
+import { useI18n } from "../../i18n";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  models: "Модели",
-  tools: "Инструменты",
-  agents: "Агенты",
-  mcp: "MCP",
+  models: "nav.models",
+  tools: "feed.tools",
+  agents: "feed.agents",
+  mcp: "feed.mcp",
 };
 
 interface PostCardProps {
@@ -25,6 +26,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
+  const { language, t } = useI18n();
   const {
     mentionEntities,
     savedItems,
@@ -49,11 +51,11 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
     };
   }, [menuOpen]);
   const status = questionStatus(post);
-  const kind = postTypeConfig(post.type);
   const saved = isSaved(savedItems, "post", post.id);
 
-  const categoryLabel = post.category ? CATEGORY_LABELS[post.category] || post.category : null;
-  const badgeText = categoryLabel ? `${categoryLabel} · ${kind.label}` : kind.label;
+  const categoryKey = post.category ? CATEGORY_LABELS[post.category] : undefined;
+  const categoryLabel = categoryKey ? t(categoryKey) : post.category;
+  const badgeText = categoryLabel ? `${categoryLabel} · ${t(`composer.${post.type}`)}` : t(`composer.${post.type}`);
 
   const isOwnPost =
     Boolean(userProfile?.username && post.author.handle === userProfile.username) ||
@@ -77,14 +79,14 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
         <div className={styles.badgesWrap}>
           <span className={styles.badge}>{badgeText}</span>
           {status?.mark === "✓" ? (
-            <span className={styles.solvedBadge}>✓ Решено</span>
+            <span className={styles.solvedBadge}>✓ {t("post.solved")}</span>
           ) : null}
         </div>
 
         {isOwnPost && (onEdit || onDelete) ? (
           <div className={styles.menuWrap} onClick={(e) => e.stopPropagation()}>
             <IconButton
-              label="Опции публикации"
+              label={t("post.options")}
               className={styles.menuTrigger}
               onClick={(e) => {
                 e.stopPropagation();
@@ -110,7 +112,7 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
                       onEdit();
                     }}
                   >
-                    Редактировать
+                    {t("common.edit")}
                   </button>
                 ) : null}
                 {onDelete ? (
@@ -123,7 +125,7 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
                       onDelete();
                     }}
                   >
-                    Удалить
+                    {t("common.delete")}
                   </button>
                 ) : null}
               </div>
@@ -155,17 +157,17 @@ export function PostCard({ post, onClick, onEdit, onDelete }: PostCardProps) {
                 e.stopPropagation();
                 openProfile(post.author.handle || post.author.id);
               }}
-              title="Открыть профиль автора"
+              title={t("post.openAuthor")}
             >
               {post.author.name}
             </button>
           </ProfileHoverCard>
           <span className={styles.dot}>·</span>
-          <span className={styles.date}>{formatDateTime(post.createdAt)}</span>
+          <span className={styles.date}>{formatDateTime(post.createdAt, language === "ru" ? "ru-RU" : "en-US")}</span>
         </div>
 
         <IconButton
-          label={saved ? "Удалить из закладок" : "Сохранить в закладки"}
+          label={saved ? t("saved.removeBookmark") : t("post.saveBookmark")}
           active={saved}
           className={styles.bookmarkBtn}
           onClick={(e) => {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useI18n } from "../../i18n";
 import {
   POPULAR_CODING_AGENTS,
   POPULAR_MODELS_PRESET,
@@ -32,6 +33,7 @@ export function AiStackPicker({
   availableModels = [],
   availableTools = [],
 }: AiStackPickerProps) {
+  const { t } = useI18n();
   const [modelSearch, setModelSearch] = useState("");
   const [toolSearch, setToolSearch] = useState("");
 
@@ -96,7 +98,7 @@ export function AiStackPicker({
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionTitle}>
-            Coding Agents
+            {t("profile.codingAgents")}
             <span className={`${styles.countBadge} ${selectedAgents.length > 0 ? styles.hasCount : ""}`}>
               {selectedAgents.length}
             </span>
@@ -118,7 +120,7 @@ export function AiStackPicker({
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionTitle}>
-            Models
+            {t("composer.models")}
             <span className={`${styles.countBadge} ${selectedModels.length > 0 ? styles.hasCount : ""}`}>
               {selectedModels.length}
             </span>
@@ -164,7 +166,7 @@ export function AiStackPicker({
           <input
             type="text"
             className={styles.searchInput}
-            placeholder="Поиск по всем доступным моделям..."
+            placeholder={t("profile.searchAllModels")}
             value={modelSearch}
             onChange={(e) => setModelSearch(e.target.value)}
           />
@@ -173,7 +175,7 @@ export function AiStackPicker({
               type="button"
               className={styles.clearSearch}
               onClick={() => setModelSearch("")}
-              aria-label="Очистить поиск"
+              aria-label={t("common.clear")}
             >
               <IconClose width={14} height={14} />
             </button>
@@ -183,7 +185,7 @@ export function AiStackPicker({
         {modelSearch.trim() && (
           <div className={styles.searchResultsList}>
             {filteredModels.length === 0 ? (
-              <div className={styles.emptySearch}>Модели не найдены</div>
+              <div className={styles.emptySearch}>{t("profile.modelsNotFound")}</div>
             ) : (
               filteredModels.map((model) => {
                 const isSelected = selectedModels.includes(model.id);
@@ -211,7 +213,7 @@ export function AiStackPicker({
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionTitle}>
-            Tools
+            {t("composer.tools")}
             <span className={`${styles.countBadge} ${selectedTools.length > 0 ? styles.hasCount : ""}`}>
               {selectedTools.length}
             </span>
@@ -258,7 +260,7 @@ export function AiStackPicker({
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Поиск по каталогу инструментов..."
+              placeholder={t("profile.searchTools")}
               value={toolSearch}
               onChange={(e) => setToolSearch(e.target.value)}
             />
@@ -267,7 +269,7 @@ export function AiStackPicker({
                 type="button"
                 className={styles.clearSearch}
                 onClick={() => setToolSearch("")}
-                aria-label="Очистить поиск"
+                aria-label={t("common.clear")}
               >
                 <IconClose width={14} height={14} />
               </button>
@@ -278,7 +280,7 @@ export function AiStackPicker({
         {toolSearch.trim() && (
           <div className={styles.searchResultsList}>
             {filteredTools.length === 0 ? (
-              <div className={styles.emptySearch}>Инструменты не найдены</div>
+              <div className={styles.emptySearch}>{t("profile.toolsNotFound")}</div>
             ) : (
               filteredTools.map((tool) => {
                 const isSelected = selectedTools.includes(tool.id);

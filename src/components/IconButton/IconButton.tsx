@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 import styles from "./IconButton.module.css";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -6,18 +6,22 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
 }
 
-export function IconButton({
-  label,
-  active,
-  className = "",
-  type = "button",
-  title,
-  ...props
-}: IconButtonProps) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  {
+    label,
+    active,
+    className = "",
+    type = "button",
+    title,
+    ...props
+  },
+  ref,
+) {
   const effectiveTitle = title !== undefined ? title : label;
 
   return (
     <button
+      ref={ref}
       type={type}
       title={effectiveTitle || undefined}
       aria-label={label}
@@ -25,4 +29,4 @@ export function IconButton({
       {...props}
     />
   );
-}
+});

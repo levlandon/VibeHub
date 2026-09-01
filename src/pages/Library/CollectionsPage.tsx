@@ -20,6 +20,7 @@ import { QuickAccess } from "../../components/QuickAccess/QuickAccess";
 import { CollectionsGridSkeleton } from "../../components/Skeleton";
 import { SiteIcon } from "../../components/SiteIcon/SiteIcon";
 import { useCollections } from "../../hooks/useCollections";
+import { useI18n } from "../../i18n";
 import type {
   Collection,
   CollectionItem,
@@ -27,18 +28,97 @@ import type {
 } from "../../types/collections";
 import styles from "./Collections.module.css";
 
-function formatItemsCount(count: number): string {
+function formatItemsCount(
+  count: number,
+  language: "ru" | "en",
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  if (language === "en") {
+    return t(count === 1 ? "collections.items.one" : "collections.items.other", { count });
+  }
+
   if (count % 10 === 1 && count % 100 !== 11) {
-    return `${count} сайт`;
+    return t("collections.items.one", { count });
   }
   if (
     count % 10 >= 2 &&
     count % 10 <= 4 &&
     (count % 100 < 10 || count % 100 >= 20)
   ) {
-    return `${count} сайта`;
+    return t("collections.items.few", { count });
   }
-  return `${count} сайтов`;
+  return t("collections.items.many", { count });
+}
+
+const DEFAULT_COLLECTION_COPY: Record<
+  string,
+  { source: string; key: string }
+> = {
+  "col-assistants": {
+    source: "Веб-интерфейсы и чат-ассистенты для ежедневной работы",
+    key: "collections.default.assistantsDescription",
+  },
+  "col-coding": {
+    source: "Инструменты для vibe coding, генерации кода и агентов",
+    key: "collections.default.codingDescription",
+  },
+  "col-research": {
+    source: "Датасеты, открытые веса, бенчмарки и анализ",
+    key: "collections.default.researchDescription",
+  },
+};
+
+const DEFAULT_ITEM_COPY: Record<string, { source: string; key: string }> = {
+  "item-openrouter": {
+    source: "Единый API и чат для доступа ко всем LLM",
+    key: "collections.default.openrouterDescription",
+  },
+  "item-claude": {
+    source: "Ассистент от Anthropic с артефактами и проектами",
+    key: "collections.default.claudeDescription",
+  },
+  "item-chatgpt": {
+    source: "Модели OpenAI GPT-4o и o3",
+    key: "collections.default.chatgptDescription",
+  },
+  "item-v0": {
+    source: "Генеративный UI и фронтенд-компоненты",
+    key: "collections.default.v0Description",
+  },
+  "item-cursor": {
+    source: "AI-first редактор кода",
+    key: "collections.default.cursorDescription",
+  },
+  "item-bolt": {
+    source: "In-browser web development агент",
+    key: "collections.default.boltDescription",
+  },
+  "item-hf": {
+    source: "Хаб моделей, датасетов и спейсов",
+    key: "collections.default.huggingfaceDescription",
+  },
+  "item-aa": {
+    source: "Независимые бенчмарки скорости, цены и качества моделей",
+    key: "collections.default.analysisDescription",
+  },
+};
+
+function localizeDefaultCollectionDescription(
+  collection: Collection,
+  t: (key: string) => string,
+): string | undefined {
+  const copy = DEFAULT_COLLECTION_COPY[collection.id];
+  return copy && collection.description === copy.source
+    ? t(copy.key)
+    : collection.description;
+}
+
+function localizeDefaultItemDescription(
+  item: CollectionItem,
+  t: (key: string) => string,
+): string | undefined {
+  const copy = DEFAULT_ITEM_COPY[item.id];
+  return copy && item.description === copy.source ? t(copy.key) : item.description;
 }
 
 interface CollectionsPageProps {
@@ -46,6 +126,7 @@ interface CollectionsPageProps {
 }
 
 export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
+  const { language, t } = useI18n();
   const {
     collections,
     loading,
@@ -135,8 +216,8 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
       <button
         type="button"
         className={`${styles.plusBtn} ${plusMenuOpen ? styles.plusBtnActive : ""}`}
-        title="Добавить"
-        aria-label="Добавить"
+        title={t("collections.add")}
+        aria-label={t("collections.add")}
         aria-expanded={plusMenuOpen}
         onClick={() => setPlusMenuOpen((prev) => !prev)}
       >
@@ -155,7 +236,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             }}
           >
             <IconCollections width={16} height={16} />
-            <span>Создать коллекцию</span>
+            <span>{t("collections.create")}</span>
           </button>
           <button
             type="button"
@@ -171,7 +252,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             }}
           >
             <IconOpen width={16} height={16} />
-            <span>Добавить сайт</span>
+            <span>{t("collections.addSite")}</span>
           </button>
           <button
             type="button"
@@ -183,7 +264,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             }}
           >
             <IconSparkles width={16} height={16} />
-            <span>Добавить в быстрый доступ</span>
+            <span>{t("collections.addToQuickAccess")}</span>
           </button>
         </div>
       ) : null}
@@ -200,14 +281,16 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             className={styles.backBtn}
             onClick={() => setActiveCollectionId(null)}
           >
-            ← Ко всем коллекциям
+            ← {t("collections.backToAll")}
           </button>
 
           <div className={styles.detailHeadRow}>
             <div>
               <h1 className={styles.detailTitle}>{activeCollection.name}</h1>
-              {activeCollection.description ? (
-                <p className={styles.detailDesc}>{activeCollection.description}</p>
+              {localizeDefaultCollectionDescription(activeCollection, t) ? (
+                <p className={styles.detailDesc}>
+                  {localizeDefaultCollectionDescription(activeCollection, t)}
+                </p>
               ) : null}
             </div>
             <div className={styles.detailActions}>
@@ -215,16 +298,16 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
                 variant="primary"
                 onClick={() => setAddSiteModalCollectionId(activeCollection.id)}
               >
-                + Добавить сайт
+                + {t("collections.addSite")}
               </Button>
               <IconButton
-                label="Редактировать коллекцию"
+                label={t("collections.editTitle")}
                 onClick={() => setEditCollectionTarget(activeCollection)}
               >
                 <IconEdit width={16} height={16} />
               </IconButton>
               <IconButton
-                label="Удалить коллекцию"
+                label={t("collections.deleteCollection")}
                 onClick={() => setDeleteConfirmActive(true)}
               >
                 <IconTrash width={16} height={16} />
@@ -235,12 +318,12 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
 
         {activeCollection.items.length === 0 ? (
           <div className={styles.emptyBlock}>
-            <p>В этой коллекции пока нет сохраненных сайтов.</p>
+            <p>{t("collections.empty")}</p>
             <Button
               variant="ghost"
               onClick={() => setAddSiteModalCollectionId(activeCollection.id)}
             >
-              + Добавить первый сайт
+              + {t("collections.addFirstSite")}
             </Button>
           </div>
         ) : (
@@ -277,18 +360,18 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
             onSave={handleEditCollection}
             initialValues={{
               name: editCollectionTarget.name,
-              description: editCollectionTarget.description,
+              description: localizeDefaultCollectionDescription(editCollectionTarget, t),
             }}
-            modalTitle="Редактировать коллекцию"
+            modalTitle={t("collections.editTitle")}
           />
         ) : null}
 
         {deleteConfirmActive ? (
           <ConfirmDialog
-            title={`Удалить коллекцию «${activeCollection.name}»?`}
-            body={`Все сохраненные сайты (${activeCollection.items.length}) в этой коллекции будут удалены.`}
-            cancelLabel="Отмена"
-            confirmLabel="Удалить"
+            title={t("collections.deleteTitle", { name: activeCollection.name })}
+            body={t("collections.deleteBody", { count: activeCollection.items.length })}
+            cancelLabel={t("common.cancel")}
+            confirmLabel={t("common.delete")}
             onCancel={() => setDeleteConfirmActive(false)}
             onConfirm={async () => {
               await deleteCollection(activeCollection.id);
@@ -315,7 +398,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
   return (
     <div className={styles.page}>
       {showHeader ? (
-        <PageHeader title="Коллекции">
+        <PageHeader title={t("collections.title")}>
           <div className={styles.headerActions}>{renderPlusButton()}</div>
         </PageHeader>
       ) : null}
@@ -328,18 +411,18 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
       <section aria-labelledby="collections-title">
         <div className={styles.sectionHeader}>
           <h2 id="collections-title" className={styles.sectionTitle}>
-            Мои коллекции ({collections.length})
+            {t("collections.my", { count: collections.length })}
           </h2>
           {!showHeader ? renderPlusButton() : null}
         </div>
 
         {loading && collections.length === 0 ? (
-          <CollectionsGridSkeleton count={3} />
+          <CollectionsGridSkeleton count={3} label={t("common.loadingCollections")} />
         ) : (
           <ul className={styles.collectionsGrid}>
             {collections.map((col) => (
             <li key={col.id}>
-              <article
+                <article
                 className={styles.collectionCard}
                 onClick={() => setActiveCollectionId(col.id)}
                 role="button"
@@ -359,7 +442,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <IconButton
-                        label="Опции коллекции"
+                        label={t("collections.options")}
                         className={styles.menuTrigger}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -386,7 +469,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
                               setAddSiteModalCollectionId(col.id);
                             }}
                           >
-                            + Добавить сайт
+                            + {t("collections.addSite")}
                           </button>
                           <button
                             type="button"
@@ -397,7 +480,7 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
                               setEditCollectionTarget(col);
                             }}
                           >
-                            Редактировать
+                            {t("collections.edit")}
                           </button>
                           <button
                             type="button"
@@ -408,20 +491,22 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
                               setDeleteConfirmCollection(col);
                             }}
                           >
-                            Удалить
+                            {t("collections.delete")}
                           </button>
                         </div>
                       ) : null}
                     </div>
                   </div>
-                  {col.description ? (
-                    <p className={styles.cardDesc}>{col.description}</p>
+                  {localizeDefaultCollectionDescription(col, t) ? (
+                    <p className={styles.cardDesc}>
+                      {localizeDefaultCollectionDescription(col, t)}
+                    </p>
                   ) : null}
                 </div>
 
                 <div className={styles.cardFooter}>
                   <span className={styles.cardCount}>
-                    {formatItemsCount(col.items.length)}
+                    {formatItemsCount(col.items.length, language, t)}
                   </span>
                   <div className={styles.cardPreviews}>
                     {col.items.slice(0, 4).map((item) => (
@@ -457,18 +542,18 @@ export function CollectionsPage({ showHeader = true }: CollectionsPageProps) {
           onSave={handleEditCollection}
           initialValues={{
             name: editCollectionTarget.name,
-            description: editCollectionTarget.description,
+            description: localizeDefaultCollectionDescription(editCollectionTarget, t),
           }}
-          modalTitle="Редактировать коллекцию"
+          modalTitle={t("collections.editTitle")}
         />
       ) : null}
 
       {deleteConfirmCollection ? (
         <ConfirmDialog
-          title={`Удалить коллекцию «${deleteConfirmCollection.name}»?`}
-          body={`Все сохраненные сайты (${deleteConfirmCollection.items.length}) в этой коллекции будут удалены.`}
-          cancelLabel="Отмена"
-          confirmLabel="Удалить"
+          title={t("collections.deleteTitle", { name: deleteConfirmCollection.name })}
+          body={t("collections.deleteBody", { count: deleteConfirmCollection.items.length })}
+          cancelLabel={t("common.cancel")}
+          confirmLabel={t("common.delete")}
           onCancel={() => setDeleteConfirmCollection(null)}
           onConfirm={async () => {
             await deleteCollection(deleteConfirmCollection.id);
@@ -513,6 +598,8 @@ function SiteRow({
   onMove: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
+  const description = localizeDefaultItemDescription(item, t);
   return (
     <article className={styles.siteRow}>
       <SiteIcon
@@ -534,20 +621,20 @@ function SiteRow({
           {item.title} ↗
         </a>
         <span className={styles.siteDomain}>{item.domain}</span>
-        {item.description ? (
-          <p className={styles.siteNote}>{item.description}</p>
+        {description ? (
+          <p className={styles.siteNote}>{description}</p>
         ) : null}
       </div>
 
       <div className={styles.siteActions}>
         <IconButton
-          label="Переместить в другую коллекцию"
+          label={t("collections.move")}
           onClick={onMove}
         >
           <IconMove width={16} height={16} />
         </IconButton>
         <IconButton
-          label="Удалить из коллекции"
+          label={t("collections.remove")}
           onClick={onDelete}
         >
           <IconTrash width={16} height={16} />

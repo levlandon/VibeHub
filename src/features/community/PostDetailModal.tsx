@@ -29,14 +29,15 @@ import type { EntityRef } from "../../types/entities";
 import type { ChatAuthor } from "../../types/hub";
 import type { Post, PostComment } from "../../types/posts";
 import { usePosts } from "../posts";
-import { postTypeConfig, questionStatus } from "./postTypes";
+import { questionStatus } from "./postTypes";
 import styles from "./PostDetailModal.module.css";
+import { useI18n } from "../../i18n";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  models: "Модели",
-  tools: "Инструменты",
-  agents: "Агенты",
-  mcp: "MCP",
+  models: "nav.models",
+  tools: "feed.tools",
+  agents: "feed.agents",
+  mcp: "feed.mcp",
 };
 
 export interface PostDetailModalProps {
@@ -54,6 +55,7 @@ export function PostDetailModal({
   onClose,
   onSelectPost,
 }: PostDetailModalProps) {
+  const { language, t } = useI18n();
   const {
     models,
     tools,
@@ -215,13 +217,14 @@ export function PostDetailModal({
 
   const saved = isSaved(savedItems, "post", post.id);
   const status = questionStatus(post);
-  const kind = postTypeConfig(post.type);
-  const categoryLabel = post.category
-    ? CATEGORY_LABELS[post.category] || post.category
-    : null;
+  const categoryKey = post.category ? CATEGORY_LABELS[post.category] : undefined;
+  const categoryLabel = categoryKey
+    ? t(categoryKey)
+    : post.category;
+  const postTypeLabel = t(`composer.${post.type}`);
   const badgeText = categoryLabel
-    ? `${categoryLabel} · ${kind.label}`
-    : kind.label;
+    ? `${categoryLabel} · ${postTypeLabel}`
+    : postTypeLabel;
 
   const currentUserInitials = profileService.getInitials(
     userProfile?.displayName,
@@ -318,10 +321,8 @@ export function PostDetailModal({
       if (replyTextareaRef.current) {
         replyTextareaRef.current.style.height = "auto";
       }
-    } catch (err) {
-      setCommentError(
-        err instanceof Error ? err.message : "Не удалось отправить комментарий",
-      );
+    } catch {
+      setCommentError(t("post.commentSendError"));
     }
   };
 
@@ -340,10 +341,8 @@ export function PostDetailModal({
     setOpenCommentMenuId(null);
     try {
       await deleteComment({ postId: post.id, commentId });
-    } catch (err) {
-      setCommentError(
-        err instanceof Error ? err.message : "Не удалось удалить комментарий",
-      );
+    } catch {
+      setCommentError(t("post.commentDeleteError"));
     }
   };
 
@@ -361,7 +360,7 @@ export function PostDetailModal({
           <div className={styles.mobileHeaderBadge}>{badgeText}</div>
           <IconButton
             className={styles.closeBtnMobile}
-            label="Закрыть"
+            label={t("common.close")}
             onClick={onClose}
           >
             <IconClose width={18} height={18} />
@@ -428,14 +427,14 @@ export function PostDetailModal({
                     </ProfileHoverCard>
                     <span className={styles.dot}>·</span>
                     <span className={styles.date}>
-                      {formatDateTime(post.createdAt)}
+                      {formatDateTime(post.createdAt, language === "ru" ? "ru-RU" : "en-US")}
                     </span>
                   </div>
                 </div>
 
                 <div className={styles.postHeaderActions}>
                   <IconButton
-                    label={saved ? "Удалить из закладок" : "Сохранить"}
+                    label={saved ? t("saved.removeBookmark") : t("common.save")}
                     active={saved}
                     onClick={() => toggleSavedTarget(describePost(post))}
                   >
@@ -449,10 +448,10 @@ export function PostDetailModal({
                 <span className={styles.typeBadge}>
                   {badgeText}
                 </span>
-                {status ? (
-                  <span className={styles.statusBadge}>
-                    {status.label}
-                  </span>
+                  {status ? (
+                    <span className={styles.statusBadge}>
+                    {status.mark === "✓" ? t("post.solution") : t("composer.question")}
+                    </span>
                 ) : null}
               </div>
 
@@ -498,9 +497,9 @@ export function PostDetailModal({
             {relatedPosts.length > 0 ? (
               <section
                 className={styles.relatedSection}
-                aria-label="Похожие обсуждения"
+                aria-label={t("post.related")}
               >
-                <div className={styles.relatedHeading}>Похожие обсуждения</div>
+                <div className={styles.relatedHeading}>{t("post.related")}</div>
                 <div className={styles.relatedList}>
                   {relatedPosts.map((relPost) => (
                     <button
@@ -514,10 +513,10 @@ export function PostDetailModal({
                           {relPost.category
                             ? CATEGORY_LABELS[relPost.category] ||
                               relPost.category
-                            : "Обсуждение"}
+                            : t("composer.discussion")}
                         </span>
                         <span className={styles.relatedDate}>
-                          {formatDateTime(relPost.createdAt)}
+                          {formatDateTime(relPost.createdAt, language === "ru" ? "ru-RU" : "en-US")}
                         </span>
                       </div>
                       <div className={styles.relatedTitle}>{relPost.title}</div>
@@ -536,11 +535,11 @@ export function PostDetailModal({
             {/* Comments Header */}
             <div className={styles.commentsHeader}>
               <div className={styles.commentsTitle}>
-                Обсуждение ({activeCommentsCount})
+                {t("post.discussionCount", { count: activeCommentsCount })}
               </div>
               <IconButton
                 className={styles.closeBtnDesktop}
-                label="Закрыть"
+                label={t("common.close")}
                 onClick={onClose}
               >
                 <IconClose width={18} height={18} />
@@ -565,7 +564,7 @@ export function PostDetailModal({
               {visibleRootComments.length === 0 ? (
                 <div className={styles.noCommentsWrap}>
                   <p className={styles.noComments}>
-                    Пока нет ответов. Будьте первым!
+                    {t("post.noComments")}
                   </p>
                 </div>
               ) : (
@@ -590,7 +589,7 @@ export function PostDetailModal({
                         {isDeletedRoot ? (
                           <div className={styles.tombstoneRoot}>
                             <span className={styles.tombstoneText}>
-                              Удалённый комментарий
+                              {t("post.deletedComment")}
                             </span>
                           </div>
                         ) : (
@@ -612,9 +611,9 @@ export function PostDetailModal({
                               void acceptAnswer({
                                 postId: post.id,
                                 commentId: post.acceptedAnswerId === root.id ? null : root.id,
-                              }).catch((err) => {
+                              }).catch(() => {
                                 setCommentError(
-                                  err instanceof Error ? err.message : "Не удалось отметить ответ",
+                                  t("post.acceptError"),
                                 );
                               });
                             }}
@@ -701,8 +700,8 @@ export function PostDetailModal({
                       type="button"
                       className={styles.cancelReplyBtn}
                       onClick={handleCancelReplyTarget}
-                      aria-label="Отменить ответ"
-                      title="Отменить ответ"
+                      aria-label={t("post.cancelReply")}
+                      title={t("post.cancelReply")}
                     >
                       <IconClose width={12} height={12} />
                     </button>
@@ -721,7 +720,7 @@ export function PostDetailModal({
                     {userProfile?.avatarUrl || userProfile?.avatar ? (
                       <img
                         src={userProfile.avatarUrl || userProfile.avatar}
-                        alt={userProfile.displayName || "User"}
+                    alt={userProfile.displayName || t("common.user")}
                         className={styles.avatarImg}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = "none";
@@ -741,11 +740,11 @@ export function PostDetailModal({
                     rows={1}
                     className={styles.replyTextarea}
                     value={replyText}
-                    placeholder="Написать ответ..."
+                    placeholder={t("post.replyPlaceholder")}
                     disabled={isMutating}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={handleTextareaKeyDown}
-                    aria-label="Текст ответа"
+                    aria-label={t("post.replyLabel")}
                   />
 
                   {/* Attachment Slot (for future media) */}
@@ -757,8 +756,8 @@ export function PostDetailModal({
                       <button
                         type="button"
                         className={styles.toolBtn}
-                        title="Прикрепить (скоро)"
-                        aria-label="Прикрепить"
+                        title={t("post.attachSoon")}
+                        aria-label={t("post.attach")}
                         disabled
                       >
                         <IconPlus width={14} height={14} />
@@ -770,8 +769,8 @@ export function PostDetailModal({
                         className={styles.sendBtn}
                         disabled={isMutating || !replyText.trim()}
                         onClick={() => handleSubmitReply()}
-                        title="Отправить ответ (Enter)"
-                        aria-label="Отправить ответ"
+                        title={t("post.sendReply")}
+                        aria-label={t("post.sendReply")}
                       >
                         <IconSend width={14} height={14} />
                       </button>
@@ -820,6 +819,7 @@ function CommentItem({
   onDelete,
   mentionEntities,
 }: CommentItemProps) {
+  const { language, t } = useI18n();
   const { openProfile, userProfile, savedItems, toggleSavedTarget } = useHub();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -962,10 +962,10 @@ function CommentItem({
             </ProfileHoverCard>
             <span className={styles.dot}>·</span>
             <span className={styles.date}>
-              {formatDateTime(comment.createdAt)}
+              {formatDateTime(comment.createdAt, language === "ru" ? "ru-RU" : "en-US")}
             </span>
             {accepted ? (
-              <span className={styles.solvedBadge}>✓ Решение</span>
+              <span className={styles.solvedBadge}>✓ {t("post.solution")}</span>
             ) : null}
           </div>
         </div>
@@ -973,8 +973,8 @@ function CommentItem({
         {/* Action icons: Reply Icon Button + More Menu */}
         <div className={styles.commentActions}>
           <IconButton
-            label="Ответить"
-            title="Ответить"
+            label={t("post.reply")}
+            title={t("post.reply")}
             active={isSelected}
             className={styles.replyIconBtn}
             onClick={onReply}
@@ -988,8 +988,8 @@ function CommentItem({
             onClick={(e) => e.stopPropagation()}
           >
             <IconButton
-              label="Опции комментария"
-              title={isMenuOpen ? "" : "Опции комментария"}
+              label={t("post.commentOptions")}
+              title={isMenuOpen ? "" : t("post.commentOptions")}
               onClick={onToggleMenu}
             >
               <IconMore width={15} height={15} />
@@ -1003,7 +1003,7 @@ function CommentItem({
                   role="menuitem"
                   onClick={handleMenuReply}
                 >
-                  Ответить
+                  {t("post.reply")}
                 </button>
                 <button
                   type="button"
@@ -1011,7 +1011,7 @@ function CommentItem({
                   role="menuitem"
                   onClick={handleCopyLink}
                 >
-                  Скопировать ссылку
+                  {t("post.copyLink")}
                 </button>
                 <button
                   type="button"
@@ -1019,7 +1019,7 @@ function CommentItem({
                   role="menuitem"
                   onClick={handleCopyText}
                 >
-                  Скопировать текст
+                  {t("post.copyText")}
                 </button>
                 <button
                   type="button"
@@ -1027,7 +1027,7 @@ function CommentItem({
                   role="menuitem"
                   onClick={handleToggleSave}
                 >
-                  {isCommentSaved ? "Удалить из сохранённого" : "Сохранить"}
+                  {isCommentSaved ? t("saved.removeBookmark") : t("common.save")}
                 </button>
                 {canManageAcceptedAnswer && onAccept ? (
                   <button
@@ -1036,7 +1036,7 @@ function CommentItem({
                     role="menuitem"
                     onClick={handleMenuAccept}
                   >
-                    {accepted ? "Снять отметку решения" : "Отметить как решение"}
+                    {accepted ? t("post.unmarkSolution") : t("post.markSolution")}
                   </button>
                 ) : null}
                 {isOwnComment ? (
@@ -1046,7 +1046,7 @@ function CommentItem({
                     role="menuitem"
                     onClick={handleMenuDelete}
                   >
-                    Удалить
+                    {t("common.delete")}
                   </button>
                 ) : null}
               </div>
@@ -1063,7 +1063,7 @@ function CommentItem({
           }`}
         >
           <IconReply width={11} height={11} className={styles.replyToIcon} />
-          <span className={styles.replyToLabel}>в ответ</span>
+          <span className={styles.replyToLabel}>{t("post.inReply")}</span>
           <ProfileHoverCard
             identifier={targetAuthor.handle || targetAuthor.id}
             initialAuthor={targetAuthor}

@@ -27,9 +27,15 @@ export function CollectionCardSkeleton() {
   );
 }
 
-export function CollectionsGridSkeleton({ count = 3 }: { count?: number }) {
+export function CollectionsGridSkeleton({
+  count = 3,
+  label = "Загрузка коллекций",
+}: {
+  count?: number;
+  label?: string;
+}) {
   return (
-    <ul className={styles.collectionsGrid} aria-label="Загрузка коллекций" aria-busy="true">
+    <ul className={styles.collectionsGrid} aria-label={label} aria-busy="true">
       {Array.from({ length: count }).map((_, idx) => (
         <li key={idx}>
           <CollectionCardSkeleton />
@@ -66,9 +72,15 @@ export function CollectionItemSkeleton() {
   );
 }
 
-export function CollectionDetailSkeleton({ count = 3 }: { count?: number }) {
+export function CollectionDetailSkeleton({
+  count = 3,
+  label = "Загрузка элементов коллекции",
+}: {
+  count?: number;
+  label?: string;
+}) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }} aria-label="Загрузка элементов коллекции" aria-busy="true">
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }} aria-label={label} aria-busy="true">
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
         <Skeleton variant="rounded" width={200} height={24} />
         <Skeleton variant="rounded" width={300} height={14} />

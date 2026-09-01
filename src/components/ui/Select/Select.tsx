@@ -9,6 +9,7 @@ import {
 } from "react";
 import { IconCheck, IconChevronDown } from "../../icons";
 import styles from "./Select.module.css";
+import { useI18n } from "../../../i18n";
 
 export interface SelectOption {
   value: string;
@@ -52,14 +53,15 @@ export interface MultiSelectProps {
 export type SelectProps = SingleSelectProps | MultiSelectProps;
 
 export function Select(props: SelectProps) {
+  const { t } = useI18n();
   const {
     options: rawOptions,
     value,
     onChange,
     label,
-    placeholder = "Выберите...",
+    placeholder,
     searchable = false,
-    searchPlaceholder = "Поиск...",
+    searchPlaceholder,
     disabled = false,
     className,
     id,
@@ -67,6 +69,8 @@ export function Select(props: SelectProps) {
     renderOption,
     multiple = false,
   } = props;
+  const resolvedPlaceholder = placeholder ?? t("common.select");
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t("common.searchPlaceholder");
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,7 +100,7 @@ export function Select(props: SelectProps) {
   const triggerDisplayValue = useMemo(() => {
     if (multiple) {
       if (selectedValues.length === 0) {
-        return placeholder || "Все";
+        return resolvedPlaceholder || t("feed.all");
       }
       if (selectedValues.length === 1) {
         const found = options.find((opt) => opt.value === selectedValues[0]);
@@ -106,8 +110,8 @@ export function Select(props: SelectProps) {
     }
 
     const found = options.find((opt) => opt.value === value);
-    return found ? found.label : placeholder;
-  }, [multiple, selectedValues, options, value, placeholder]);
+    return found ? found.label : resolvedPlaceholder;
+  }, [multiple, selectedValues, options, value, resolvedPlaceholder, t]);
 
   // Filtered options based on search query
   const filteredOptions = useMemo(() => {
@@ -272,14 +276,14 @@ export function Select(props: SelectProps) {
                 ref={searchInputRef}
                 type="search"
                 className={styles.searchInput}
-                placeholder={searchPlaceholder}
+                placeholder={resolvedSearchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setFocusedIndex(0);
                 }}
                 onClick={(e) => e.stopPropagation()}
-                aria-label={searchPlaceholder}
+                aria-label={resolvedSearchPlaceholder}
               />
             </div>
           ) : null}
@@ -296,7 +300,7 @@ export function Select(props: SelectProps) {
             }
           >
             {filteredOptions.length === 0 ? (
-              <li className={styles.emptyState}>Ничего не найдено</li>
+              <li className={styles.emptyState}>{t("search.empty")}</li>
             ) : (
               filteredOptions.map((opt, idx) => {
                 const isSelected = multiple

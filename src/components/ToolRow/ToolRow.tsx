@@ -3,6 +3,7 @@ import { IconButton } from "../IconButton/IconButton";
 import { IconBookmark } from "../icons";
 import type { Tool } from "../../types/hub";
 import styles from "./ToolRow.module.css";
+import { useI18n } from "../../i18n";
 
 export interface ToolRowProps {
   tool: Tool;
@@ -17,6 +18,7 @@ export const ToolRow = memo(function ToolRow({
   onBookmark,
   onOpen,
 }: ToolRowProps) {
+  const { t } = useI18n();
   const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -31,7 +33,7 @@ export const ToolRow = memo(function ToolRow({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      aria-label={`Открыть инструмент ${tool.name}`}
+      aria-label={t("tools.openTool", { name: tool.name })}
     >
       <span className={styles.mark} aria-hidden>
         {tool.name.slice(0, 1)}
@@ -55,7 +57,7 @@ export const ToolRow = memo(function ToolRow({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <IconButton
-          label={bookmarked ? "Убрать из закладок" : "Сохранить"}
+          label={bookmarked ? t("saved.removeBookmark") : t("common.save")}
           active={bookmarked}
           onClick={(e) => {
             e.stopPropagation();

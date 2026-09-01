@@ -17,8 +17,10 @@ import { ENTITY_TABS } from "./entityTabs";
 import { ModelHeader } from "./components/ModelHeader";
 import { RelatedPosts } from "./RelatedPosts";
 import styles from "./EntityPage.module.css";
+import { useI18n } from "../../i18n";
 
 export function EntityPage() {
+  const { t } = useI18n();
   const {
     entityView,
     models,
@@ -44,12 +46,12 @@ export function EntityPage() {
     return (
       <div className={styles.page}>
         <button type="button" className={styles.back} onClick={() => setEntityView(null)}>
-          ← К списку
+          ← {t("common.back")}
         </button>
         <p className={styles.descriptionEmpty}>
           {loading
-            ? "Загружаем каталог моделей…"
-            : "Сущность не найдена. Возможно, ссылка устарела."}
+            ? t("models.loading")
+            : t("entity.notFound")}
         </p>
       </div>
     );
@@ -98,6 +100,7 @@ function EntityPageView({
   onSave: () => void;
   saved: boolean;
 }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const tabs = ENTITY_TABS[kind];
   const [tab, setTab] = useState(tabs[0].id);
@@ -142,7 +145,7 @@ function EntityPageView({
   return (
     <div className={styles.page}>
       <button type="button" className={styles.back} onClick={onBack}>
-        ← К списку
+        ← {t("common.back")}
       </button>
 
       {model ? (
@@ -157,7 +160,7 @@ function EntityPageView({
           </div>
           <div className={styles.headActions}>
             <IconButton
-              label={saved ? "Убрать из закладок" : "Сохранить"}
+              label={saved ? t("saved.removeBookmark") : t("common.save")}
               active={saved}
               onClick={onSave}
             >
@@ -175,7 +178,7 @@ function EntityPageView({
             className={item.id === tab ? styles.on : undefined}
             onClick={() => setTab(item.id)}
           >
-            {item.label}
+            {t(`entity.tab.${item.id}`)}
           </button>
         ))}
       </div>
@@ -185,15 +188,15 @@ function EntityPageView({
           {!model && tool ? (
             <>
               <div className={styles.toolDescription}>
-                <p>{tool.summary ?? "Карточка инструмента в каталоге VibeHub."}</p>
+                <p>{tool.summary ?? t("entity.toolFallback")}</p>
               </div>
               <div className={styles.toolSpecsGrid}>
                 <div className={styles.toolSpecCard}>
-                  <h3 className={styles.toolSpecTitle}>Тип</h3>
+                  <h3 className={styles.toolSpecTitle}>{t("tools.type")}</h3>
                   <p className={styles.toolSpecValue}>{tool.typeLabel}</p>
                 </div>
                 <div className={styles.toolSpecCard}>
-                  <h3 className={styles.toolSpecTitle}>Совместимость</h3>
+                  <h3 className={styles.toolSpecTitle}>{t("entity.compatibility")}</h3>
                   <p className={styles.toolSpecValue}>{tool.compatibility.join(" · ")}</p>
                 </div>
               </div>
@@ -203,7 +206,7 @@ function EntityPageView({
           {/* Benchmarks summary in Overview if present for this model */}
           {model && benchmarkScores.length > 0 ? (
             <div className={styles.overviewBenchmarks}>
-              <h3 className={styles.overviewSectionTitle}>Проверенные бенчмарки (BenchLM)</h3>
+              <h3 className={styles.overviewSectionTitle}>{t("entity.verifiedBenchmarks")}</h3>
               <div className={styles.benchmarkList}>
                 {benchmarkScores.slice(0, 6).map((score) => (
                   <div
@@ -228,17 +231,17 @@ function EntityPageView({
           {/* Speed summary in Overview if present */}
           {model && speedMetric ? (
             <div className={styles.overviewBenchmarks}>
-              <h3 className={styles.overviewSectionTitle}>Скорость генерации (Inference Speed)</h3>
+              <h3 className={styles.overviewSectionTitle}>{t("entity.inferenceSpeed")}</h3>
               <div className={styles.speedGrid}>
                 <div className={styles.speedCard}>
-                  <span className={styles.speedCardLabel}>Пропускная способность</span>
+                  <span className={styles.speedCardLabel}>{t("entity.throughput")}</span>
                   <span className={styles.speedCardValue}>
-                    {speedMetric.tokensPerSecond} <small>токенов/сек</small>
+                    {speedMetric.tokensPerSecond} <small>{t("entity.tokensPerSecond")}</small>
                   </span>
                 </div>
                 {typeof speedMetric.ttft === "number" && !isNaN(speedMetric.ttft) ? (
                   <div className={styles.speedCard}>
-                    <span className={styles.speedCardLabel}>Латентность (TTFT)</span>
+                    <span className={styles.speedCardLabel}>{t("entity.latency")}</span>
                     <span className={styles.speedCardValue}>
                       {speedMetric.ttft.toFixed(2)}s
                     </span>
@@ -251,7 +254,7 @@ function EntityPageView({
           {/* Related posts in Overview only if they actually exist (no empty state) */}
           {related.length > 0 ? (
             <div className={styles.overviewSection}>
-              <h3 className={styles.overviewSectionTitle}>Связанные материалы</h3>
+              <h3 className={styles.overviewSectionTitle}>{t("entity.related")}</h3>
               <RelatedPosts posts={related} />
             </div>
           ) : null}
@@ -262,17 +265,17 @@ function EntityPageView({
         <section className={styles.block}>
           {speedMetric ? (
             <div className={styles.speedSectionBox}>
-              <h3 className={styles.overviewSectionTitle}>Скорость работы модели</h3>
+              <h3 className={styles.overviewSectionTitle}>{t("entity.modelSpeed")}</h3>
               <div className={styles.speedGrid}>
                 <div className={styles.speedCard}>
-                  <span className={styles.speedCardLabel}>Пропускная способность</span>
+                  <span className={styles.speedCardLabel}>{t("entity.throughput")}</span>
                   <span className={styles.speedCardValue}>
-                    {speedMetric.tokensPerSecond} <small>токенов/сек</small>
+                    {speedMetric.tokensPerSecond} <small>{t("entity.tokensPerSecond")}</small>
                   </span>
                 </div>
                 {typeof speedMetric.ttft === "number" && !isNaN(speedMetric.ttft) ? (
                   <div className={styles.speedCard}>
-                    <span className={styles.speedCardLabel}>Время до первого токена (TTFT)</span>
+                    <span className={styles.speedCardLabel}>{t("entity.timeToFirstToken")}</span>
                     <span className={styles.speedCardValue}>
                       {speedMetric.ttft.toFixed(2)}s
                     </span>
@@ -284,12 +287,12 @@ function EntityPageView({
 
           {benchmarkScores.length === 0 && !speedMetric ? (
             <p className={styles.emptyNotice}>
-              Для этой модели пока нет проверенных внешних бенчмарков в открытой базе.
+              {t("entity.noBenchmarks")}
             </p>
           ) : benchmarkScores.length > 0 ? (
             <div>
               <h3 className={styles.overviewSectionTitle}>
-                Результаты бенчмарков ({benchmarkScores.length})
+                {t("entity.benchmarkResults", { count: benchmarkScores.length })}
               </h3>
               <div className={styles.benchmarkList}>
                 {benchmarkScores.map((score) => (

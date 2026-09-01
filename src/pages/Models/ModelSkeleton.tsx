@@ -1,8 +1,10 @@
 import styles from "./Models.module.css";
+import { useI18n } from "../../i18n";
 
 export function ModelSkeletonList({ count = 8 }: { count?: number }) {
+  const { t } = useI18n();
   return (
-    <ul className={styles.list} aria-label="Загрузка моделей..." aria-busy="true">
+    <ul className={styles.list} aria-label={t("models.loading")} aria-busy="true">
       {Array.from({ length: count }).map((_, i) => (
         <li key={i} className={styles.row}>
           <div className={styles.skeletonMark} />

@@ -2,15 +2,14 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { BookmarksPage, CollectionsPage } from "../Library/Library";
 import styles from "./SavedPage.module.css";
+import { useI18n } from "../../i18n";
 
-const SAVED_TABS = [
-  { id: "collections", label: "Коллекции" },
-  { id: "bookmarks", label: "Закладки" },
-] as const;
+const SAVED_TABS = ["collections", "bookmarks"] as const;
 
-type SavedTabId = (typeof SAVED_TABS)[number]["id"];
+type SavedTabId = (typeof SAVED_TABS)[number];
 
 export function SavedPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const search = useLocation({ select: (location) => location.search as { tab?: string } });
   const activeTab: SavedTabId = search?.tab === "bookmarks" ? "bookmarks" : "collections";
@@ -24,24 +23,24 @@ export function SavedPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Сохранённое">
+      <PageHeader title={t("nav.saved")}>
         <nav
           className={styles.primaryTabs}
           role="tablist"
-          aria-label="Разделы сохранённого"
+          aria-label={t("saved.sections")}
         >
           {SAVED_TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
+            const isActive = activeTab === tab;
             return (
               <button
-                key={tab.id}
+                key={tab}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
                 className={`${styles.primaryTab} ${isActive ? styles.primaryTabActive : ""}`}
-                onClick={() => handleTabChange(tab.id)}
+                onClick={() => handleTabChange(tab)}
               >
-                {tab.label}
+                {t(tab === "collections" ? "saved.collections" : "saved.bookmarks")}
               </button>
             );
           })}

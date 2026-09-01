@@ -27,9 +27,15 @@ export function PostCardSkeleton() {
   );
 }
 
-export function FeedSkeletonList({ count = 3 }: { count?: number }) {
+export function FeedSkeletonList({
+  count = 3,
+  label = "Загрузка публикаций",
+}: {
+  count?: number;
+  label?: string;
+}) {
   return (
-    <ul className={feedStyles.feedGrid} aria-label="Загрузка публикаций" aria-busy="true">
+    <ul className={feedStyles.feedGrid} aria-label={label} aria-busy="true">
       {Array.from({ length: count }).map((_, i) => (
         <li key={i} className={feedStyles.gridItem}>
           <PostCardSkeleton />

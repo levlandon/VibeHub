@@ -9,8 +9,10 @@ import { CHAT_BETA_ENABLED } from "./config/beta";
 import { IconChat } from "./components/icons";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { useHub } from "./state/HubContext";
+import { useI18n } from "./i18n";
 
 export function Shell() {
+  const { t } = useI18n();
   const {
     sidebarCollapsed,
     searchOpen,
@@ -50,14 +52,14 @@ export function Shell() {
       {mobileOpen ? (
         <button
           className="backdrop"
-          aria-label="Закрыть меню"
+          aria-label={t("common.closeMenu")}
           onClick={() => setMobileOpen(false)}
         />
       ) : null}
       {CHAT_BETA_ENABLED && chatOpen ? (
         <button
           className="chat-backdrop"
-          aria-label="Свернуть чат"
+          aria-label={t("common.collapseMenu")}
           onClick={() => setChatOpen(false)}
         />
       ) : null}
@@ -65,7 +67,7 @@ export function Shell() {
         <div className={shellClass}>
           <Sidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
           <div className="main-wrap">
-            <button className="menu-btn" aria-label="Меню" onClick={() => setMobileOpen(true)}>
+            <button className="menu-btn" aria-label={t("common.openMenu")} onClick={() => setMobileOpen(true)}>
               ☰
             </button>
             <main className="main">
@@ -75,8 +77,8 @@ export function Shell() {
               <button
                 type="button"
                 className="chat-fab"
-                title="Открыть чат"
-                aria-label="Открыть чат"
+                title={t("common.openMenu")}
+                aria-label={t("common.openMenu")}
                 onClick={() => setChatOpen(true)}
               >
                 <IconChat width={20} height={20} />

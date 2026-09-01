@@ -1,8 +1,8 @@
-export function formatDateTime(value: string): string {
+export function formatDateTime(value: string, locale = "ru-RU"): string {
   if (!value) return value;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("ru-RU", {
+  return date.toLocaleString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

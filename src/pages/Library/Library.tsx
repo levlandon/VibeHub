@@ -22,24 +22,25 @@ import type { ModelSort } from "../../types/models";
 import type { Post } from "../../types/posts";
 import type { SavedItem } from "../../types/saved";
 import styles from "./Library.module.css";
+import { useI18n } from "../../i18n";
 
 type TabId = "all" | "model" | "tool" | "repository" | "post" | "comment";
 
 const CAPABILITY_OPTIONS = [
-  { value: "vision", label: "Vision" },
-  { value: "reasoning", label: "Reasoning" },
-  { value: "tools", label: "Tools" },
-  { value: "audio", label: "Audio" },
-  { value: "free", label: "Бесплатные" },
+  { value: "vision", key: "models.vision" },
+  { value: "reasoning", key: "models.reasoning" },
+  { value: "tools", key: "models.tools" },
+  { value: "audio", key: "models.audio" },
+  { value: "free", key: "models.free" },
 ];
 
-const SORT_OPTIONS: { value: ModelSort; label: string }[] = [
-  { value: "catalog", label: "Каталог" },
-  { value: "new", label: "Новые" },
-  { value: "context-desc", label: "Контекст: больше" },
-  { value: "context-asc", label: "Контекст: меньше" },
-  { value: "price-asc", label: "Цена: дешевле" },
-  { value: "name", label: "Название (A–Z)" },
+const SORT_OPTIONS: { value: ModelSort; key: string }[] = [
+  { value: "catalog", key: "models.sort.catalog" },
+  { value: "new", key: "models.sort.new" },
+  { value: "context-desc", key: "models.sort.contextDesc" },
+  { value: "context-asc", key: "models.sort.contextAsc" },
+  { value: "price-asc", key: "models.sort.priceAsc" },
+  { value: "name", key: "models.sort.name" },
 ];
 
 interface BookmarksPageProps {
@@ -47,6 +48,7 @@ interface BookmarksPageProps {
 }
 
 export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
+  const { language, t } = useI18n();
   const navigate = useNavigate();
   const {
     savedItems,
@@ -107,7 +109,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
         type: "discussion",
         author: {
           id: item.authorHandle || "author",
-          name: item.authorName || item.subtitle || "Автор",
+          name: item.authorName || item.subtitle || t("saved.author"),
           handle: item.authorHandle || "user",
           avatarUrl: item.authorAvatar,
           initials: profileService.getInitials(item.authorName, item.authorHandle),
@@ -122,7 +124,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
         extras: item.url ? { url: item.url } : {},
       };
     });
-  }, [savedItems, posts]);
+  }, [savedItems, posts, t]);
 
   // Resolve saved comments
   const savedComments = useMemo(() => {
@@ -132,12 +134,12 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
   // Categories with live computed counts
   const categories = useMemo(
     () => [
-      { id: "all" as const, label: "Все", count: savedItems.length },
-      { id: "model" as const, label: "Модели", count: savedModels.length },
-      { id: "tool" as const, label: "Инструменты", count: savedTools.length },
-      { id: "repository" as const, label: "Репозитории", count: savedRepositories.length },
-      { id: "post" as const, label: "Посты", count: savedPosts.length },
-      { id: "comment" as const, label: "Комментарии", count: savedComments.length },
+      { id: "all" as const, label: t("feed.all"), count: savedItems.length },
+      { id: "model" as const, label: t("nav.models"), count: savedModels.length },
+      { id: "tool" as const, label: t("feed.tools"), count: savedTools.length },
+      { id: "repository" as const, label: t("saved.repositories"), count: savedRepositories.length },
+      { id: "post" as const, label: t("saved.posts"), count: savedPosts.length },
+      { id: "comment" as const, label: t("saved.comments"), count: savedComments.length },
     ],
     [
       savedItems.length,
@@ -146,6 +148,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       savedRepositories.length,
       savedPosts.length,
       savedComments.length,
+      t,
     ],
   );
 
@@ -156,9 +159,9 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
   );
 
   const providerOptions = useMemo(() => {
-    const allOpt = { value: "all", label: `Все (${savedProviders.length})` };
+    const allOpt = { value: "all", label: t("models.allProviders", { count: savedProviders.length }) };
     return [allOpt, ...savedProviders.map((p) => ({ value: p, label: p }))];
-  }, [savedProviders]);
+  }, [savedProviders, t]);
 
   // Filtered saved models
   const filteredSavedModels = useMemo(
@@ -201,25 +204,25 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       {activeTab === "model" && savedModels.length > 0 ? (
         <div className={styles.toolbar}>
           <Select
-            label="Provider"
+            label={t("models.provider")}
             value={provider}
             options={providerOptions}
             onChange={setProvider}
             searchable={savedProviders.length > 5}
-            searchPlaceholder="Поиск провайдера..."
+            searchPlaceholder={t("models.searchProvider")}
           />
           <Select
-            label="Возможности"
+            label={t("models.capabilities")}
             multiple
             value={capabilities}
-            options={CAPABILITY_OPTIONS}
+            options={CAPABILITY_OPTIONS.map((option) => ({ value: option.value, label: t(option.key) }))}
             onChange={setCapabilities}
-            placeholder="Все"
+            placeholder={t("feed.all")}
           />
           <Select
-            label="Сортировка"
+            label={t("models.sort")}
             value={sort}
-            options={SORT_OPTIONS}
+            options={SORT_OPTIONS.map((option) => ({ value: option.value, label: t(option.key) }))}
             onChange={(val) => setSort(val as ModelSort)}
           />
         </div>
@@ -230,20 +233,20 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
   return (
     <div className={styles.page}>
       {showHeader ? (
-        <PageHeader title="Закладки">{renderContentControls()}</PageHeader>
+        <PageHeader title={t("saved.bookmarks")}>{renderContentControls()}</PageHeader>
       ) : (
         renderContentControls()
       )}
 
       {savedItems.length === 0 ? (
         <EmptyState>
-          <p>Здесь появятся сохранённые модели, инструменты, репозитории, посты и комментарии.</p>
+          <p>{t("saved.empty")}</p>
         </EmptyState>
       ) : activeTab === "all" ? (
         <>
           {savedModels.length > 0 ? (
-            <section aria-label="Сохранённые модели">
-              <h3 className={styles.groupTitle}>Модели</h3>
+            <section aria-label={t("saved.models")}>
+              <h3 className={styles.groupTitle}>{t("nav.models")}</h3>
               <ul className={styles.list}>
                 {savedModels.map((model) => (
                   <li key={model.id} id={`saved-model-${model.id.replace(/\//g, "-")}`}>
@@ -260,8 +263,8 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
           ) : null}
 
           {savedTools.length > 0 ? (
-            <section aria-label="Сохранённые инструменты">
-              <h3 className={styles.groupTitle}>Инструменты</h3>
+            <section aria-label={t("saved.tools")}>
+              <h3 className={styles.groupTitle}>{t("feed.tools")}</h3>
               <ul className={styles.list}>
                 {savedTools.map((tool) => (
                   <li key={tool.id} id={`saved-tool-${tool.id}`}>
@@ -278,8 +281,8 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
           ) : null}
 
           {savedRepositories.length > 0 ? (
-            <section aria-label="Сохранённые репозитории">
-              <h3 className={styles.groupTitle}>Репозитории</h3>
+            <section aria-label={t("saved.repositories")}>
+              <h3 className={styles.groupTitle}>{t("saved.repositories")}</h3>
               <ul className={styles.list}>
                 {savedRepositories.map((repo) => (
                   <li key={repo.id} id={`saved-repo-${repo.targetId.replace(/\//g, "-")}`}>
@@ -295,8 +298,8 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
           ) : null}
 
           {savedPosts.length > 0 ? (
-            <section aria-label="Сохранённые публикации">
-              <h3 className={styles.groupTitle}>Посты</h3>
+            <section aria-label={t("saved.posts")}>
+              <h3 className={styles.groupTitle}>{t("saved.posts")}</h3>
               <ul className={styles.postGrid}>
                 {savedPosts.map((post) => (
                   <li key={post.id}>
@@ -314,8 +317,8 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
           ) : null}
 
           {savedComments.length > 0 ? (
-            <section aria-label="Сохранённые комментарии">
-              <h3 className={styles.groupTitle}>Комментарии</h3>
+            <section aria-label={t("saved.comments")}>
+              <h3 className={styles.groupTitle}>{t("saved.comments")}</h3>
               <ul className={styles.commentsList}>
                 {savedComments.map((comment) => (
                   <li key={comment.id}>
@@ -342,15 +345,15 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
                             </div>
                           )}
                           <span className={styles.savedCommentAuthorName}>
-                            {comment.authorName || "Пользователь"}
+                            {comment.authorName || t("common.user")}
                           </span>
                           <span className={styles.dot}>·</span>
                           <span className={styles.savedCommentDate}>
-                            {formatDateTime(comment.savedAt)}
+                            {formatDateTime(comment.savedAt, language === "ru" ? "ru-RU" : "en-US")}
                           </span>
                         </div>
                         <IconButton
-                          label="Удалить из закладок"
+                          label={t("saved.removeBookmark")}
                           active={true}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -365,7 +368,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
                       </p>
                       {comment.subtitle ? (
                         <div className={styles.savedCommentContext}>
-                          в посте:{" "}
+                          {t("saved.inPost")}: {" "}
                           <span className={styles.savedCommentPostTitle}>
                             «{comment.subtitle}»
                           </span>
@@ -381,11 +384,11 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       ) : activeTab === "model" ? (
         savedModels.length === 0 ? (
           <EmptyState>
-            <p>Сохранённых моделей пока нет.</p>
+            <p>{t("saved.modelsEmpty")}</p>
           </EmptyState>
         ) : filteredSavedModels.length === 0 ? (
           <EmptyState>
-            <p>Среди сохранённых моделей ничего не найдено.</p>
+            <p>{t("saved.modelsFilteredEmpty")}</p>
             {hasActiveModelFilters ? (
               <button
                 type="button"
@@ -395,15 +398,14 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
                   setProvider("all");
                 }}
               >
-                Сбросить фильтры
+                {t("saved.resetFilters")}
               </button>
             ) : null}
           </EmptyState>
         ) : (
           <>
             <div className={styles.countInfo}>
-              Показано моделей: {filteredSavedModels.length}
-              {filteredSavedModels.length !== savedModels.length ? ` из ${savedModels.length}` : ""}
+              {t("saved.modelsShown", { shown: filteredSavedModels.length, total: savedModels.length })}
             </div>
             <ul className={styles.list}>
               {filteredSavedModels.map((model) => (
@@ -422,7 +424,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       ) : activeTab === "tool" ? (
         savedTools.length === 0 ? (
           <EmptyState>
-            <p>Сохранённых инструментов пока нет.</p>
+            <p>{t("saved.toolsEmpty")}</p>
           </EmptyState>
         ) : (
           <ul className={styles.list}>
@@ -441,7 +443,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       ) : activeTab === "repository" ? (
         savedRepositories.length === 0 ? (
           <EmptyState>
-            <p>Сохранённых репозиториев пока нет.</p>
+            <p>{t("saved.repositoriesEmpty")}</p>
           </EmptyState>
         ) : (
           <ul className={styles.list}>
@@ -459,7 +461,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       ) : activeTab === "post" ? (
         savedPosts.length === 0 ? (
           <EmptyState>
-            <p>Сохранённых публикаций пока нет.</p>
+            <p>{t("saved.postsEmpty")}</p>
           </EmptyState>
         ) : (
           <ul className={styles.postGrid}>
@@ -479,7 +481,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
       ) : activeTab === "comment" ? (
         savedComments.length === 0 ? (
           <EmptyState>
-            <p>Сохранённых комментариев пока нет.</p>
+            <p>{t("saved.commentsEmpty")}</p>
           </EmptyState>
         ) : (
           <ul className={styles.commentsList}>
@@ -508,15 +510,15 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
                         </div>
                       )}
                       <span className={styles.savedCommentAuthorName}>
-                        {comment.authorName || "Пользователь"}
+                        {comment.authorName || t("common.user")}
                       </span>
                       <span className={styles.dot}>·</span>
                       <span className={styles.savedCommentDate}>
-                        {formatDateTime(comment.savedAt)}
+                        {formatDateTime(comment.savedAt, language === "ru" ? "ru-RU" : "en-US")}
                       </span>
                     </div>
                     <IconButton
-                      label="Удалить из закладок"
+                      label={t("saved.removeBookmark")}
                       active={true}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -531,7 +533,7 @@ export function BookmarksPage({ showHeader = true }: BookmarksPageProps) {
                   </p>
                   {comment.subtitle ? (
                     <div className={styles.savedCommentContext}>
-                      в посте:{" "}
+                      {t("saved.inPost")}: {" "}
                       <span className={styles.savedCommentPostTitle}>
                         «{comment.subtitle}»
                       </span>

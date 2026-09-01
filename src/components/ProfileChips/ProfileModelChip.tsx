@@ -1,4 +1,5 @@
 import { ProviderMark } from "../ProviderMark/ProviderMark";
+import { useI18n } from "../../i18n";
 import styles from "./ProfileChips.module.css";
 
 export interface ProfileModelChipProps {
@@ -18,6 +19,7 @@ export function ProfileModelChip({
   clickable = false,
   onClick,
 }: ProfileModelChipProps) {
+  const { t } = useI18n();
   const isCompact = size === "compact";
   const markModel = model || (provider ? { providerId: provider, provider, name } : { name });
 
@@ -27,7 +29,7 @@ export function ProfileModelChip({
         type="button"
         className={`${styles.chip} ${isCompact ? styles.chipCompact : ""} ${styles.chipClickable}`}
         onClick={onClick}
-        title={`Перейти к модели ${name}`}
+        title={t("profile.openModel", { name })}
       >
         <ProviderMark
           model={markModel}

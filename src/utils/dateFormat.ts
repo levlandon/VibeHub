@@ -70,9 +70,18 @@ function parseDateParts(input: string | number | Date | null | undefined): {
 export function formatModelDate(
   input: string | number | Date | null | undefined,
   currentYear = new Date().getFullYear(),
+  locale = "ru-RU",
 ): string {
   const parts = parseDateParts(input);
   if (!parts) return "";
+
+  if (locale !== "ru-RU") {
+    const monthName = new Intl.DateTimeFormat(locale, { month: "short" }).format(
+      new Date(parts.year, parts.month, 1),
+    );
+    if (parts.year === currentYear) return `${monthName} ${parts.day}`;
+    return `${monthName} ${parts.day}, ${parts.year}`;
+  }
 
   const monthName = SHORT_MONTHS[parts.month];
   if (parts.year === currentYear) {
@@ -85,9 +94,16 @@ export function formatModelDate(
  * Formats a date for full tooltip display.
  * e.g. "14 августа 2026"
  */
-export function formatFullDate(input: string | number | Date | null | undefined): string {
+export function formatFullDate(input: string | number | Date | null | undefined, locale = "ru-RU"): string {
   const parts = parseDateParts(input);
   if (!parts) return "";
+
+  if (locale !== "ru-RU") {
+    const monthName = new Intl.DateTimeFormat(locale, { month: "short" }).format(
+      new Date(parts.year, parts.month, 1),
+    );
+    return `${monthName} ${parts.day}, ${parts.year}`;
+  }
 
   const monthName = FULL_MONTHS_GENITIVE[parts.month];
   return `${parts.day} ${monthName} ${parts.year}`;

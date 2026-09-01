@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../../i18n";
 import { IconChevron } from "../icons";
 import styles from "./CategoryStrip.module.css";
 
@@ -15,6 +16,7 @@ interface CategoryStripProps {
 }
 
 export function CategoryStrip({ items, value, onChange }: CategoryStripProps) {
+  const { t } = useI18n();
   const scroller = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -45,7 +47,7 @@ export function CategoryStrip({ items, value, onChange }: CategoryStripProps) {
   return (
     <div className={styles.wrap}>
       {canLeft ? (
-        <button type="button" className={styles.arrow} aria-label="Назад" onClick={() => scroll(-1)}>
+        <button type="button" className={styles.arrow} aria-label={t("common.previous")} onClick={() => scroll(-1)}>
           <IconChevron width={16} height={16} style={{ transform: "rotate(180deg)" }} />
         </button>
       ) : null}
@@ -67,7 +69,7 @@ export function CategoryStrip({ items, value, onChange }: CategoryStripProps) {
         ))}
       </div>
       {canRight ? (
-        <button type="button" className={`${styles.arrow} ${styles.right}`} aria-label="Дальше" onClick={() => scroll(1)}>
+        <button type="button" className={`${styles.arrow} ${styles.right}`} aria-label={t("common.next")} onClick={() => scroll(1)}>
           <IconChevron width={16} height={16} />
         </button>
       ) : null}

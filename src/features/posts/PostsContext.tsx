@@ -19,6 +19,7 @@ import {
 import type { EntityRef } from "../../types/entities";
 import type { CreatePostInput, Post, PostComment } from "../../types/posts";
 import { resolveEntitiesFromContent } from "../share/composerUtils";
+import { useI18n } from "../../i18n";
 
 export interface PostsState {
   posts: Post[];
@@ -73,6 +74,7 @@ export function PostsProvider({
   mentionEntities = [],
   autoFetch = true,
 }: PostsProviderProps) {
+  const { t } = useI18n();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(autoFetch);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -94,15 +96,13 @@ export function PostsProvider({
       const page = await repository.getPosts(undefined, pageSize);
       setPosts(page.posts);
       setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось загрузить публикации",
-      );
+    } catch {
+      setError(t("feed.loadError"));
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [repository, pageSize]);
+  }, [repository, pageSize, t]);
 
   const fetchMorePosts = useCallback(async () => {
     if (!nextCursor || isFetchingMoreRef.current || isFetchingRef.current) {
@@ -118,15 +118,13 @@ export function PostsProvider({
 
       setPosts((prev) => mergePostsDeduplicated(prev, page.posts));
       setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось загрузить следующие публикации",
-      );
+    } catch {
+      setError(t("feed.loadMoreError"));
     } finally {
       setLoadingMore(false);
       isFetchingMoreRef.current = false;
     }
-  }, [repository, nextCursor, pageSize]);
+  }, [repository, nextCursor, pageSize, t]);
 
   const refreshPosts = useCallback(async () => {
     await fetchPosts();
@@ -151,15 +149,13 @@ export function PostsProvider({
         setPosts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
         return created;
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось опубликовать запись";
-        setMutationError(msg);
+        setMutationError(t("feed.publishError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository, mentionEntities],
+    [repository, mentionEntities, t],
   );
 
   const updatePost = useCallback(
@@ -183,15 +179,13 @@ export function PostsProvider({
         );
         return updated;
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось обновить запись";
-        setMutationError(msg);
+        setMutationError(t("feed.updateError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository, mentionEntities],
+    [repository, mentionEntities, t],
   );
 
   const deletePost = useCallback(
@@ -202,15 +196,13 @@ export function PostsProvider({
         await repository.deletePost(postId);
         setPosts((prev) => prev.filter((p) => p.id !== postId));
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось удалить запись";
-        setMutationError(msg);
+        setMutationError(t("feed.deleteError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository],
+    [repository, t],
   );
 
   const addComment = useCallback(
@@ -244,15 +236,13 @@ export function PostsProvider({
         );
         return comment;
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось добавить комментарий";
-        setMutationError(msg);
+        setMutationError(t("post.commentSendError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository],
+    [repository, t],
   );
 
   const updateComment = useCallback(
@@ -277,15 +267,13 @@ export function PostsProvider({
         );
         return updated;
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось обновить комментарий";
-        setMutationError(msg);
+        setMutationError(t("post.commentUpdateError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository],
+    [repository, t],
   );
 
   const deleteComment = useCallback(
@@ -307,15 +295,13 @@ export function PostsProvider({
           }),
         );
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Не удалось удалить комментарий";
-        setMutationError(msg);
+        setMutationError(t("post.commentDeleteError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository],
+    [repository, t],
   );
 
   const acceptAnswer = useCallback(
@@ -329,13 +315,13 @@ export function PostsProvider({
         );
         return updated;
       } catch (err) {
-        setMutationError(err instanceof Error ? err.message : "Не удалось отметить ответ");
+        setMutationError(t("post.acceptError"));
         throw err;
       } finally {
         setIsMutating(false);
       }
     },
-    [repository],
+    [repository, t],
   );
 
   const getPost = useCallback(

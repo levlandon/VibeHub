@@ -1,4 +1,5 @@
 import styles from "./Rating.module.css";
+import { useI18n } from "../../i18n";
 
 interface RatingProps {
   value: number;
@@ -15,10 +16,11 @@ export function Rating({
   userValue,
   onRate,
 }: RatingProps) {
+  const { t } = useI18n();
   return (
     <div className={styles.wrap}>
       {interactive ? (
-        <div className={styles.stars} role="radiogroup" aria-label="Оценка">
+        <div className={styles.stars} role="radiogroup" aria-label={t("rating.label")}>
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
@@ -39,7 +41,7 @@ export function Rating({
         </span>
       )}
       {votes != null ? (
-        <span className={styles.votes}>{votes} голосов</span>
+        <span className={styles.votes}>{t("rating.votes", { count: votes })}</span>
       ) : null}
     </div>
   );

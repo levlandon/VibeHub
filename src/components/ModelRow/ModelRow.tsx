@@ -12,6 +12,7 @@ import { ProviderMark } from "../ProviderMark/ProviderMark";
 import type { Model } from "../../types/models";
 import { formatFullDate, formatModelDate } from "../../utils/dateFormat";
 import styles from "./ModelRow.module.css";
+import { useI18n } from "../../i18n";
 
 export interface ModelRowProps {
   model: Model;
@@ -26,10 +27,19 @@ export const ModelRow = memo(function ModelRow({
   onBookmark,
   onOpen,
 }: ModelRowProps) {
+  const { language, t } = useI18n();
   const hasReasoning = model.capabilities.includes("Reasoning");
   const hasVision = model.capabilities.includes("Vision");
   const hasTools = model.capabilities.includes("Tools");
   const hasAudio = model.capabilities.includes("Audio");
+  const hasCompletePricing =
+    model.pricing.promptPerMillion !== null &&
+    model.pricing.completionPerMillion !== null;
+  const pricingSummary = model.pricing.isFree
+    ? t("model.free")
+    : hasCompletePricing
+      ? model.pricing.formattedSummary
+      : t("models.priceUnavailable");
 
   const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -45,7 +55,7 @@ export const ModelRow = memo(function ModelRow({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      aria-label={`Открыть модель ${model.name} (${model.provider})`}
+      aria-label={t("models.openModel", { name: model.name, provider: model.provider })}
     >
       <ProviderMark model={model} />
       <div className={styles.body}>
@@ -54,7 +64,7 @@ export const ModelRow = memo(function ModelRow({
         <div className={styles.metaRow}>
           <span
             className={styles.contextWindow}
-            title={`Контекстное окно: ${model.contextLength.toLocaleString("ru-RU")} токенов`}
+            title={t("models.contextWindow", { count: model.contextLength.toLocaleString(language === "ru" ? "ru-RU" : "en-US") })}
           >
             <IconLayers width={14} height={14} className={styles.metaIcon} aria-hidden />
             <span>{model.contextWindow}</span>
@@ -63,34 +73,34 @@ export const ModelRow = memo(function ModelRow({
             className={`${styles.pricing} ${model.pricing.isFree ? styles.pricingFree : ""}`}
             title={
               model.pricing.isFree
-                ? "Бесплатная модель"
+                ? t("models.freeModel")
                 : model.pricing.promptPerMillion !== null &&
                     model.pricing.completionPerMillion !== null
-                  ? `Цена: Prompt $${model.pricing.promptPerMillion.toFixed(2)} / Completion $${model.pricing.completionPerMillion.toFixed(2)} за 1M токенов`
-                  : "Цена недоступна"
+                  ? t("models.price", { prompt: model.pricing.promptPerMillion.toFixed(2), completion: model.pricing.completionPerMillion.toFixed(2) })
+                  : t("models.priceUnavailable")
             }
           >
-            {model.pricing.formattedSummary}
+            {pricingSummary}
           </span>
           {hasReasoning || hasVision || hasTools || hasAudio ? (
-            <div className={styles.capabilities} aria-label="Возможности">
+            <div className={styles.capabilities} aria-label={t("models.capabilities")}>
               {hasReasoning ? (
-                <span className={styles.capIcon} title="Рассуждения (Reasoning)" aria-label="Reasoning">
+                <span className={styles.capIcon} title={t("models.reasoningTitle")} aria-label={t("models.reasoning")}>
                   <IconBrain width={15} height={15} />
                 </span>
               ) : null}
               {hasVision ? (
-                <span className={styles.capIcon} title="Зрение (Vision)" aria-label="Vision">
+                <span className={styles.capIcon} title={t("models.visionTitle")} aria-label={t("models.vision")}>
                   <IconVision width={15} height={15} />
                 </span>
               ) : null}
               {hasTools ? (
-                <span className={styles.capIcon} title="Инструменты (Tools)" aria-label="Tools">
+                <span className={styles.capIcon} title={t("models.toolsTitle")} aria-label={t("models.tools")}>
                   <IconTools width={15} height={15} />
                 </span>
               ) : null}
               {hasAudio ? (
-                <span className={styles.capIcon} title="Аудио (Audio)" aria-label="Audio">
+                <span className={styles.capIcon} title={t("models.audioTitle")} aria-label={t("models.audio")}>
                   <IconAudio width={15} height={15} />
                 </span>
               ) : null}
@@ -99,9 +109,9 @@ export const ModelRow = memo(function ModelRow({
           {model.releaseDate ? (
             <span
               className={styles.date}
-              title={formatFullDate(model.releaseDate)}
+              title={formatFullDate(model.releaseDate, language === "ru" ? "ru-RU" : "en-US")}
             >
-              {formatModelDate(model.releaseDate)}
+              {formatModelDate(model.releaseDate, new Date().getFullYear(), language === "ru" ? "ru-RU" : "en-US")}
             </span>
           ) : null}
         </div>
@@ -112,7 +122,7 @@ export const ModelRow = memo(function ModelRow({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <IconButton
-          label={bookmarked ? "Убрать из закладок" : "Сохранить"}
+          label={bookmarked ? t("saved.removeBookmark") : t("common.save")}
           active={bookmarked}
           onClick={(e) => {
             e.stopPropagation();

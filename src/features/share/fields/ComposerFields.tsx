@@ -1,6 +1,7 @@
 import { MentionField } from "../../../components/mentions/MentionField";
 import type { ExtraField } from "../../../config/postTypes";
 import type { PostDraft } from "../types";
+import { useI18n } from "../../../i18n";
 import styles from "./ComposerFields.module.css";
 
 export function TitleField({
@@ -10,11 +11,12 @@ export function TitleField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <input
       className={styles.title}
       value={value}
-      placeholder="Заголовок"
+      placeholder={t("composer.title")}
       onChange={(e) => onChange(e.target.value)}
     />
   );
@@ -27,12 +29,13 @@ export function ContentField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <MentionField
       className={styles.body}
       value={value}
       onChange={onChange}
-      placeholder="Текст. Можно упомянуть @модель или @инструмент"
+      placeholder={t("composer.content")}
       rows={4}
     />
   );
@@ -47,9 +50,11 @@ export function ExtraTextField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
+  const labelKey = field.key === "repositoryUrl" ? "composer.repository" : field.key === "demoUrl" ? "composer.demo" : "composer.link";
   return (
     <label className={styles.extra}>
-      {field.label}
+      {t(labelKey)}
       <input
         value={value}
         placeholder={field.placeholder}

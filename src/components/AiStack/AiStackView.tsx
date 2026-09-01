@@ -3,6 +3,7 @@ import {
   resolveModelToStackItem,
   resolveToolToStackItem,
 } from "../../data/aiStack";
+import { useI18n } from "../../i18n";
 import type { Model, Tool } from "../../types/hub";
 import { IconBot, IconModels, IconTools } from "../icons";
 import styles from "./AiStackView.module.css";
@@ -22,17 +23,18 @@ export function AiStackView({
   availableModels = [],
   availableTools = [],
 }: AiStackViewProps) {
+  const { t } = useI18n();
   return (
     <div className={styles.stackContainer}>
       {/* 1. Coding Agents */}
       <div className={styles.categoryBlock}>
         <div className={styles.categoryHeader}>
           <IconBot width={16} height={16} />
-          <span>Agents</span>
+          <span>{t("profile.codingAgents")}</span>
           <span className={styles.categoryCount}>{codingAgents.length}</span>
         </div>
         {codingAgents.length === 0 ? (
-          <div className={styles.emptyCategory}>Coding Agents не выбраны</div>
+          <div className={styles.emptyCategory}>{t("profile.codingAgentsNone")}</div>
         ) : (
           <div className={styles.itemList}>
             {codingAgents.map((name) => {
@@ -55,11 +57,11 @@ export function AiStackView({
       <div className={styles.categoryBlock}>
         <div className={styles.categoryHeader}>
           <IconModels width={16} height={16} />
-          <span>Models</span>
+          <span>{t("composer.models")}</span>
           <span className={styles.categoryCount}>{models.length}</span>
         </div>
         {models.length === 0 ? (
-          <div className={styles.emptyCategory}>Модели не выбраны</div>
+          <div className={styles.emptyCategory}>{t("profile.modelsNone")}</div>
         ) : (
           <div className={styles.itemList}>
             {models.map((id) => {
@@ -82,11 +84,11 @@ export function AiStackView({
       <div className={styles.categoryBlock}>
         <div className={styles.categoryHeader}>
           <IconTools width={16} height={16} />
-          <span>Tools</span>
+          <span>{t("composer.tools")}</span>
           <span className={styles.categoryCount}>{tools.length}</span>
         </div>
         {tools.length === 0 ? (
-          <div className={styles.emptyCategory}>Инструменты не выбраны</div>
+          <div className={styles.emptyCategory}>{t("profile.toolsNone")}</div>
         ) : (
           <div className={styles.itemList}>
             {tools.map((id) => {
